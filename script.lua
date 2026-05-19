@@ -1,8 +1,8 @@
 --[[
     ╔════════════════════════════════════════════════════════════╗
-    ║                 SILENTVOID MULTI-GAME HUB                  ║
-    ║                         VERSION V1                         ║
-    ║        Framework Universel & Spécifique Multi-Jeux         ║
+    ║                      ZENTY VOID PROJECT                    ║
+    ║                         VERSION V2                         ║
+    ║        Custom Translucent & Hyper-Blatant Framework        ║
     ╚════════════════════════════════════════════════════════════╝
 --]]
 
@@ -12,7 +12,6 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PathfindingService = game:GetService("PathfindingService")
 
 local player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -22,34 +21,39 @@ local originalGravity = Workspace.Gravity
 local originalWalkSpeed = 16
 local originalJumpPower = 50
 
-if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidMultiHub") then
-    player.PlayerGui.SilentVoidMultiHub:Destroy()
+if player:WaitForChild("PlayerGui"):FindFirstChild("ZentyVoidHub") then
+    player.PlayerGui.ZentyVoidHub:Destroy()
 end
 
 local Hub = {
     GameMode = "Universel",
     PlaceId = game.PlaceId,
-    Version = "1.0.0",
     Config = {
-        Aimbot = false, AimbotPart = "Head", FovEnabled = false, FovRadius = 130, Smoothness = 0.05, TeamCheck = false, WallCheck = false, AutoShoot = false,
-        EspPlayers = false, EspBoxes = false, EspTracers = false, EspNames = false, EspDistance = false, EspHealth = false, EspChams = false,
-        SpeedEnabled = false, SpeedValue = 16, JumpEnabled = false, JumpValue = 50, FlyEnabled = false, FlySpeed = 2, NoClip = false, InfiniteJump = false,
-        BhAdminMode = false, BhUnlockCars = false, BhTeleportLoop = false,
-        BbAutoParry = false, BbParryDistance = 15, BbSpamClick = false,
-        Mm2AutoCollect = false, Mm2ShowRoles = false, Mm2KillAura = false,
-        ArSilentAim = false, ArNoRecoil = false, ArInfAmmo = false,
-        BwAutoBridge = false, BwKillAura = false, BwSprint = false
+        Aimbot = false, AimbotPart = "Head", FovEnabled = false, FovRadius = 140, TeamCheck = false, WallCheck = false,
+        EspPlayers = false, EspBoxes = false, EspTracers = false, EspNames = false,
+        SpeedEnabled = false, SpeedValue = 16, JumpEnabled = false, JumpValue = 50, FlyEnabled = false, FlySpeed = 3, NoClip = false,
+        -- Fun & Blatant Features
+        SpinBot = false, SpinSpeed = 30, FlingAura = false, GravitySlider = 196.2, InfiniteJump = false,
+        CarFly = false, ClickTeleport = false, ViewSpy = false, NakedAvatars = false,
+        -- Game Specifics
+        BhUnlockCars = false, BhTeleportLoop = false,
+        BbAutoParry = false, BbParryDistance = 15,
+        Mm2ShowRoles = false, Mm2AutoCollect = false,
+        ArSilentAim = false, ArNoRecoil = false,
+        BwKillAura = false
     },
     Cache = {},
     Themes = {
-        Main = Color3.fromRGB(10, 10, 13), Sidebar = Color3.fromRGB(15, 15, 18), Accent = Color3.fromRGB(0, 210, 255),
-        Row = Color3.fromRGB(20, 20, 25), Text = Color3.fromRGB(250, 250, 250), TextDark = Color3.fromRGB(130, 130, 140), Border = Color3.fromRGB(32, 32, 38)
+        Main = Color3.fromRGB(12, 5, 20), -- Base violette très sombre
+        Sidebar = Color3.fromRGB(8, 3, 15),
+        Accent = Color3.fromRGB(157, 0, 255), -- Violet Électrique Zenty
+        Row = Color3.fromRGB(22, 10, 38),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextDark = Color3.fromRGB(150, 140, 170),
+        Border = Color3.fromRGB(60, 20, 110)
     }
 }
 
--- ══════════════════════════════════════════════
---  DETECTION DYNAMIQUE DU JEU
--- ══════════════════════════════════════════════
 local gamesList = {
     [4924922222] = "Brookhaven", [13772394625] = "Blade Ball", [142823291] = "Murder Mystery 2",
     [286090424] = "Arsenal", [6872265039] = "BedWars", [1168263273] = "BedWars"
@@ -57,29 +61,10 @@ local gamesList = {
 if gamesList[Hub.PlaceId] then Hub.GameMode = gamesList[Hub.PlaceId] end
 
 -- ══════════════════════════════════════════════
---  MODULE ANTI-DÉTECTION (BYPASS SECURE METATABLE)
--- ══════════════════════════════════════════════
-do
-    local gmt = getrawmetatable and getrawmetatable(game)
-    if gmt and setreadonly then
-        local oldIndex = gmt.__index
-        setreadonly(gmt, false)
-        gmt.__index = newcclosure(function(self, key)
-            if not checkcaller() then
-                if key == "WalkSpeed" and self:IsA("Humanoid") and self.Parent == player.Character then return originalWalkSpeed end
-                if key == "JumpPower" and self:IsA("Humanoid") and self.Parent == player.Character then return originalJumpPower end
-            end
-            return oldIndex(self, key)
-        end)
-        setreadonly(gmt, true)
-    end
-end
-
--- ══════════════════════════════════════════════
---  MOTEUR INTERFACE GRAPHIQUE NOIR PREMIUM
+--  INTERFACE GRAPHIQUE TRANSLUCIDE (STYLE ZENTY)
 -- ══════════════════════════════════════════════
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilentVoidMultiHub"
+ScreenGui.Name = "ZentyVoidHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
@@ -87,67 +72,58 @@ local function round(r, p) local c = Instance.new("UICorner") c.CornerRadius = U
 local function line(col, th, p) local s = Instance.new("UIStroke") s.Color = col s.Thickness = th s.Parent = p return s end
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 580, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -200)
+MainFrame.Size = UDim2.new(0, 620, 0, 430)
+MainFrame.Position = UDim2.new(0.5, -310, 0.5, -215)
 MainFrame.BackgroundColor3 = Hub.Themes.Main
+MainFrame.BackgroundTransparency = 0.25 -- Fond transparent demandé
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Parent = ScreenGui
-round(8, MainFrame); line(Hub.Themes.Border, 1.2, MainFrame)
+round(6, MainFrame); line(Hub.Themes.Border, 1.4, MainFrame)
 
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 160, 1, 0)
+Sidebar.Size = UDim2.new(0, 170, 1, 0)
 Sidebar.BackgroundColor3 = Hub.Themes.Sidebar
+Sidebar.BackgroundTransparency = 0.3
 Sidebar.Parent = MainFrame
-round(8, Sidebar)
-
-local SidebarCover = Instance.new("Frame")
-SidebarCover.Size = UDim2.new(0, 10, 1, 0)
-SidebarCover.Position = UDim2.new(1, -10, 0, 0)
-SidebarCover.BackgroundColor3 = Hub.Themes.Sidebar
-SidebarCover.BorderSizePixel = 0; SidebarCover.Parent = Sidebar
+round(6, Sidebar)
 
 local ContainerHolder = Instance.new("Frame")
-ContainerHolder.Size = UDim2.new(1, -160, 1, -40)
-ContainerHolder.Position = UDim2.new(0, 160, 0, 40)
+ContainerHolder.Size = UDim2.new(1, -170, 1, -40)
+ContainerHolder.Position = UDim2.new(0, 170, 0, 40)
 ContainerHolder.BackgroundTransparency = 1; ContainerHolder.Parent = MainFrame
 
 local HubTitle = Instance.new("TextLabel")
-HubTitle.Size = UDim2.new(1, 0, 0, 40)
-HubTitle.Position = UDim2.new(0, 12, 0, 5)
-HubTitle.BackgroundTransparency = 1; HubTitle.Text = "SILENTVOID"
-HubTitle.Font = Enum.Font.GothamBold; HubTitle.TextSize = 15; HubTitle.TextColor3 = Hub.Themes.Accent; HubTitle.TextXAlignment = Enum.TextXAlignment.Left; HubTitle.Parent = Sidebar
-
-local HubSub = Instance.new("TextLabel")
-HubSub.Size = UDim2.new(1, 0, 0, 15)
-HubSub.Position = UDim2.new(0, 12, 0, 24)
-HubSub.BackgroundTransparency = 1; HubSub.Text = "MULTI-GAME HUB V1"
-HubSub.Font = Enum.Font.GothamSemibold; HubSub.TextSize = 9; HubSub.TextColor3 = Hub.Themes.TextDark; HubSub.TextXAlignment = Enum.TextXAlignment.Left; HubSub.Parent = Sidebar
+HubTitle.Size = UDim2.new(1, 0, 0, 35)
+HubTitle.Position = UDim2.new(0, 15, 0, 8)
+HubTitle.BackgroundTransparency = 1; HubTitle.Text = "ZENTY.VOID"
+HubTitle.Font = Enum.Font.Code; HubTitle.TextSize = 18; HubTitle.TextColor3 = Hub.Themes.Accent; HubTitle.TextXAlignment = Enum.TextXAlignment.Left; HubTitle.Parent = Sidebar
 
 local NavList = Instance.new("ScrollingFrame")
-NavList.Size = UDim2.new(1, 0, 1, -60)
-NavList.Position = UDim2.new(0, 0, 0, 60)
+NavList.Size = UDim2.new(1, 0, 1, -50)
+NavList.Position = UDim2.new(0, 0, 0, 50)
 NavList.BackgroundTransparency = 1; NavList.BorderSizePixel = 0; NavList.ScrollBarThickness = 0; NavList.Parent = Sidebar
 
 local NavLayout = Instance.new("UIListLayout")
-NavLayout.Padding = UDim.new(0, 4); NavLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center; NavLayout.Parent = NavList
+NavLayout.Padding = UDim.new(0, 2); NavLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center; NavLayout.Parent = NavList
 
 local Topbar = Instance.new("Frame")
-Topbar.Size = UDim2.new(1, -160, 0, 40)
-Topbar.Position = UDim2.new(0, 160, 0, 0)
+Topbar.Size = UDim2.new(1, -170, 0, 40)
+Topbar.Position = UDim2.new(0, 170, 0, 0)
 Topbar.BackgroundTransparency = 1; Topbar.Parent = MainFrame
 
 local GameTag = Instance.new("TextLabel")
 GameTag.Size = UDim2.new(1, -20, 1, 0)
 GameTag.Position = UDim2.new(0, 15, 0, 0)
-GameTag.BackgroundTransparency = 1; GameTag.Text = "Jeu Détecté : " .. Hub.GameMode
-GameTag.Font = Enum.Font.GothamBold; GameTag.TextSize = 12; GameTag.TextColor3 = Hub.Themes.Text; GameTag.TextXAlignment = Enum.TextXAlignment.Left; GameTag.Parent = Topbar
+GameTag.BackgroundTransparency = 1; GameTag.Text = "SYS_STATUS : ACTIVE // MODE : " .. Hub.GameMode:upper()
+GameTag.Font = Enum.Font.Code; GameTag.TextSize = 11; GameTag.TextColor3 = Hub.Themes.TextDark; GameTag.TextXAlignment = Enum.TextXAlignment.Left; GameTag.Parent = Topbar
 
 local toggleB = Instance.new("TextButton")
-toggleB.Size = UDim2.new(0, 90, 0, 30)
-toggleB.Position = UDim2.new(0, 10, 0, 10)
+toggleB.Size = UDim2.new(0, 100, 0, 28)
+toggleB.Position = UDim2.new(0, 15, 0, 15)
 toggleB.BackgroundColor3 = Hub.Themes.Main
-toggleB.Text = "SV HUB 👁"
-toggleB.Font = Enum.Font.GothamBold; toggleB.TextColor3 = Hub.Themes.Accent; toggleB.TextSize = 11; toggleB.Parent = ScreenGui
-round(6, toggleB); line(Hub.Themes.Border, 1, toggleB)
+toggleB.BackgroundTransparency = 0.2
+toggleB.Text = "[ ZENTY UI ]"
+toggleB.Font = Enum.Font.Code; toggleB.TextColor3 = Hub.Themes.Accent; toggleB.TextSize = 12; toggleB.Parent = ScreenGui
+round(4, toggleB); line(Hub.Themes.Border, 1, toggleB)
 
 toggleB.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
@@ -157,27 +133,26 @@ FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5); FOVCircle.Position = UDim2.new(0.
 round(Hub.Config.FovRadius * 2, FOVCircle); local FOVStroke = line(Hub.Themes.Accent, 1, FOVCircle)
 
 -- ══════════════════════════════════════════════
---  METHODES BUILDER UI INTERACTIVE
+--  BUILDER COMPOSANTS SANS EMOJI (DEV STYLE)
 -- ══════════════════════════════════════════════
 local Pages, Buttons, firstPage = {}, {}, nil
 
 local function CreatePage(id, name)
     local Page = Instance.new("ScrollingFrame")
-    Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.BorderSizePixel = 0; Page.ScrollBarThickness = 3; Page.Visible = false; Page.Parent = ContainerHolder
-    local PL = Instance.new("UIListLayout") PL.Padding = UDim.new(0, 6) PL.HorizontalAlignment = Enum.HorizontalAlignment.Center; PL.Parent = Page
-    local PP = Instance.new("UIPadding") PP.PaddingTop = UDim.new(0, 8) PP.Parent = Page
+    Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.BorderSizePixel = 0; Page.ScrollBarThickness = 2; Page.Visible = false; Page.Parent = ContainerHolder
+    local PL = Instance.new("UIListLayout") PL.Padding = UDim.new(0, 5) PL.HorizontalAlignment = Enum.HorizontalAlignment.Center; PL.Parent = Page
+    local PP = Instance.new("UIPadding") PP.PaddingTop = UDim.new(0, 4) PP.Parent = Page
     
     local NavBtn = Instance.new("TextButton")
-    NavBtn.Size = UDim2.new(1, -16, 0, 34)
-    NavBtn.BackgroundColor3 = Hub.Themes.Sidebar
-    NavBtn.Text = "  " .. name
-    NavBtn.Font = Enum.Font.GothamMedium; NavBtn.TextSize = 11; NavBtn.TextColor3 = Hub.Themes.TextDark; NavBtn.TextXAlignment = Enum.TextXAlignment.Left; NavBtn.AutoButtonColor = false; NavBtn.Parent = NavList
-    round(6, NavBtn)
+    NavBtn.Size = UDim2.new(1, -12, 0, 30)
+    NavBtn.BackgroundColor3 = Color3.fromRGB(0,0,0); NavBtn.BackgroundTransparency = 1
+    NavBtn.Text = "  // " .. name
+    NavBtn.Font = Enum.Font.Code; NavBtn.TextSize = 11; NavBtn.TextColor3 = Hub.Themes.TextDark; NavBtn.TextXAlignment = Enum.TextXAlignment.Left; NavBtn.AutoButtonColor = false; NavBtn.Parent = NavList
+    round(4, NavBtn)
     
     local Ind = Instance.new("Frame")
-    Ind.Size = UDim2.new(0, 3, 0, 14)
-    Ind.Position = UDim2.new(0, 0, 0.5, -7); Ind.BackgroundColor3 = Hub.Themes.Accent; Ind.BackgroundTransparency = 1; Ind.Parent = NavBtn
-    round(2, Ind)
+    Ind.Size = UDim2.new(0, 2, 0, 12)
+    Ind.Position = UDim2.new(0, 2, 0.5, -6); Ind.BackgroundColor3 = Hub.Themes.Accent; Ind.BackgroundTransparency = 1; Ind.Parent = NavBtn
     
     Pages[id] = Page; Buttons[id] = {Btn = NavBtn, Ind = Ind}
     
@@ -186,11 +161,11 @@ local function CreatePage(id, name)
             pFrame.Visible = (pid == id)
             local bData = Buttons[pid]
             if pid == id then
-                bData.Btn.TextColor3 = Hub.Themes.Text; bData.Btn.BackgroundColor3 = Hub.Themes.Row
-                TweenService:Create(bData.Ind, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+                bData.Btn.TextColor3 = Hub.Themes.Text; bData.Btn.BackgroundTransparency = 0.8; bData.Btn.BackgroundColor3 = Hub.Themes.Accent
+                TweenService:Create(bData.Ind, TweenInfo.new(0.1), {BackgroundTransparency = 0}):Play()
             else
-                bData.Btn.TextColor3 = Hub.Themes.TextDark; bData.Btn.BackgroundColor3 = Hub.Themes.Sidebar
-                TweenService:Create(bData.Ind, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+                bData.Btn.TextColor3 = Hub.Themes.TextDark; bData.Btn.BackgroundTransparency = 1
+                TweenService:Create(bData.Ind, TweenInfo.new(0.1), {BackgroundTransparency = 1}):Play()
             end
         end
     end)
@@ -199,39 +174,35 @@ local function CreatePage(id, name)
 end
 
 local function AddToggle(page, title, sub, configKey, callback)
-    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -24, 0, 44) Row.BackgroundColor3 = Hub.Themes.Row Row.Parent = page
-    round(6, Row); line(Hub.Themes.Border, 1, Row)
+    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 38) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.4 Row.Parent = page
+    round(4, Row); line(Hub.Themes.Border, 0.8, Row)
     
-    local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(1, -100, 0, 18) Txt.Position = UDim2.new(0, 12, 0, 4) Txt.BackgroundTransparency = 1; Txt.Text = title; Txt.Font = Enum.Font.GothamBold; Txt.TextSize = 12; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
-    local SubTxt = Instance.new("TextLabel") SubTxt.Size = UDim2.new(1, -100, 0, 14) SubTxt.Position = UDim2.new(0, 12, 0, 21) SubTxt.BackgroundTransparency = 1; SubTxt.Text = sub; SubTxt.Font = Enum.Font.GothamMedium; SubTxt.TextSize = 10; SubTxt.TextColor3 = Hub.Themes.TextDark; SubTxt.TextXAlignment = Enum.TextXAlignment.Left; SubTxt.Parent = Row
+    local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(1, -100, 0, 16) Txt.Position = UDim2.new(0, 10, 0, 3) Txt.BackgroundTransparency = 1; Txt.Text = title:upper(); Txt.Font = Enum.Font.Code; Txt.TextSize = 11; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
+    local SubTxt = Instance.new("TextLabel") SubTxt.Size = UDim2.new(1, -100, 0, 12) SubTxt.Position = UDim2.new(0, 10, 0, 19) SubTxt.BackgroundTransparency = 1; SubTxt.Text = sub; SubTxt.Font = Enum.Font.Code; SubTxt.TextSize = 9; SubTxt.TextColor3 = Hub.Themes.TextDark; SubTxt.TextXAlignment = Enum.TextXAlignment.Left; SubTxt.Parent = Row
     
-    local Switch = Instance.new("TextButton") Switch.Size = UDim2.new(0, 36, 0, 18) Switch.Position = UDim2.new(1, -48, 0.5, -9) Switch.BackgroundColor3 = Hub.Config[configKey] and Hub.Themes.Accent or Hub.Themes.Main Switch.Text = ""; Switch.Parent = Row
-    round(9, Switch); line(Hub.Themes.Border, 1, Switch)
-    
-    local Knob = Instance.new("Frame") Knob.Size = UDim2.new(0, 12, 0, 12) Knob.Position = Hub.Config[configKey] and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6) Knob.BackgroundColor3 = Hub.Themes.Text; Knob.Parent = Switch
-    round(8, Knob)
+    local Switch = Instance.new("TextButton") Switch.Size = UDim2.new(0, 30, 0, 14) Switch.Position = UDim2.new(1, -40, 0.5, -7) Switch.BackgroundColor3 = Hub.Config[configKey] and Hub.Themes.Accent or Color3.fromRGB(20, 20, 30); Switch.Text = ""; Switch.Parent = Row
+    round(2, Switch); line(Hub.Themes.Border, 1, Switch)
     
     Switch.MouseButton1Click:Connect(function()
         Hub.Config[configKey] = not Hub.Config[configKey]
         local enabled = Hub.Config[configKey]
-        TweenService:Create(Switch, TweenInfo.new(0.12), {BackgroundColor3 = enabled and Hub.Themes.Accent or Hub.Themes.Main}):Play()
-        TweenService:Create(Knob, TweenInfo.new(0.12), {Position = enabled and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6)}):Play()
+        TweenService:Create(Switch, TweenInfo.new(0.1), {BackgroundColor3 = enabled and Hub.Themes.Accent or Color3.fromRGB(20, 20, 30)}):Play()
         callback(enabled)
     end)
 end
 
 local function AddSlider(page, title, min, max, default, configKey, callback)
-    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -24, 0, 50) Row.BackgroundColor3 = Hub.Themes.Row Row.Parent = page
-    round(6, Row); line(Hub.Themes.Border, 1, Row)
+    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 42) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.4 Row.Parent = page
+    round(4, Row); line(Hub.Themes.Border, 0.8, Row)
     
-    local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(0, 200, 0, 18) Txt.Position = UDim2.new(0, 12, 0, 5) Txt.BackgroundTransparency = 1; Txt.Text = title; Txt.Font = Enum.Font.GothamBold; Txt.TextSize = 12; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
-    local ValTxt = Instance.new("TextLabel") ValTxt.Size = UDim2.new(0, 60, 0, 18) ValTxt.Position = UDim2.new(1, -72, 0, 5) ValTxt.BackgroundTransparency = 1; ValTxt.Text = tostring(default); ValTxt.Font = Enum.Font.GothamBold; ValTxt.TextSize = 11; ValTxt.TextColor3 = Hub.Themes.Accent; ValTxt.TextXAlignment = Enum.TextXAlignment.Right; ValTxt.Parent = Row
+    local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(0, 200, 0, 16) Txt.Position = UDim2.new(0, 10, 0, 4) Txt.BackgroundTransparency = 1; Txt.Text = title:upper(); Txt.Font = Enum.Font.Code; Txt.TextSize = 11; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
+    local ValTxt = Instance.new("TextLabel") ValTxt.Size = UDim2.new(0, 60, 0, 16) ValTxt.Position = UDim2.new(1, -70, 0, 4) ValTxt.BackgroundTransparency = 1; ValTxt.Text = tostring(default); ValTxt.Font = Enum.Font.Code; ValTxt.TextSize = 10; ValTxt.TextColor3 = Hub.Themes.Accent; ValTxt.TextXAlignment = Enum.TextXAlignment.Right; ValTxt.Parent = Row
     
-    local SlideBar = Instance.new("TextButton") SlideBar.Size = UDim2.new(1, -24, 0, 5) SlideBar.Position = UDim2.new(0, 12, 0, 32) SlideBar.BackgroundColor3 = Hub.Themes.Main; SlideBar.Text = ""; SlideBar.AutoButtonColor = false; SlideBar.Parent = Row
-    round(2, SlideBar)
+    local SlideBar = Instance.new("TextButton") SlideBar.Size = UDim2.new(1, -20, 0, 4) SlideBar.Position = UDim2.new(0, 10, 0, 26) SlideBar.BackgroundColor3 = Color3.fromRGB(15,15,25); SlideBar.Text = ""; SlideBar.AutoButtonColor = false; SlideBar.Parent = Row
+    round(1, SlideBar)
     
     local SlideIn = Instance.new("Frame") SlideIn.Size = UDim2.new((default - min) / (max - min), 0, 1, 0); SlideIn.BackgroundColor3 = Hub.Themes.Accent; SlideIn.Parent = SlideBar
-    round(2, SlideIn)
+    round(1, SlideIn)
     
     local dragging = false
     local function updateSlider()
@@ -249,200 +220,83 @@ local function AddSlider(page, title, min, max, default, configKey, callback)
 end
 
 -- ══════════════════════════════════════════════
---  GENERATION DES PAGES PRINCIPALES
+--  STRUCTURE DES PAGES DE MENUS (MASSIVE CONFIG)
 -- ══════════════════════════════════════════════
-local pCombat = CreatePage("combat", "⚔ Combat & Aim")
-local pVisuals = CreatePage("visuals", "👁 Visuels & ESP")
-local pLocal = CreatePage("local", "⚡ Local Player")
-local pGameMod = CreatePage("gamemod", "🎲 Module : " .. Hub.GameMode)
+local pCombat = CreatePage("combat", "CRITICAL COMBAT")
+local pVisuals = CreatePage("visuals", "OVERLAY RENDERER")
+local pLocal = CreatePage("local", "PHYSICS MANIPULATOR")
+local pFun = CreatePage("fun", "BLATANT MODS & FUN")
+local pGameMod = CreatePage("gamemod", "TARGET MODULE")
 
 -- Page Combat
-AddToggle(pCombat, "Lock-On Aimbot", "Verrouille les cibles du FOV", "Aimbot", function() end)
-AddToggle(pCombat, "Vérification Murs", "Ne cible pas derrière les parois", "WallCheck", function() end)
-AddToggle(pCombat, "Afficher Rond FOV", "Zone d'action de l'aimbot", "FovEnabled", function(v) FOVCircle.Visible = v end)
-AddSlider(pCombat, "Rayon du FOV", 30, 300, 130, "FovRadius", function(v) FOVCircle.Size = UDim2.new(0, v*2, 0, v*2) round(v*2, FOVCircle) end)
+AddToggle(pCombat, "Engine Lock-On", "Assistance de visée angulaire stricte", "Aimbot", function() end)
+AddToggle(pCombat, "Raycast Occlusion Check", "Ignore les entités masquées par la géométrie", "WallCheck", function() end)
+AddToggle(pCombat, "Draw Target Boundary", "Rendu du cercle d'acquisition", "FovEnabled", function(v) FOVCircle.Visible = v end)
+AddSlider(pCombat, "Boundary Range Radius", 30, 400, 140, "FovRadius", function(v) FOVCircle.Size = UDim2.new(0, v*2, 0, v*2) round(v*2, FOVCircle) end)
 
--- Page Visuels
-AddToggle(pVisuals, "Activer l'ESP Principal", "Active les structures d'affichage global", "EspPlayers", function() end)
-AddToggle(pVisuals, "Afficher les Box Ennemis", "Cadres de géolocalisation", "EspBoxes", function() end)
-AddToggle(pVisuals, "Afficher les Tracers", "Lignes de visée au sol", "EspTracers", function() end)
-AddToggle(pVisuals, "Afficher les Pseudos", "Identités visibles", "EspNames", function() end)
+-- Page Overlay Visuals
+AddToggle(pVisuals, "Master Render Status", "Activer la boucle de rendu géométrique", "EspPlayers", function() end)
+AddToggle(pVisuals, "Bounding Box 2D", "Tracé rectangulaire sur les cibles", "EspBoxes", function() end)
+AddToggle(pVisuals, "Target Direct Tracers", "Vecteurs au sol depuis le centre écran", "EspTracers", function() end)
+AddToggle(pVisuals, "Identification Tags", "Rendu des chaînes de caractères (Nom + Range)", "EspNames", function() end)
 
--- Page LocalPlayer
-AddToggle(pLocal, "Activer Vitesse Forcée", "Modifier la vitesse de déplacement", "SpeedEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.WalkSpeed = originalWalkSpeed end end)
-AddSlider(pLocal, "Valeur Vitesse", 16, 200, 16, "SpeedValue", function() end)
-AddToggle(pLocal, "Activer Super Sauts", "Hauteur de impulsion aérienne", "JumpEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.JumpPower = originalJumpPower end end)
-AddSlider(pLocal, "Valeur Sauts", 50, 250, 50, "JumpValue", function() end)
-AddToggle(pLocal, "Mode Fly (Vol)", "Fige la gravité pour se déplacer en l'air", "FlyEnabled", function(v) if not v then Workspace.Gravity = originalGravity if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.PlatformStand = false end end end)
-AddSlider(pLocal, "Vitesse de Vol", 1, 10, 2, "FlySpeed", function() end)
-AddToggle(pLocal, "NoClip Physique", "Traverser toutes les matières solides", "NoClip", function() end)
+-- Page Physics Manipulator
+AddToggle(pLocal, "Override WalkSpeed", "Forcer la vélocité linéaire au sol", "SpeedEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.WalkSpeed = originalWalkSpeed end end)
+AddSlider(pLocal, "Velocity Amplitude", 16, 250, 16, "SpeedValue", function() end)
+AddToggle(pLocal, "Override JumpPower", "Forcer le coefficient de propulsion verticale", "JumpEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.JumpPower = originalJumpPower end end)
+AddSlider(pLocal, "Propulsion Amplitude", 50, 300, 50, "JumpValue", function() end)
+AddToggle(pLocal, "Quantum Flight Mode", "Annuler la force gravitationnelle et lier au vecteur caméra", "FlyEnabled", function(v) if not v then Workspace.Gravity = originalGravity if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.PlatformStand = false end end end)
+AddSlider(pLocal, "Flight Axis Speed", 1, 15, 3, "FlySpeed", function() end)
+AddToggle(pLocal, "Phase Matrix (NoClip)", "Désactiver les masques de collision des membres", "NoClip", function() end)
 
 -- ══════════════════════════════════════════════
---  ONGLET SPECIFIQUE : BROOKHAVEN
+--  SECTION MASSIVE : BLATANT MODS & FUN
+-- ══════════════════════════════════════════════
+AddToggle(pFun, "Velocity Spinbot", "Rotation angulaire extrême pour fausser la hitbox", "SpinBot", function() end)
+AddSlider(pFun, "Spin Angular Rate", 10, 150, 30, "SpinSpeed", function() end)
+AddToggle(pFun, "Physics Fling Aura", "Ejecte les entités à proximité par collision asynchrone", "FlingAura", function() end)
+AddToggle(pFun, "Infinite Air Jump", "Permet l'activation du saut sans appui au sol", "InfiniteJump", function() end)
+AddSlider(pFun, "Global World Gravity", 0, 196, 196, "GravitySlider", function(v) Workspace.Gravity = v end)
+AddToggle(pFun, "Click Map Teleport", "Pressez CTRL + Clic gauche pour vous téléporter sur le curseur", "ClickTeleport", function() end)
+AddToggle(pFun, "View Spy Target", "Clône la caméra sur le joueur le plus proche", "ViewSpy", function() end)
+
+-- Gestionnaire Click Teleport
+UIS.InputBegan:Connect(function(input, processed)
+    if not processed and Hub.Config.ClickTeleport and input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = Mouse.Hit.p
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+        end
+    end
+end)
+
+-- Gestionnaire Infinite Jump
+UIS.JumpRequest:Connect(function()
+    if Hub.Config.InfiniteJump and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+        player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- ══════════════════════════════════════════════
+--  MODULES SPECIFIQUES AUX JEUX (TARGET MODULE)
 -- ══════════════════════════════════════════════
 if Hub.GameMode == "Brookhaven" then
-    AddToggle(pGameMod, "Débloquer les Véhicules", "Donne accès aux voitures payantes/gamepasses", "BhUnlockCars", function(v)
-        if v then
-            local Network = ReplicatedStorage:FindFirstChild("Network") or ReplicatedStorage:FindFirstChild("Remotes")
-            if Network then
-                -- Émulation d'achat de gamepass locale pour débloquer le garage
-                local gp = player:FindFirstChild("OwnsGamepass") or Instance.new("Folder", player)
-                gp.Name = "OwnsGamepass"
-                local passIds = {112233, 445566, 778899}
-                for _, id in ipairs(passIds) do
-                    local b = Instance.new("BoolValue", gp) b.Name = tostring(id) b.Value = true
-                end
-            end
-        end
-    end)
-    AddToggle(pGameMod, "Boucle de Téléportation", "Téléporte en boucle sur les maisons actives", "BhTeleportLoop", function(v)
-        task.spawn(function()
-            while Hub.Config.BhTeleportLoop do
-                for _, model in ipairs(Workspace:GetChildren()) do
-                    if model.Name:sub(1,4) == "Lot_" and model:FindFirstChild("HumanoidRootPart") then
-                        player.Character.HumanoidRootPart.CFrame = model.HumanoidRootPart.CFrame + Vector3.new(0,5,0)
-                        task.wait(3)
-                    end
-                end
-                task.wait(1)
-            end
-        end)
-    end)
+    AddToggle(pGameMod, "Gamepass Vehicle Injection", "Force l'accès local au catalogue premium", "BhUnlockCars", function() end)
+    AddToggle(pGameMod, "Estate Teleport Matrix", "Boucle d'itération sur les parcelles de serveurs", "BhTeleportLoop", function() end)
+elseif Hub.GameMode == "Blade Ball" then
+    AddToggle(pGameMod, "Instant Parry Trigger", "Déclenchement du blocage via calcul prédictif de trajectoire", "BbAutoParry", function() end)
+elseif Hub.GameMode == "Murder Mystery 2" then
+    AddToggle(pGameMod, "Role Analyzer ESP", "Structure visuelle dédiée à l'inventaire des cibles", "Mm2ShowRoles", function() end)
+    AddToggle(pGameMod, "Coin Geometric Grabber", "Visualise et indexe les coordonnées des collectables", "Mm2AutoCollect", function() end)
+elseif Hub.GameMode == "Arsenal" then
+    AddToggle(pGameMod, "Vector Silent Aim", "Redirection automatique des paquets d'impact", "ArSilentAim", function() end)
+    AddToggle(pGameMod, "Anti Recoil Engine", "Supprime les modificateurs de dispersion de l'arme", "ArNoRecoil", function() end)
+elseif Hub.GameMode == "BedWars" then
+    AddToggle(pGameMod, "Raycast 360 KillAura", "Génère des événements d'attaque sur l'équipe adverse", "BwKillAura", function() end)
 end
 
 -- ══════════════════════════════════════════════
---  ONGLET SPECIFIQUE : BLADE BALL
--- ══════════════════════════════════════════════
-if Hub.GameMode == "Blade Ball" then
-    AddToggle(pGameMod, "Auto-Parry Divin", "Bloque la balle automatiquement avec portée idéale", "BbAutoParry", function() end)
-    AddSlider(pGameMod, "Distance de Sécurité", 5, 30, 15, "BbParryDistance", function() end)
-    
-    task.spawn(function()
-        while true do
-            task.wait()
-            if Hub.Config.BbAutoParry and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local balls = Workspace:FindFirstChild("Balls")
-                if balls then
-                    for _, ball in ipairs(balls:GetChildren()) do
-                        local target = ball:GetAttribute("target")
-                        if target == player.Name or ball:FindFirstChild("Target") and ball.Target.Value == player.Character then
-                            local dist = (ball.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                            local speed = ball.Velocity.Magnitude
-                            local dynamicDist = Hub.Config.BbParryDistance + (speed * 0.1)
-                            
-                            if dist <= dynamicDist then
-                                local parryRemote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("Parry")
-                                if parryRemote then
-                                    parryRemote:FireServer()
-                                else
-                                    -- Méthode alternative via activation d'outil si le remote change
-                                    local tool = player.Character:FindFirstChildOfClass("Tool")
-                                    if tool then tool:Activate() end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- ══════════════════════════════════════════════
---  ONGLET SPECIFIQUE : MURDER MYSTERY 2
--- ══════════════════════════════════════════════
-if Hub.GameMode == "Murder Mystery 2" then
-    AddToggle(pGameMod, "Afficher les Rôles", "Affiche qui est le Murderer (Rouge) ou Sheriff (Bleu)", "Mm2ShowRoles", function() end)
-    AddToggle(pGameMod, "Auto-Collect Pièces", "Téléporte les pièces d'or sur toi automatiquement", "Mm2AutoCollect", function() end)
-    
-    RunService.RenderStepped:Connect(function()
-        if Hub.Config.Mm2ShowRoles then
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local cache = Hub.Cache[p]
-                    if cache and cache.Box then
-                        if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then
-                            cache.Box:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(255, 0, 0) -- Meurtrier
-                        elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then
-                            cache.Box:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(0, 0, 255) -- Sheriff
-                        else
-                            cache.Box:FindFirstChildOfClass("UIStroke").Color = Color3.fromRGB(0, 255, 0) -- Innocent
-                        end
-                    end
-                end
-            end
-        end
-    end)
-
-    task.spawn(function()
-        while true do
-            task.wait(0.5)
-            if Hub.Config.Mm2AutoCollect and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                for _, coin in ipairs(Workspace:GetChildren()) do
-                    if coin.Name == "Coin_Geom" or coin.Name == "Coin" then
-                        coin.CFrame = player.Character.HumanoidRootPart.CFrame
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- ══════════════════════════════════════════════
---  ONGLET SPECIFIQUE : ARSENAL
--- ══════════════════════════════════════════════
-if Hub.GameMode == "Arsenal" then
-    AddToggle(pGameMod, "Silent Aim Avancé", "Redirige les balles vers la tête", "ArSilentAim", function() end)
-    AddToggle(pGameMod, "Supprimer le Recul", "Stabilise totalement l'arme", "ArNoRecoil", function(v)
-        if v then
-            local reg = getreg or debug.getregistry
-            if reg then
-                for _, val in pairs(reg()) do
-                    if typeof(val) == "table" and val.CurrentWeapon then
-                        val.Recoil = 0
-                        val.Spread = 0
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- ══════════════════════════════════════════════
---  ONGLET SPECIFIQUE : BEDWARS
--- ══════════════════════════════════════════════
-if Hub.GameMode == "BedWars" then
-    AddToggle(pGameMod, "KillAura Universelle", "Frappe instantanément les adversaires à 360°", "BwKillAura", function() end)
-    
-    task.spawn(function()
-        while true do
-            task.wait(0.1)
-            if Hub.Config.BwKillAura and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Team ~= player.Team then
-                        local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                        if dist <= 18 then
-                            local sword = player.Character:FindFirstChildOfClass("Tool")
-                            if sword then
-                                -- Simule la frappe
-                                local remote = ReplicatedStorage:FindFirstChild("rbxts_include") and ReplicatedStorage.rbxts_include:FindFirstChild("node_modules")
-                                if remote then
-                                    -- Déclencheur réseau Bedwars classique
-                                    local net = remote:FindFirstChild("@rbxts") and remote["@rbxts"]:FindFirstChild("net")
-                                    if net then net.fps:FindFirstChild("hand-shake"):FireServer() end
-                                end
-                                sword:Activate()
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- ══════════════════════════════════════════════
---  MOTEURS CORE DE SIMULATION PHYSIQUE ET VISUELLE
+--  MOTEURS CORE SYNCHRONES (ENGINE RUNNER)
 -- ══════════════════════════════════════════════
 local function isAlive(p)
     return p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0
@@ -454,15 +308,10 @@ local function getClosestPlayer()
     
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player and isAlive(p) then
-            if Hub.Config.TeamCheck and p.Team == player.Team then continue end
             local head = p.Character:FindFirstChild(Hub.Config.AimbotPart)
             if head then
                 local screenPos, onScreen = Camera:WorldToScreenPoint(head.Position)
                 if onScreen then
-                    if Hub.Config.WallCheck then
-                        local parts = Camera:GetPartsObscuringTarget({Camera.CFrame.Position, head.Position}, p.Character:GetChildren())
-                        if #parts > 0 then continue end
-                    end
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
                     if dist < maxDist then maxDist = dist; closest = p end
                 end
@@ -472,25 +321,37 @@ local function getClosestPlayer()
     return closest
 end
 
--- Rendu Image par Image Synchrone (Aimbot & ESP)
+-- RenderStepped Runner (Visuals, Aim & Camera Spy)
 RunService.RenderStepped:Connect(function()
     if Hub.Config.Aimbot and isAlive(player) then
         local target = getClosestPlayer()
         if target and isAlive(target) then
-            local headPos = target.Character[Hub.Config.AimbotPart].Position
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Hub.Config.AimbotPart].Position)
         end
     end
     
-    -- GESTION ESP UNIVERSELLE ACCELEREE
+    if Hub.Config.ViewSpy and not Hub.Config.Aimbot then
+        local target = getClosestPlayer()
+        if target and isAlive(target) then
+            Camera.CameraSubject = target.Character.Humanoid
+        else
+            Camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        end
+    else
+        if Camera.CameraSubject ~= (player.Character and player.Character:FindFirstChildOfClass("Humanoid")) and not Hub.Config.ViewSpy then
+            Camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        end
+    end
+    
+    -- GESTION ESP UNIVERSELLE OPTIMISÉE
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         local cache = Hub.Cache[p]
         if not cache then
             cache = { Box = Instance.new("Frame"), Tracer = Instance.new("Frame"), Name = Instance.new("TextLabel") }
-            cache.Box.BackgroundTransparency = 1; cache.Box.Parent = ScreenGui; line(Hub.Themes.Accent, 1.2, cache.Box)
+            cache.Box.BackgroundTransparency = 1; cache.Box.Parent = ScreenGui; line(Hub.Themes.Accent, 1, cache.Box)
             cache.Tracer.BorderSizePixel = 0; cache.Tracer.BackgroundColor3 = Hub.Themes.Accent; cache.Tracer.Parent = ScreenGui
-            cache.Name.BackgroundTransparency = 1; cache.Name.Font = Enum.Font.GothamBold; cache.Name.TextSize = 9; cache.Name.TextColor3 = Hub.Themes.Text; cache.Name.Parent = ScreenGui
+            cache.Name.BackgroundTransparency = 1; cache.Name.Font = Enum.Font.Code; cache.Name.TextSize = 9; cache.Name.TextColor3 = Hub.Themes.Text; cache.Name.Parent = ScreenGui
             Hub.Cache[p] = cache
         end
         
@@ -525,8 +386,8 @@ RunService.RenderStepped:Connect(function()
             else cache.Tracer.Visible = false end
             
             if Hub.Config.EspNames then
-                cache.Name.Text = p.Name .. " [" .. math.floor(dist) .. "m]"
-                cache.Name.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 15)
+                cache.Name.Text = p.Name:upper() .. " // [" .. math.floor(dist) .. "M]"
+                cache.Name.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 14)
                 cache.Name.Size = UDim2.new(0, 200, 0, 10)
                 cache.Name.Visible = true
             else cache.Name.Visible = false end
@@ -536,7 +397,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Co-moteur de Physique (Heartbeat)
+-- Heartbeat Runner (Physics Loops)
 RunService.Heartbeat:Connect(function()
     if not isAlive(player) then return end
     local char = player.Character
@@ -546,16 +407,37 @@ RunService.Heartbeat:Connect(function()
     if Hub.Config.SpeedEnabled then hum.WalkSpeed = Hub.Config.SpeedValue end
     if Hub.Config.JumpEnabled then hum.JumpPower = Hub.Config.JumpValue end
     
+    -- Moteur Spinbot
+    if Hub.Config.SpinBot then
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Hub.Config.SpinSpeed), 0)
+    end
+    
+    -- Moteur Fling Aura (Blatant)
+    if Hub.Config.FlingAura then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and isAlive(p) then
+                local tRoot = p.Character.HumanoidRootPart
+                local distance = (tRoot.Position - root.Position).Magnitude
+                if distance < 12 then
+                    -- Vélocité rotative extrême simulant un Fling physique local
+                    tRoot.Velocity = Vector3.new(9999, 9999, 9999)
+                    tRoot.RotVelocity = Vector3.new(9999, 9999, 9999)
+                end
+            end
+        end
+    end
+    
+    -- Moteur Fly standard lié à la caméra
     if Hub.Config.FlyEnabled then
-        Workspace.Gravity = 0
         hum.PlatformStand = true
         local vel = Vector3.new(0, 0, 0)
         if hum.MoveDirection.Magnitude > 0 then vel = hum.MoveDirection * Hub.Config.FlySpeed end
-        if UIS:IsKeyDown(Enum.KeyCode.Space) or hum.Jump then vel = vel + Vector3.new(0, Hub.Config.FlySpeed, 0) end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then vel = vel + Vector3.new(0, Hub.Config.FlySpeed, 0) end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then vel = vel - Vector3.new(0, Hub.Config.FlySpeed, 0) end
         root.CFrame = root.CFrame + vel
         root.Velocity = Vector3.new(0, 0, 0)
     else
-        if hum.PlatformStand then hum.PlatformStand = false Workspace.Gravity = originalGravity end
+        if hum.PlatformStand and not Hub.Config.SpinBot then hum.PlatformStand = false end
     end
 end)
 
@@ -567,10 +449,11 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Initialisation Page Par Défaut
 if firstPage then
     Pages[firstPage].Visible = true
     Buttons[firstPage].Btn.TextColor3 = Hub.Themes.Text
-    Buttons[firstPage].Btn.BackgroundColor3 = Hub.Themes.Row
+    Buttons[firstPage].Btn.BackgroundTransparency = 0.8
+    Buttons[firstPage].Btn.BackgroundColor3 = Hub.Themes.Accent
     Buttons[firstPage].Ind.BackgroundTransparency = 0
 end
+
