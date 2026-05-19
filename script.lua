@@ -1,7 +1,7 @@
 -- ╔══════════════════════════════════════════════╗
 -- ║         SILENTVOID HUB & MULTI GAMES         ║
 -- ║  Style : Dark Premium Noir Semi-Transparent  ║
--- ║        ESP, AIMBOT, FLY, NOCLIP & MINIMIZE   ║
+-- ║   Fix Fly, NoClip & Aimbot FOV + Team Check  ║
 -- ╚══════════════════════════════════════════════╝
 
 local Players       = game:GetService("Players")
@@ -13,12 +13,9 @@ local Workspace     = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Antécédent de nettoyage (Permet de relancer le script sans bug)
-if game:GetService("CoreGui"):FindFirstChild("SilentVoidHubV4") then
-    game:GetService("CoreGui").SilentVoidHubV4:Destroy()
-end
-if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidHubV4") then
-    player.PlayerGui.SilentVoidHubV4:Destroy()
+-- Nettoyage automatique au lancement
+if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidHubV6") then
+    player.PlayerGui.SilentVoidHubV6:Destroy()
 end
 
 -- ══════════════════════════════════════════════
@@ -37,22 +34,21 @@ local C = {
 }
 
 local config = {
-    -- Visuals
     EspEnabled     = false,
     BoxVisible     = false,
     TracerVisible  = false,
     ShowName       = false,
     ShowDistance   = false,
     
-    -- Combat
     AimbotEnabled  = false,
+    FovEnabled     = false,
+    FovRadius      = 150, -- Taille du rond de visée
+    TeamCheck      = false,
     
-    -- Fun
     FlyEnabled     = false,
-    FlySpeed       = 50,
+    FlySpeed       = 2, 
     NoClipEnabled  = false,
     
-    -- Couleurs par défaut
     R = 0, G = 210, B = 255
 }
 
@@ -113,10 +109,10 @@ local function btn(props, parent)
 end
 
 -- ══════════════════════════════════════════════
---  CREATION DES INTERFACES GRAPHICK
+--  CREATION DE L'INTERFACE GRAPHIQUE
 -- ══════════════════════════════════════════════
 local sg = Instance.new("ScreenGui")
-sg.Name = "SilentVoidHub V1"
+sg.Name = "SilentVoidHubV6"
 sg.ResetOnSpawn = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 sg.DisplayOrder = 999
@@ -124,7 +120,17 @@ sg.Parent = player:WaitForChild("PlayerGui")
 
 local ESPContainer = frame({ Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1 }, sg)
 
--- Fenêtre principale
+-- Dessin du Cercle de FOV (Optimisé Mobile)
+local fovCircle = frame({
+    Size = UDim2.new(0, config.FovRadius * 2, 0, config.FovRadius * 2),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    BackgroundTransparency = 1,
+    Visible = false
+}, sg)
+corner(config.FovRadius * 2, fovCircle)
+local fovStroke = stroke(C.CYAN, 1, fovCircle)
+
 local win = frame({
     Size = UDim2.new(0, 560, 0, 420),
     Position = UDim2.new(0.5, -280, 0.5, -210),
@@ -136,7 +142,6 @@ local win = frame({
 corner(10, win)
 stroke(C.BORDER, 1.5, win)
 
--- Bouton de réouverture (Discret)
 local openB = btn({
     Size = UDim2.new(0, 110, 0, 32),
     Position = UDim2.new(0, 10, 0, 10),
@@ -154,11 +159,9 @@ frame({ Size = UDim2.new(1, 0, 0, 10), Position = UDim2.new(0, 0, 1, -10), Backg
 
 lbl({ Text = " ✕  SilentVoid Hub & Multi Games", Size = UDim2.new(0, 350, 1, 0), Position = UDim2.new(0, 12, 0, 0), TextColor3 = C.WHITE, TextSize = 14, Font = Enum.Font.GothamBold }, titleBar)
 
--- Bouton Fermer (Croix)
 local closeB = btn({ Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -38, 0, 6), BackgroundColor3 = Color3.fromRGB(30, 15, 15), Text = "✕", TextColor3 = C.RED }, titleBar)
 corner(6, closeB)
 
--- Bouton Réduire (Moins)
 local minimizeB = btn({ Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -74, 0, 6), BackgroundColor3 = Color3.fromRGB(20, 20, 25), Text = "—", TextColor3 = C.WHITE }, titleBar)
 corner(6, minimizeB)
 
@@ -178,7 +181,6 @@ local function addTab(id, icon, name)
     local nb = btn({ Size = UDim2.new(1, -16, 0, 38), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 1, Text = "" }, navContainer)
     corner(6, nb)
     
-    -- Indicateur lumineux sur la catégorie active
     local indicator = frame({ Size = UDim2.new(0, 4, 0, 16), Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = C.CYAN, BackgroundTransparency = 1 }, nb)
     corner(2, indicator)
 
@@ -218,30 +220,27 @@ local function makeRow(parent, yOff, title, sub, initVal, onChange)
     end)
 end
 
--- ── UNIFICATION DES CATEGORIES EN PAGES DETAILEES ───────────────────────────
--- PAGE HOME
+-- Remplissage des pages
 lbl({ Text = "SilentVoid Hub & Multi Games", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
-lbl({ Text = "Tout est désactivé au lancement.\nCliquez sur les catégories à gauche.\nL'indicateur bleu vous montre où vous êtes.\n\nUtilisez '—' pour cacher l'interface sans la couper !", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
+lbl({ Text = "Mise à jour V6 :\n- Ajout du cercle de FOV intelligent pour l'Aimbot.\n- Filtre d'Équipe intégré (Ignore les coéquipiers).\n- Système de tir automatique lors du verrouillage.", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
 
--- PAGE VISUALS
 local scrVis = Instance.new("ScrollingFrame")
 scrVis.Size = UDim2.new(1, 0, 1, -10); scrVis.BackgroundTransparency = 1; scrVis.BorderSizePixel = 0; scrVis.CanvasSize = UDim2.new(0, 0, 0, 300); scrVis.Parent = pVisuals
-makeRow(scrVis, 10, "Activer l'ESP Global", "Doit être coché pour voir les éléments", config.EspEnabled, function(v) config.EspEnabled = v end)
+makeRow(scrVis, 10, "Activer l'ESP Global", "Doit être coché pour voir l'ESP", config.EspEnabled, function(v) config.EspEnabled = v end)
 makeRow(scrVis, 65, "Afficher les Boîtes (Boxes)", "Cadre autour des vrais membres", config.BoxVisible, function(v) config.BoxVisible = v end)
 makeRow(scrVis, 120, "Afficher les Lignes (Tracers)", "Ligne droite parfaite depuis le haut", config.TracerVisible, function(v) config.TracerVisible = v end)
 makeRow(scrVis, 175, "Afficher le Pseudo", "Affiche le vrai nom au-dessus", config.ShowName, function(v) config.ShowName = v end)
-makeRow(scrVis, 230, "Afficher la Distance", "Affiche la distance exacte en Studs", config.ShowDistance, function(v) config.ShowDistance = v end)
+makeRow(scrVis, 230, "Afficher la Distance", "Affiche la distance exacte", config.ShowDistance, function(v) config.ShowDistance = v end)
 
--- PAGE COMBAT
-makeRow(pCombat, 15, "Activer l'Aimbot Mobile", "Verrouille automatiquement la vue sur le plus proche", config.AimbotEnabled, function(v) config.AimbotEnabled = v end)
+makeRow(pCombat, 15, "Activer l'Aimbot Auto-Tir", "Vise et attaque l'ennemi le plus proche", config.AimbotEnabled, function(v) config.AimbotEnabled = v end)
+makeRow(pCombat, 70, "Afficher le Rond FOV", "Affiche le cercle de détection de visée", config.FovEnabled, function(v) config.FovEnabled = v fovCircle.Visible = v end)
+makeRow(pCombat, 125, "Filtre d'Équipe (Team Check)", "L'aimbot ignore tes alliés", config.TeamCheck, function(v) config.TeamCheck = v end)
 
--- PAGE FUN
-makeRow(pFun, 15, "Activer le Mode Fly", "Saute pour t'envoler, dirige avec le Joystick", config.FlyEnabled, function(v) config.FlyEnabled = v end)
-makeRow(pFun, 75, "Activer le NoClip", "Passe à travers les structures sans tomber sous le sol", config.NoClipEnabled, function(v) config.NoClipEnabled = v end)
-
+makeRow(pFun, 15, "Activer le Fly Mobile v6", "Maintenez SAUT pour monter, Joystick pour bouger", config.FlyEnabled, function(v) config.FlyEnabled = v end)
+makeRow(pFun, 75, "Activer le NoClip v6", "Passe à travers les parois sans glisser sous la map", config.NoClipEnabled, function(v) config.NoClipEnabled = v end)
 
 -- ══════════════════════════════════════════════
---  MOTEURS DE JEU (ESP, AIMBOT, FLY, NOCLIP)
+--  MOTEURS DE JEU CORRIGÉS ET OPTIMISÉS
 -- ══════════════════════════════════════════════
 local function IsPlayerValid(p)
     local char = p.Character
@@ -251,7 +250,6 @@ end
 local function CreateVisualElements(p)
     if RenderCache[p] then return end
     local elements = {}
-    
     local box = Instance.new("Frame")
     box.BackgroundTransparency = 1; box.Visible = false; box.Parent = ESPContainer
     stroke(GetCustomColor(), 1.5, box)
@@ -261,36 +259,45 @@ local function CreateVisualElements(p)
     elements.Tracer = tracer
     
     local infoTag = lbl({ Size = UDim2.new(0, 200, 0, 30), Text = "", TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, Visible = false }, ESPContainer)
-    infoTag.Font = Enum.Font.GothamBold
-    stroke(Color3.fromRGB(0,0,0), 1.5, infoTag)
+    infoTag.Font = Enum.Font.GothamBold; stroke(Color3.fromRGB(0,0,0), 1.5, infoTag)
     elements.InfoTag = infoTag
     
     RenderCache[p] = elements
 end
 
--- Récupération du joueur le plus proche pour l'Aimbot
-local function GetClosestPlayer()
-    local closest, maxDist = nil, math.huge
+-- Recherche de l'ennemi le plus proche à l'intérieur du FOV uniquement
+local function GetClosestEnemyInFOV()
+    local closest, maxScreenDist = nil, config.FovRadius
+    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player and IsPlayerValid(p) and IsPlayerValid(player) then
-            local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if dist < maxDist then
-                maxDist = dist
-                closest = p
+            -- Filtre d'Équipe (Si activé, ignore les alliés)
+            if config.TeamCheck and p.Team == player.Team then continue end
+            
+            local root = p.Character.HumanoidRootPart
+            local screenPos, onScreen = Camera:WorldToScreenPoint(root.Position)
+            
+            if onScreen then
+                local playerCoord = Vector2.new(screenPos.X, screenPos.Y)
+                local distFromCenter = (playerCoord - screenCenter).Magnitude
+                
+                -- Vérifie si l'ennemi est bien dans le rond du FOV
+                if distFromCenter < maxScreenDist then
+                    maxScreenDist = distFromCenter
+                    closest = p
+                end
             end
         end
     end
     return closest
 end
 
--- Variables Fly
-local bodyGyro, bodyVelocity
-
--- Boucle générale de rendu
 RunService.RenderStepped:Connect(function()
     local customColor = GetCustomColor()
+    fovStroke.Color = customColor
     
-    -- MOTEUR ESP
+    -- ESP BOUCLE
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         if not RenderCache[p] then CreateVisualElements(p) end
@@ -345,54 +352,57 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- MOTEUR AIMBOT
+    -- EXECUTION AIMBOT FOV + AUTO TIR ENNEMI
     if config.AimbotEnabled then
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+        local target = GetClosestEnemyInFOV()
+        if target and IsPlayerValid(target) and IsPlayerValid(player) then
+            local targetPos = target.Character.HumanoidRootPart.Position
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+            
+            -- Activation forcée de l'outil équipé (Arme/Objet)
+            local tool = player.Character:FindFirstChildOfClass("Tool")
+            if tool then tool:Activate() end
         end
     end
+end)
+
+-- Gestion Fly CFrame Direct Mobile
+RunService.Heartbeat:Connect(function()
+    if not IsPlayerValid(player) then return end
+    local char = player.Character
+    local root = char.HumanoidRootPart
+    local hum = char.Humanoid
     
-    -- MOTEUR NOCLIP (Vérification et exécution sécurisée du sol)
+    if config.FlyEnabled then
+        hum.PlatformStand = true
+        local moveDir = hum.MoveDirection
+        local newVelocity = Vector3.new(0, 0, 0)
+        
+        if moveDir.Magnitude > 0 then newVelocity = moveDir * config.FlySpeed end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) or hum.Jump then newVelocity = newVelocity + Vector3.new(0, config.FlySpeed, 0) end
+        
+        root.CFrame = root.CFrame + newVelocity
+        root.Velocity = Vector3.new(0, 0, 0)
+    else
+        if hum.PlatformStand then hum.PlatformStand = false end
+    end
+end)
+
+-- Gestion NoClip Stabilité Sol
+RunService.Stepped:Connect(function()
     if config.NoClipEnabled and IsPlayerValid(player) then
-        for _, child in ipairs(player.Character:GetChildren()) do
-            if child:IsA("BasePart") and child.Name ~= "HumanoidRootPart" then
-                child.CanCollide = false
+        for _, part in ipairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                if part.Name ~= "LeftFoot" and part.Name ~= "RightFoot" and part.Name ~= "LowerTorso" then
+                    part.CanCollide = false
+                end
             end
         end
-    end
-    
-    -- MOTEUR FLY (Mouvements calqués sur la direction du Joystick et Caméra)
-    if config.FlyEnabled and IsPlayerValid(player) then
-        local root = player.Character.HumanoidRootPart
-        local hum = player.Character.Humanoid
-        
-        if not bodyGyro then
-            bodyGyro = Instance.new("BodyGyro", root)
-            bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-            bodyGyro.cframe = root.CFrame
-            
-            bodyVelocity = Instance.new("BodyVelocity", root)
-            bodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
-            bodyVelocity.velocity = Vector3.new(0, 0.1, 0)
-        end
-        
-        bodyGyro.cframe = Camera.CFrame
-        local moveDir = hum.MoveDirection
-        
-        if moveDir.Magnitude > 0 then
-            bodyVelocity.velocity = moveDir * config.FlySpeed
-        else
-            bodyVelocity.velocity = Vector3.new(0, 0.1, 0)
-        end
-    else
-        if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
-        if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
     end
 end)
 
 -- ══════════════════════════════════════════════
---  GESTION DE LA NAVIGATION & COMMANDE ETATS
+--  NAVIGATION ET COMMANDE INTERFACE
 -- ══════════════════════════════════════════════
 local function showPage(id)
     for pid, p in pairs(pages) do p.Visible = (pid == id) end
@@ -400,7 +410,7 @@ local function showPage(id)
         local active = (nid == id)
         data.btn.BackgroundTransparency = active and 0.85 or 1
         data.btn:FindFirstChildOfClass("TextLabel").TextColor3 = active and C.CYAN or C.GRAY
-        data.ind.BackgroundTransparency = active and 0 or 1 -- Allume le témoin bleu
+        data.ind.BackgroundTransparency = active and 0 or 1
     end
 end
 
@@ -410,7 +420,6 @@ for id, data in pairs(navBtns) do
     data.btn.MouseButton1Click:Connect(function() showPage(id) end)
 end
 
--- Logique Réduire (—)
 minimizeB.MouseButton1Click:Connect(function()
     win.Visible = false
     openB.Visible = true
@@ -421,14 +430,13 @@ openB.MouseButton1Click:Connect(function()
     openB.Visible = false
 end)
 
--- Logique Quitter (Croix définitive)
 closeB.MouseButton1Click:Connect(function()
     config.EspEnabled = false
     config.AimbotEnabled = false
     config.FlyEnabled = false
     config.NoClipEnabled = false
-    if bodyGyro then bodyGyro:Destroy() end
-    if bodyVelocity then bodyVelocity:Destroy() end
+    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+    if hum then hum.PlatformStand = false end
     for _, p in ipairs(Players:GetPlayers()) do
         if RenderCache[p] then
             if RenderCache[p].Box then RenderCache[p].Box:Destroy() end
