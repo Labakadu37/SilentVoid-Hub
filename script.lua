@@ -17,12 +17,21 @@ local MainFrame = Instance.new("Frame")
 local UIGradient = Instance.new("UIGradient")
 local UICorner = Instance.new("UICorner")
 local TitleLabel = Instance.new("TextLabel")
+local AccueilButton = Instance.new("TextButton")
+local MultiGameButton = Instance.new("TextButton")
+local InfoLabel = Instance.new("TextLabel")
 local DiscordButton = Instance.new("TextButton")
 local ButtonCorner = Instance.new("UICorner")
-local CloseButton = Instance.new("TextButton")
 local FlyButton = Instance.new("TextButton")
 local FlyButtonCorner = Instance.new("UICorner")
 local SpeedLabel = Instance.new("TextLabel")
+local SpeedMinusButton = Instance.new("TextButton")
+local SpeedPlusButton = Instance.new("TextButton")
+local SpeedCorner = Instance.new("UICorner")
+local FlyInfoLabel = Instance.new("TextLabel")
+local CloseButton = Instance.new("TextButton")
+local TabCorner1 = Instance.new("UICorner")
+local TabCorner2 = Instance.new("UICorner")
 
 ScreenGui.Name = "PhantomGui"
 ScreenGui.ResetOnSpawn = false
@@ -65,19 +74,59 @@ TitleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
 TitleLabel.TextSize = 20
 TitleLabel.TextStrokeTransparency = 0.7
 
+-- Tabs Accueil / Multigame
+AccueilButton.Name = "AccueilButton"
+AccueilButton.Parent = MainFrame
+AccueilButton.BackgroundColor3 = Color3.fromRGB(90, 90, 110)
+AccueilButton.BackgroundTransparency = 0.2
+AccueilButton.Position = UDim2.new(0.05, 0, 0.12, 0)
+AccueilButton.Size = UDim2.new(0.43, 0, 0, 30)
+AccueilButton.Font = Enum.Font.GothamSemibold
+AccueilButton.Text = "Accueil"
+AccueilButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+AccueilButton.TextSize = 13
+AccueilButton.BorderSizePixel = 0
+TabCorner1.CornerRadius = UDim.new(0, 10)
+TabCorner1.Parent = AccueilButton
+
+MultiGameButton.Name = "MultiGameButton"
+MultiGameButton.Parent = MainFrame
+MultiGameButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+MultiGameButton.BackgroundTransparency = 0.2
+MultiGameButton.Position = UDim2.new(0.52, 0, 0.12, 0)
+MultiGameButton.Size = UDim2.new(0.43, 0, 0, 30)
+MultiGameButton.Font = Enum.Font.GothamSemibold
+MultiGameButton.Text = "Multigame"
+MultiGameButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+MultiGameButton.TextSize = 13
+MultiGameButton.BorderSizePixel = 0
+TabCorner2.CornerRadius = UDim.new(0, 10)
+TabCorner2.Parent = MultiGameButton
+
+InfoLabel.Name = "InfoLabel"
+InfoLabel.Parent = MainFrame
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Position = UDim2.new(0.05, 0, 0.22, 0)
+InfoLabel.Size = UDim2.new(0.9, 0, 0.18, 0)
+InfoLabel.Font = Enum.Font.GothamSemibold
+InfoLabel.Text = "Bienvenue dans Phantom Mode. Va dans Multigame pour activer le fly et régler la vitesse."
+InfoLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
+InfoLabel.TextSize = 12
+InfoLabel.TextWrapped = true
+InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+
 -- Bouton Discord (Stylé)
 DiscordButton.Name = "DiscordButton"
 DiscordButton.Parent = MainFrame
 DiscordButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 DiscordButton.BackgroundTransparency = 0.2
-DiscordButton.Position = UDim2.new(0.05, 0, 0.35, 0)
+DiscordButton.Position = UDim2.new(0.05, 0, 0.44, 0)
 DiscordButton.Size = UDim2.new(0.9, 0, 0, 40)
 DiscordButton.Font = Enum.Font.GothamSemibold
 DiscordButton.Text = TEXTE_BOUTON
 DiscordButton.TextColor3 = Color3.fromRGB(150, 200, 255)
 DiscordButton.TextSize = 13
 DiscordButton.BorderSizePixel = 0
-
 ButtonCorner.CornerRadius = UDim.new(0, 10)
 ButtonCorner.Parent = DiscordButton
 
@@ -86,27 +135,70 @@ FlyButton.Name = "FlyButton"
 FlyButton.Parent = MainFrame
 FlyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 FlyButton.BackgroundTransparency = 0.2
-FlyButton.Position = UDim2.new(0.05, 0, 0.6, 0)
+FlyButton.Position = UDim2.new(0.05, 0, 0.44, 0)
 FlyButton.Size = UDim2.new(0.9, 0, 0, 40)
 FlyButton.Font = Enum.Font.GothamSemibold
-FlyButton.Text = "✈️ ACTIVER LE VOL"
+FlyButton.Text = "☐ Activer Fly"
 FlyButton.TextColor3 = Color3.fromRGB(150, 255, 150)
 FlyButton.TextSize = 13
 FlyButton.BorderSizePixel = 0
-
+FlyButton.Visible = false
 FlyButtonCorner.CornerRadius = UDim.new(0, 10)
 FlyButtonCorner.Parent = FlyButton
 
--- Label Vitesse
+-- Contrôles de vitesse
+SpeedMinusButton.Name = "SpeedMinusButton"
+SpeedMinusButton.Parent = MainFrame
+SpeedMinusButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+SpeedMinusButton.BackgroundTransparency = 0.2
+SpeedMinusButton.Position = UDim2.new(0.05, 0, 0.62, 0)
+SpeedMinusButton.Size = UDim2.new(0.15, 0, 0, 30)
+SpeedMinusButton.Font = Enum.Font.GothamSemibold
+SpeedMinusButton.Text = "-"
+SpeedMinusButton.TextColor3 = Color3.fromRGB(150, 255, 150)
+SpeedMinusButton.TextSize = 18
+SpeedMinusButton.BorderSizePixel = 0
+SpeedCorner.CornerRadius = UDim.new(0, 8)
+SpeedCorner.Parent = SpeedMinusButton
+
 SpeedLabel.Name = "SpeedLabel"
 SpeedLabel.Parent = MainFrame
 SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Position = UDim2.new(0, 10, 0.85, 0)
-SpeedLabel.Size = UDim2.new(1, -20, 0, 25)
+SpeedLabel.Position = UDim2.new(0.23, 0, 0.62, 0)
+SpeedLabel.Size = UDim2.new(0.52, 0, 0, 30)
 SpeedLabel.Font = Enum.Font.GothamSemibold
-SpeedLabel.Text = "Vitesse: " .. FLY_CONFIG.DefaultSpeed .. " (Molette souris)"
-SpeedLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
-SpeedLabel.TextSize = 11
+SpeedLabel.Text = "Vitesse: " .. FLY_CONFIG.DefaultSpeed .. ""
+SpeedLabel.TextColor3 = Color3.fromRGB(180, 180, 230)
+SpeedLabel.TextSize = 13
+SpeedLabel.TextWrapped = true
+SpeedLabel.TextYAlignment = Enum.TextYAlignment.Center
+SpeedLabel.Visible = false
+
+SpeedPlusButton.Name = "SpeedPlusButton"
+SpeedPlusButton.Parent = MainFrame
+SpeedPlusButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+SpeedPlusButton.BackgroundTransparency = 0.2
+SpeedPlusButton.Position = UDim2.new(0.8, 0, 0.62, 0)
+SpeedPlusButton.Size = UDim2.new(0.15, 0, 0, 30)
+SpeedPlusButton.Font = Enum.Font.GothamSemibold
+SpeedPlusButton.Text = "+"
+SpeedPlusButton.TextColor3 = Color3.fromRGB(150, 255, 150)
+SpeedPlusButton.TextSize = 18
+SpeedPlusButton.BorderSizePixel = 0
+SpeedPlusButton.Visible = false
+
+FlyInfoLabel.Name = "FlyInfoLabel"
+FlyInfoLabel.Parent = MainFrame
+FlyInfoLabel.BackgroundTransparency = 1
+FlyInfoLabel.Position = UDim2.new(0.05, 0, 0.72, 0)
+FlyInfoLabel.Size = UDim2.new(0.9, 0, 0.2, 0)
+FlyInfoLabel.Font = Enum.Font.GothamSemibold
+FlyInfoLabel.Text = "Espace = boost. Ctrl = descendre. Répète les sauts pour monter plus haut."
+FlyInfoLabel.TextColor3 = Color3.fromRGB(180, 180, 230)
+FlyInfoLabel.TextSize = 12
+FlyInfoLabel.TextWrapped = true
+FlyInfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+FlyInfoLabel.Visible = false
 
 -- Bouton Fermer (X)
 CloseButton.Name = "CloseButton"
@@ -123,6 +215,7 @@ CloseButton.TextSize = 18
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local mouse = player:GetMouse()
@@ -131,45 +224,132 @@ ScreenGui.Parent = playerGui
 
 local isFlying = false
 local currentSpeed = FLY_CONFIG.DefaultSpeed
+local flyBoost = 0
+local flyDescending = false
+local inputConnections = {}
 
 local bodyVelocity
 local bodyGyro
 
+local function updateSpeedLabel()
+    SpeedLabel.Text = "Vitesse: " .. currentSpeed
+end
+
+local function setTab(isMultiGame)
+    AccueilButton.BackgroundColor3 = isMultiGame and Color3.fromRGB(60, 60, 70) or Color3.fromRGB(90, 90, 110)
+    MultiGameButton.BackgroundColor3 = isMultiGame and Color3.fromRGB(90, 90, 110) or Color3.fromRGB(60, 60, 70)
+    DiscordButton.Visible = not isMultiGame
+    FlyButton.Visible = isMultiGame
+    SpeedMinusButton.Visible = isMultiGame
+    SpeedPlusButton.Visible = isMultiGame
+    SpeedLabel.Visible = isMultiGame
+    FlyInfoLabel.Visible = isMultiGame
+    if isMultiGame then
+        InfoLabel.Text = "Multigame - Fly activable ici.\nEspace pour monter, Ctrl pour descendre."
+    else
+        InfoLabel.Text = "Bienvenue dans Phantom Mode.\nVa dans Multigame pour activer le fly et régler la vitesse."
+    end
+end
+
+local function getGroundDistance(origin)
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {player.Character}
+    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local ray = Workspace:Raycast(origin.Position, Vector3.new(0, -500, 0), rayParams)
+    if ray then
+        return origin.Position.Y - ray.Position.Y
+    end
+    return 300
+end
+
+local function clearInputConnections()
+    for _, conn in ipairs(inputConnections) do
+        if conn.Connected then
+            conn:Disconnect()
+        end
+    end
+    inputConnections = {}
+end
+
+local function stopFly()
+    if not isFlying then return end
+    isFlying = false
+    clearInputConnections()
+
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
+    end
+    if bodyGyro then
+        bodyGyro:Destroy()
+        bodyGyro = nil
+    end
+
+    FlyButton.Text = "☐ Activer Fly"
+    FlyButton.TextColor3 = Color3.fromRGB(150, 255, 150)
+    flyBoost = 0
+    flyDescending = false
+end
+
 local function startFly()
     if isFlying then return end
-    isFlying = true
-    
+
     local character = player.Character
     if not character then return end
-    
+
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then return end
-    
-    -- Créer les objets physiques pour le vol
+
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    isFlying = true
+    flyBoost = 0
+    flyDescending = false
+
     bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.Parent = humanoidRootPart
-    
+
     bodyGyro = Instance.new("BodyGyro")
     bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
     bodyGyro.CFrame = humanoidRootPart.CFrame
     bodyGyro.Parent = humanoidRootPart
-    
-    FlyButton.Text = "✈️ VOL ACTIF (Appuie sur E)"
+
+    FlyButton.Text = "☑ Fly activé"
     FlyButton.TextColor3 = Color3.fromRGB(255, 200, 100)
-    
-    -- Boucle de vol dans un thread séparé pour ne pas bloquer les événements
+
+    inputConnections[#inputConnections + 1] = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Enum.KeyCode.Space then
+            local groundDistance = getGroundDistance(humanoidRootPart)
+            local boost = groundDistance < 6 and 70 or 35
+            flyBoost = math.clamp(flyBoost + boost, 0, 220)
+        elseif input.KeyCode == Enum.KeyCode.LeftControl then
+            flyDescending = true
+        end
+    end)
+
+    inputConnections[#inputConnections + 1] = UserInputService.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.LeftControl then
+            flyDescending = false
+        end
+    end)
+
+    local lastTime = tick()
     task.spawn(function()
         while isFlying do
             if not character or not humanoidRootPart or not humanoidRootPart.Parent then
                 isFlying = false
                 break
             end
-            
+
+            local now = tick()
+            local dt = math.clamp(now - lastTime, 0, 0.1)
+            lastTime = now
+
             local moveDirection = Vector3.new(0, 0, 0)
-            
-            -- Contrôles directionnels
             if UserInputService:IsKeyDown(Enum.KeyCode.W) then
                 moveDirection = moveDirection + humanoidRootPart.CFrame.LookVector
             end
@@ -182,38 +362,28 @@ local function startFly()
             if UserInputService:IsKeyDown(Enum.KeyCode.D) then
                 moveDirection = moveDirection + humanoidRootPart.CFrame.RightVector
             end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDirection = moveDirection + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                moveDirection = moveDirection - Vector3.new(0, 1, 0)
-            end
-            
             if moveDirection.Magnitude > 0 then
                 moveDirection = moveDirection.Unit
             end
-            
-            bodyVelocity.Velocity = moveDirection * currentSpeed
+
+            if flyDescending then
+                bodyVelocity.Velocity = moveDirection * currentSpeed - Vector3.new(0, 50, 0)
+            else
+                local verticalBoost = Vector3.new(0, math.min(flyBoost, 220), 0)
+                bodyVelocity.Velocity = moveDirection * currentSpeed + verticalBoost
+            end
+
             bodyGyro.CFrame = humanoidRootPart.CFrame * CFrame.Angles(
                 math.rad(-mouse.Y / 4),
                 math.rad(-mouse.X / 4),
                 0
             )
-            
+
+            flyBoost = math.max(flyBoost - 100 * dt, 0)
             RunService.RenderStepped:Wait()
         end
+        stopFly()
     end)
-end
-
-local function stopFly()
-    if not isFlying then return end
-    isFlying = false
-    
-    if bodyVelocity then bodyVelocity:Destroy() end
-    if bodyGyro then bodyGyro:Destroy() end
-    
-    FlyButton.Text = "✈️ ACTIVER LE VOL"
-    FlyButton.TextColor3 = Color3.fromRGB(150, 255, 150)
 end
 
 -- ============== EVENT HANDLERS ==============
@@ -231,6 +401,14 @@ DiscordButton.MouseButton1Click:Connect(function()
     end
 end)
 
+AccueilButton.MouseButton1Click:Connect(function()
+    setTab(false)
+end)
+
+MultiGameButton.MouseButton1Click:Connect(function()
+    setTab(true)
+end)
+
 FlyButton.MouseButton1Click:Connect(function()
     if isFlying then
         stopFly()
@@ -244,15 +422,25 @@ CloseButton.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
+SpeedMinusButton.MouseButton1Click:Connect(function()
+    currentSpeed = math.max(currentSpeed - FLY_CONFIG.SpeedIncrement, FLY_CONFIG.MinSpeed)
+    updateSpeedLabel()
+end)
+
+SpeedPlusButton.MouseButton1Click:Connect(function()
+    currentSpeed = math.min(currentSpeed + FLY_CONFIG.SpeedIncrement, FLY_CONFIG.MaxSpeed)
+    updateSpeedLabel()
+end)
+
 -- Contrôle de la vitesse avec la molette souris
 mouse.WheelForward:Connect(function()
     currentSpeed = math.min(currentSpeed + FLY_CONFIG.SpeedIncrement, FLY_CONFIG.MaxSpeed)
-    SpeedLabel.Text = "Vitesse: " .. currentSpeed .. " (Molette souris)"
+    updateSpeedLabel()
 end)
 
 mouse.WheelBackward:Connect(function()
     currentSpeed = math.max(currentSpeed - FLY_CONFIG.SpeedIncrement, FLY_CONFIG.MinSpeed)
-    SpeedLabel.Text = "Vitesse: " .. currentSpeed .. " (Molette souris)"
+    updateSpeedLabel()
 end)
 
 local function connectHumanoidDeath(character)
@@ -266,3 +454,6 @@ if player.Character then
     connectHumanoidDeath(player.Character)
 end
 player.CharacterAdded:Connect(connectHumanoidDeath)
+
+setTab(false)
+updateSpeedLabel()
