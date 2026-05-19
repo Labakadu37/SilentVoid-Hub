@@ -1,898 +1,716 @@
---[[
-    ╔══════════════════════════════════════════════════════════════╗
-    ║           KICK A LUCKY BLOCK — PREMIUM AUTO FARM            ║
-    ║                     by AetherScripts                        ║
-    ║                        v2.0.0                               ║
-    ╚══════════════════════════════════════════════════════════════╝
+-- =============================================================================
+--  KICK A LUCKY BLOCK — AETHER HUB
+--  Style : Phantom noir | CoreGui | Sidebar navigation
+-- =============================================================================
 
-    Features:
-      ✦ Auto Farm (kick blocks automatically)
-      ✦ Auto Collect (coins / items)
-      ✦ Auto Rebirth
-      ✦ Auto Equip Best item
-      ✦ Teleport System (Farm zone / Rebirth zone)
-      ✦ Anti AFK
-      ✦ Tween smooth movement
-      ✦ Mobile support (tap-friendly buttons)
-      ✦ Notifications system
-      ✦ Save settings (via writefile / readfile)
-      ✦ Draggable GUI
-      ✦ Toggle buttons with animated state
-      ✦ Dark blue / black neon design
+local Players           = game:GetService("Players")
+local RunService        = game:GetService("RunService")
+local UserInputService  = game:GetService("UserInputService")
+local TweenService      = game:GetService("TweenService")
+local CoreGui           = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace         = game:GetService("Workspace")
 
-    NOTE: Inject via a supported executor (Synapse, KRNL, Fluxus, etc.)
-          Works on PC and Mobile.
-]]
+local lp = Players.LocalPlayer
 
--- ─────────────────────────────────────────────────────────────────
---  SERVICES
--- ─────────────────────────────────────────────────────────────────
-local Players            = game:GetService("Players")
-local RunService         = game:GetService("RunService")
-local TweenService       = game:GetService("TweenService")
-local UserInputService   = game:GetService("UserInputService")
-local ReplicatedStorage  = game:GetService("ReplicatedStorage")
-local Workspace          = game:GetService("Workspace")
-local StarterGui         = game:GetService("StarterGui")
-local VirtualInputManager = game:FindService("VirtualInputManager") -- mobile
+local function char()  return lp.Character end
+local function root()  local c=char() return c and c:FindFirstChild("HumanoidRootPart") end
+local function hum()   local c=char() return c and c:FindFirstChildOfClass("Humanoid") end
 
--- ─────────────────────────────────────────────────────────────────
---  LOCAL PLAYER / CHARACTER
--- ─────────────────────────────────────────────────────────────────
-local LocalPlayer  = Players.LocalPlayer
-local PlayerGui    = LocalPlayer:WaitForChild("PlayerGui")
-local Character    = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-local Humanoid     = Character:WaitForChild("Humanoid")
+lp.CharacterAdded:Connect(function() task.wait(1) end)
 
--- Re-grab character on respawn
-LocalPlayer.CharacterAdded:Connect(function(newChar)
-    Character        = newChar
-    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    Humanoid         = newChar:WaitForChild("Humanoid")
-end)
-
--- ─────────────────────────────────────────────────────────────────
---  SETTINGS (saved / loaded)
--- ─────────────────────────────────────────────────────────────────
-local SETTINGS_FILE = "AetherKLB_Settings.json"
-
-local DefaultSettings = {
-    AutoFarm     = false,
-    AutoCollect  = false,
-    AutoRebirth  = false,
-    AutoEquip    = false,
-    AntiAFK      = true,
-    TweenMove    = true,
-    TweenSpeed   = 0.3,   -- seconds per tween segment
-    RebirthCash  = 1e15,  -- rebirth when cash >= this value (1 quadrillion)
+-- =============================================================================
+--  SETTINGS
+-- =============================================================================
+local S = {
+    AutoFarm    = false,
+    AutoMuscle  = false,
+    AutoViolet  = false,
+    AutoMoney   = false,
+    AntiAFK     = true,
+    PerfectOnly = true,
+    FarmDelay   = 0.08,
 }
 
--- Load settings from file (if executor supports it)
-local function LoadSettings()
-    local ok, data = pcall(function()
-        if isfile and isfile(SETTINGS_FILE) then
-            return game:GetService("HttpService"):JSONDecode(readfile(SETTINGS_FILE))
-        end
-    end)
-    if ok and type(data) == "table" then
-        for k, v in pairs(data) do
-            if DefaultSettings[k] ~= nil then
-                DefaultSettings[k] = v
-            end
+-- =============================================================================
+--  UTILITAIRES
+-- =============================================================================
+local function tp(cf)
+    local r = root() if r then r.CFrame = cf end
+end
+
+local function fireRemote(name, ...)
+    for _, v in ipairs(ReplicatedStorage:GetDescendants()) do
+        if v:IsA("RemoteEvent") and v.Name:lower():find(name:lower()) then
+            v:FireServer(...) return true
         end
     end
-end
-
-local function SaveSettings()
-    pcall(function()
-        if writefile then
-            writefile(SETTINGS_FILE, game:GetService("HttpService"):JSONEncode(DefaultSettings))
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("RemoteEvent") and v.Name:lower():find(name:lower()) then
+            v:FireServer(...) return true
         end
-    end)
-end
-
-LoadSettings()
-
--- ─────────────────────────────────────────────────────────────────
---  UTILITY FUNCTIONS
--- ─────────────────────────────────────────────────────────────────
-
---- Smooth tween to a CFrame position
-local function TweenTo(targetCFrame, duration)
-    duration = duration or DefaultSettings.TweenSpeed
-    if DefaultSettings.TweenMove and HumanoidRootPart then
-        local tween = TweenService:Create(
-            HumanoidRootPart,
-            TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            { CFrame = targetCFrame }
-        )
-        tween:Play()
-        tween.Completed:Wait()
-    else
-        -- Instant teleport fallback
-        if HumanoidRootPart then
-            HumanoidRootPart.CFrame = targetCFrame
-        end
-    end
-end
-
---- Get all blocks in workspace matching a name pattern
-local function GetBlocks(namePattern)
-    local blocks = {}
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find(namePattern:lower()) then
-            table.insert(blocks, obj)
-        end
-    end
-    return blocks
-end
-
---- Get the nearest object from a list to the player
-local function GetNearest(objects)
-    local nearest, nearestDist = nil, math.huge
-    if not HumanoidRootPart then return nil end
-    for _, obj in ipairs(objects) do
-        local dist = (HumanoidRootPart.Position - obj.Position).Magnitude
-        if dist < nearestDist then
-            nearest    = dist < nearestDist and obj or nearest
-            nearestDist = dist
-        end
-    end
-    return nearest
-end
-
---- Fire a remote event safely
-local function FireRemote(remoteName, ...)
-    local remote = ReplicatedStorage:FindFirstChild(remoteName, true)
-        or Workspace:FindFirstChild(remoteName, true)
-    if remote and remote:IsA("RemoteEvent") then
-        remote:FireServer(...)
-        return true
     end
     return false
 end
 
---- Invoke a remote function safely
-local function InvokeRemote(remoteName, ...)
-    local remote = ReplicatedStorage:FindFirstChild(remoteName, true)
-        or Workspace:FindFirstChild(remoteName, true)
-    if remote and remote:IsA("RemoteFunction") then
-        return pcall(function() return remote:InvokeServer(...) end)
+local function findParts(pattern)
+    local list = {}
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if (v:IsA("BasePart") or v:IsA("Model")) and v.Name:lower():find(pattern:lower()) then
+            table.insert(list, v)
+        end
     end
-    return false
+    return list
 end
 
--- ─────────────────────────────────────────────────────────────────
---  NOTIFICATION SYSTEM
--- ─────────────────────────────────────────────────────────────────
-local NotifQueue = {}
-local NotifActive = false
-
-local function ShowNotif(title, message, duration)
-    table.insert(NotifQueue, { title = title, message = message, duration = duration or 3 })
+local function getPos(v)
+    if v:IsA("BasePart") then return v.Position end
+    if v:IsA("Model") then
+        local p = v.PrimaryPart or v:FindFirstChildOfClass("BasePart")
+        return p and p.Position
+    end
 end
 
-local function ProcessNotifQueue(notifFrame, notifTitle, notifMsg)
-    if NotifActive or #NotifQueue == 0 then return end
-    NotifActive = true
-    local n = table.remove(NotifQueue, 1)
-
-    notifTitle.Text = n.title
-    notifMsg.Text   = n.message
-    notifFrame.Position = UDim2.new(1, 10, 1, -80)  -- start off-screen right
-
-    -- Slide in
-    TweenService:Create(notifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        { Position = UDim2.new(1, -270, 1, -80) }):Play()
-
-    task.delay(n.duration, function()
-        -- Slide out
-        local t = TweenService:Create(notifFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-            { Position = UDim2.new(1, 10, 1, -80) })
-        t:Play()
-        t.Completed:Wait()
-        NotifActive = false
-    end)
+local function clickPart(part)
+    local pp = part:FindFirstChildOfClass("ProximityPrompt") or part:FindFirstChild("ProximityPrompt", true)
+    if pp then pcall(fireproximityprompt, pp) return end
+    local r = root() if r then r.CFrame = CFrame.new((getPos(part) or r.Position) + Vector3.new(0,3,0)) end
 end
 
--- ─────────────────────────────────────────────────────────────────
+-- =============================================================================
 --  ANTI AFK
--- ─────────────────────────────────────────────────────────────────
-local antiAfkConn
-local function StartAntiAFK()
-    if antiAfkConn then return end
-    antiAfkConn = RunService.Heartbeat:Connect(function()
-        if DefaultSettings.AntiAFK then
-            -- Simulate a small movement to prevent kick
-            LocalPlayer:Move(Vector3.new(0, 0, 0), false)
-        end
-    end)
-end
-
-local function StopAntiAFK()
-    if antiAfkConn then
-        antiAfkConn:Disconnect()
-        antiAfkConn = nil
-    end
-end
-
--- Anti AFK via VirtualInputManager on mobile
-task.spawn(function()
-    while task.wait(60) do
-        if DefaultSettings.AntiAFK then
-            pcall(function()
-                -- Simulate a key press / tap so Roblox doesn't count as AFK
-                if VirtualInputManager then
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-                    task.wait(0.1)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-                end
-            end)
-        end
-    end
-end)
-
-StartAntiAFK()
-
--- ─────────────────────────────────────────────────────────────────
---  CORE FARM LOGIC — KICK A LUCKY BLOCK
--- ─────────────────────────────────────────────────────────────────
-
--- Known remote / function names for Kick a Lucky Block
--- Adjust these if the game updates them.
-local REMOTES = {
-    KickBlock    = "KickBlock",      -- Fire to kick a block
-    Collect      = "CollectCoins",   -- Collect dropped items
-    Rebirth      = "Rebirth",        -- Trigger rebirth
-    EquipItem    = "EquipItem",      -- Equip an item
-}
-
-local BLOCK_NAMES     = { "luckyblock", "block", "lucky" }
-local COLLECT_NAMES   = { "coin", "drop", "item", "reward" }
-
--- ── Auto Farm loop ────────────────────────────────────────────────
-local farmConn
-local function StartAutoFarm()
-    if farmConn then return end
-    farmConn = RunService.Heartbeat:Connect(function()
-        if not DefaultSettings.AutoFarm then return end
-        pcall(function()
-            -- Try to find any lucky block
-            local blocks = {}
-            for _, n in ipairs(BLOCK_NAMES) do
-                local found = GetBlocks(n)
-                for _, b in ipairs(found) do table.insert(blocks, b) end
-            end
-
-            local target = GetNearest(blocks)
-            if target then
-                -- Move near the block
-                local offset = (HumanoidRootPart.Position - target.Position).Unit * 4
-                TweenTo(CFrame.new(target.Position + offset))
-
-                -- Fire kick remote
-                FireRemote(REMOTES.KickBlock, target)
-
-                -- Small wait before next kick
-                task.wait(0.05)
-            end
-        end)
-    end)
-end
-
-local function StopAutoFarm()
-    if farmConn then
-        farmConn:Disconnect()
-        farmConn = nil
-    end
-end
-
--- ── Auto Collect loop ─────────────────────────────────────────────
-local collectConn
-local function StartAutoCollect()
-    if collectConn then return end
-    collectConn = RunService.Heartbeat:Connect(function()
-        if not DefaultSettings.AutoCollect then return end
-        pcall(function()
-            local drops = {}
-            for _, n in ipairs(COLLECT_NAMES) do
-                local found = GetBlocks(n)
-                for _, d in ipairs(found) do table.insert(drops, d) end
-            end
-
-            for _, drop in ipairs(drops) do
-                -- Teleport directly onto each drop to collect
-                if HumanoidRootPart then
-                    HumanoidRootPart.CFrame = CFrame.new(drop.Position)
-                end
-                FireRemote(REMOTES.Collect, drop)
-                task.wait(0.01)
-            end
-        end)
-    end)
-end
-
-local function StopAutoCollect()
-    if collectConn then
-        collectConn:Disconnect()
-        collectConn = nil
-    end
-end
-
--- ── Auto Rebirth loop ─────────────────────────────────────────────
-local function CheckRebirth()
-    -- Try to read the player's cash from the leaderboard
-    pcall(function()
-        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
-            or LocalPlayer:FindFirstChild("Stats")
-        if not leaderstats then return end
-
-        local cash = leaderstats:FindFirstChild("Cash")
-            or leaderstats:FindFirstChild("Coins")
-            or leaderstats:FindFirstChild("Money")
-
-        if cash and (cash.Value >= DefaultSettings.RebirthCash) then
-            FireRemote(REMOTES.Rebirth)
-            ShowNotif("✦ Auto Rebirth", "Rebirth triggered!", 3)
-        end
-    end)
-end
-
--- ── Auto Equip Best ───────────────────────────────────────────────
-local function AutoEquipBest()
-    pcall(function()
-        -- Find the player's inventory / backpack
-        local backpack = LocalPlayer:FindFirstChild("Backpack")
-        if not backpack then return end
-
-        local bestTool, bestPower = nil, -1
-
-        for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                -- Try to find a power / damage attribute
-                local power = tool:GetAttribute("Power")
-                    or tool:GetAttribute("Damage")
-                    or tool:GetAttribute("CPS")
-                    or 0
-
-                if power > bestPower then
-                    bestPower = power
-                    bestTool  = tool
-                end
-            end
-        end
-
-        if bestTool then
-            -- Equip by moving to character
-            bestTool.Parent = Character
-            FireRemote(REMOTES.EquipItem, bestTool.Name)
-        end
-    end)
-end
-
--- ── Teleport Zones ────────────────────────────────────────────────
-local ZONES = {
-    FarmZone    = Vector3.new(0, 5, 0),   -- adjust to actual farm zone coords
-    RebirthZone = Vector3.new(50, 5, 50), -- adjust to actual rebirth zone coords
-}
-
-local function TeleportTo(zoneName)
-    local pos = ZONES[zoneName]
-    if pos then
-        TweenTo(CFrame.new(pos + Vector3.new(0, 3, 0)))
-        ShowNotif("✦ Teleport", "Moved to " .. zoneName, 2)
-    end
-end
-
--- ── Main loop for rebirth / equip (every 2 seconds) ──────────────
-task.spawn(function()
-    while task.wait(2) do
-        if DefaultSettings.AutoRebirth then
-            CheckRebirth()
-        end
-        if DefaultSettings.AutoEquip then
-            AutoEquipBest()
-        end
-    end
-end)
-
--- ─────────────────────────────────────────────────────────────────
---  GUI CONSTRUCTION
--- ─────────────────────────────────────────────────────────────────
--- Remove any previous instance
-if PlayerGui:FindFirstChild("AetherKLB") then
-    PlayerGui:FindFirstChild("AetherKLB"):Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name              = "AetherKLB"
-ScreenGui.ResetOnSpawn      = false
-ScreenGui.ZIndexBehavior    = Enum.ZIndexBehavior.Sibling
-ScreenGui.DisplayOrder      = 999
-ScreenGui.IgnoreGuiInset    = true
-ScreenGui.Parent            = PlayerGui
-
--- ── Color palette ─────────────────────────────────────────────────
-local C = {
-    BG        = Color3.fromRGB(8,   12,  25),   -- deep space black-blue
-    Panel     = Color3.fromRGB(12,  18,  38),
-    Card      = Color3.fromRGB(16,  24,  50),
-    Accent    = Color3.fromRGB(0,   140, 255),  -- neon blue
-    AccentDim = Color3.fromRGB(0,   80,  160),
-    Green     = Color3.fromRGB(0,   220, 100),
-    Red       = Color3.fromRGB(220, 50,  50),
-    TextHi    = Color3.fromRGB(220, 235, 255),
-    TextLo    = Color3.fromRGB(100, 130, 180),
-    Border    = Color3.fromRGB(0,   80,  180),
-    Glow      = Color3.fromRGB(0,   100, 200),
-}
-
--- ── Helper: create a UIStroke ──────────────────────────────────────
-local function Stroke(parent, color, thickness)
-    local s = Instance.new("UIStroke")
-    s.Color     = color or C.Border
-    s.Thickness = thickness or 1
-    s.Parent    = parent
-    return s
-end
-
--- ── Helper: create a UICorner ─────────────────────────────────────
-local function Corner(parent, radius)
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, radius or 8)
-    c.Parent = parent
-    return c
-end
-
--- ── Helper: create a TextLabel ────────────────────────────────────
-local function Label(parent, text, size, color, font, props)
-    local lbl = Instance.new("TextLabel")
-    lbl.BackgroundTransparency = 1
-    lbl.Text       = text
-    lbl.TextSize   = size or 14
-    lbl.TextColor3 = color or C.TextHi
-    lbl.Font       = font or Enum.Font.GothamBold
-    lbl.RichText   = true
-    for k, v in pairs(props or {}) do lbl[k] = v end
-    lbl.Parent = parent
-    return lbl
-end
-
--- ── Main Window ───────────────────────────────────────────────────
-local MainFrame = Instance.new("Frame")
-MainFrame.Name              = "MainFrame"
-MainFrame.Size              = UDim2.new(0, 340, 0, 480)
-MainFrame.Position          = UDim2.new(0.5, -170, 0.5, -240)
-MainFrame.BackgroundColor3  = C.BG
-MainFrame.BorderSizePixel   = 0
-MainFrame.ClipsDescendants  = false
-MainFrame.Parent            = ScreenGui
-Corner(MainFrame, 14)
-Stroke(MainFrame, C.Accent, 1.5)
-
--- Outer glow effect (shadow frame)
-local GlowFrame = Instance.new("ImageLabel")
-GlowFrame.Name              = "Glow"
-GlowFrame.Size              = UDim2.new(1, 40, 1, 40)
-GlowFrame.Position          = UDim2.new(0, -20, 0, -20)
-GlowFrame.BackgroundTransparency = 1
-GlowFrame.Image             = "rbxassetid://5028857084"  -- radial gradient
-GlowFrame.ImageColor3       = C.Glow
-GlowFrame.ImageTransparency = 0.75
-GlowFrame.ZIndex            = 0
-GlowFrame.Parent            = MainFrame
-
--- ── Title Bar ─────────────────────────────────────────────────────
-local TitleBar = Instance.new("Frame")
-TitleBar.Name              = "TitleBar"
-TitleBar.Size              = UDim2.new(1, 0, 0, 44)
-TitleBar.BackgroundColor3  = C.Panel
-TitleBar.BorderSizePixel   = 0
-TitleBar.Parent            = MainFrame
-Corner(TitleBar, 14)
-
--- Bottom-round fix (only round on top)
-local TitleBarFix = Instance.new("Frame")
-TitleBarFix.Size              = UDim2.new(1, 0, 0.5, 0)
-TitleBarFix.Position          = UDim2.new(0, 0, 0.5, 0)
-TitleBarFix.BackgroundColor3  = C.Panel
-TitleBarFix.BorderSizePixel   = 0
-TitleBarFix.Parent            = TitleBar
-
--- Logo dot
-local LogoDot = Instance.new("Frame")
-LogoDot.Size             = UDim2.new(0, 10, 0, 10)
-LogoDot.Position         = UDim2.new(0, 14, 0.5, -5)
-LogoDot.BackgroundColor3 = C.Accent
-LogoDot.BorderSizePixel  = 0
-LogoDot.Parent           = TitleBar
-Corner(LogoDot, 5)
-
--- Pulsing animation on logo dot
+-- =============================================================================
 task.spawn(function()
     while true do
-        TweenService:Create(LogoDot, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-            { BackgroundTransparency = 0.6 }):Play()
-        task.wait(1)
-        TweenService:Create(LogoDot, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-            { BackgroundTransparency = 0 }):Play()
-        task.wait(1)
+        task.wait(55)
+        if S.AntiAFK then
+            local h = hum() if h then h.Jump = true end
+        end
     end
 end)
 
-Label(TitleBar, "AETHER  <font color='#0088FF'>LUCKY BLOCK</font>", 15, C.TextHi, Enum.Font.GothamBold, {
-    Size = UDim2.new(1, -80, 1, 0),
-    Position = UDim2.new(0, 32, 0, 0),
-    TextXAlignment = Enum.TextXAlignment.Left,
-})
+-- =============================================================================
+--  MODULE 1 — AUTO FARM (perfect kick)
+-- =============================================================================
+local KICK_REMOTES = {"Kick","KickBlock","HitBlock","ThrowBlock","Throw","Launch","DoKick"}
+local ZONE_NAMES   = {"KickZone","ThrowZone","LaunchZone","Zone","Pad","KickPad","Plate","Platform"}
 
-Label(TitleBar, "v2.0.0", 11, C.TextLo, Enum.Font.Gotham, {
-    Size = UDim2.new(0, 50, 1, 0),
-    Position = UDim2.new(1, -100, 0, 0),
-    TextXAlignment = Enum.TextXAlignment.Right,
-})
-
--- Close button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size              = UDim2.new(0, 28, 0, 28)
-CloseBtn.Position          = UDim2.new(1, -38, 0.5, -14)
-CloseBtn.BackgroundColor3  = Color3.fromRGB(200, 50, 50)
-CloseBtn.Text              = "✕"
-CloseBtn.TextColor3        = C.TextHi
-CloseBtn.TextSize          = 13
-CloseBtn.Font              = Enum.Font.GothamBold
-CloseBtn.BorderSizePixel   = 0
-CloseBtn.Parent            = TitleBar
-Corner(CloseBtn, 7)
-CloseBtn.MouseButton1Click:Connect(function()
-    TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-        { Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0) }):Play()
-    task.delay(0.35, function() ScreenGui:Destroy() end)
-end)
-
--- Minimize button
-local MinBtn = Instance.new("TextButton")
-MinBtn.Size             = UDim2.new(0, 28, 0, 28)
-MinBtn.Position         = UDim2.new(1, -72, 0.5, -14)
-MinBtn.BackgroundColor3 = C.AccentDim
-MinBtn.Text             = "—"
-MinBtn.TextColor3       = C.TextHi
-MinBtn.TextSize         = 13
-MinBtn.Font             = Enum.Font.GothamBold
-MinBtn.BorderSizePixel  = 0
-MinBtn.Parent           = TitleBar
-Corner(MinBtn, 7)
-
-local minimized = false
-local expandedSize = UDim2.new(0, 340, 0, 480)
-MinBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    local targetSize = minimized and UDim2.new(0, 340, 0, 44) or expandedSize
-    TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-        { Size = targetSize }):Play()
-end)
-
--- ── Scroll container for toggles ──────────────────────────────────
-local ScrollFrame = Instance.new("ScrollingFrame")
-ScrollFrame.Name              = "Scroll"
-ScrollFrame.Size              = UDim2.new(1, -16, 1, -56)
-ScrollFrame.Position          = UDim2.new(0, 8, 0, 50)
-ScrollFrame.BackgroundTransparency = 1
-ScrollFrame.BorderSizePixel   = 0
-ScrollFrame.ScrollBarThickness = 3
-ScrollFrame.ScrollBarImageColor3 = C.Accent
-ScrollFrame.CanvasSize        = UDim2.new(0, 0, 0, 0)
-ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.Parent            = MainFrame
-
-local ListLayout = Instance.new("UIListLayout")
-ListLayout.Padding        = UDim.new(0, 8)
-ListLayout.SortOrder      = Enum.SortOrder.LayoutOrder
-ListLayout.Parent         = ScrollFrame
-
-local Padding = Instance.new("UIPadding")
-Padding.PaddingBottom = UDim.new(0, 8)
-Padding.PaddingTop    = UDim.new(0, 4)
-Padding.Parent        = ScrollFrame
-
--- ── Section header helper ─────────────────────────────────────────
-local sectionOrder = 0
-local function MakeSection(title)
-    sectionOrder = sectionOrder + 1
-    local s = Instance.new("Frame")
-    s.Size              = UDim2.new(1, 0, 0, 24)
-    s.BackgroundTransparency = 1
-    s.LayoutOrder       = sectionOrder
-    s.Parent            = ScrollFrame
-
-    local line = Instance.new("Frame")
-    line.Size             = UDim2.new(1, 0, 0, 1)
-    line.Position         = UDim2.new(0, 0, 0.5, 0)
-    line.BackgroundColor3 = C.Border
-    line.BorderSizePixel  = 0
-    line.Parent           = s
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Size              = UDim2.new(0, 0, 1, 0)
-    lbl.AutomaticSize     = Enum.AutomaticSize.X
-    lbl.Position          = UDim2.new(0, 8, 0, 0)
-    lbl.BackgroundColor3  = C.BG
-    lbl.BackgroundTransparency = 0
-    lbl.Text              = "  " .. title .. "  "
-    lbl.TextSize          = 11
-    lbl.TextColor3        = C.Accent
-    lbl.Font              = Enum.Font.GothamBold
-    lbl.TextXAlignment    = Enum.TextXAlignment.Left
-    lbl.BorderSizePixel   = 0
-    lbl.Parent            = s
+local function findKickZone()
+    for _, n in ipairs(ZONE_NAMES) do
+        local f = Workspace:FindFirstChild(n, true)
+        if f and (f:IsA("BasePart") or f:IsA("Model")) then return f end
+    end
+    local z = findParts("zone") if #z>0 then return z[1] end
+    local p = findParts("pad")  if #p>0 then return p[1] end
 end
 
--- ── Toggle button helper ──────────────────────────────────────────
-local function MakeToggle(labelText, settingKey, icon, onToggle)
-    sectionOrder = sectionOrder + 1
+local function findKickBar()
+    local pg = lp:FindFirstChild("PlayerGui") if not pg then return end
+    for _, v in ipairs(pg:GetDescendants()) do
+        if v:IsA("Frame") and (v.Name:lower():find("bar") or v.Name:lower():find("meter")
+            or v.Name:lower():find("power") or v.Name:lower():find("kick") or v.Name:lower():find("charge")) then
+            return v
+        end
+    end
+end
 
+local function isPerfect(bar)
+    if not bar then return true end
+    return bar.Position.Y.Scale <= 0.15
+end
+
+local function doKick()
+    for _, n in ipairs(KICK_REMOTES) do if fireRemote(n) then return true end end
+    local pg = lp:FindFirstChild("PlayerGui") if not pg then return end
+    for _, v in ipairs(pg:GetDescendants()) do
+        if (v:IsA("TextButton") or v:IsA("ImageButton")) then
+            local n = v.Name:lower()
+            if n:find("kick") or n:find("throw") or n:find("tap") or n:find("coup") then
+                pcall(function() v.MouseButton1Click:Fire() end) return true
+            end
+        end
+    end
+end
+
+local farmThread
+local function startAutoFarm()
+    if farmThread then task.cancel(farmThread) end
+    farmThread = task.spawn(function()
+        while S.AutoFarm do
+            pcall(function()
+                local zone = findKickZone()
+                if zone then
+                    local pos = getPos(zone) or Vector3.new(0,5,0)
+                    tp(CFrame.new(pos + Vector3.new(0,5,0)))
+                end
+                if S.PerfectOnly then
+                    local bar = findKickBar()
+                    local t = 0
+                    while not isPerfect(bar) and t < 3 do
+                        task.wait(0.01) t = t + 0.01 bar = findKickBar()
+                    end
+                end
+                doKick()
+            end)
+            task.wait(S.FarmDelay)
+        end
+    end)
+end
+
+-- =============================================================================
+--  MODULE 2 — AUTO MUSCLE GRAB
+-- =============================================================================
+local MUSCLE_NAMES = {"Muscle","Giant","Big","Boss","Huge","Brainrot","Drop","Reward","Prize"}
+
+local function findMuscleItem()
+    local candidates = {}
+    for _, n in ipairs(MUSCLE_NAMES) do
+        for _, v in ipairs(findParts(n)) do table.insert(candidates, v) end
+    end
+    table.sort(candidates, function(a, b)
+        local sa = a:IsA("BasePart") and a.Size.Magnitude or 0
+        local sb = b:IsA("BasePart") and b.Size.Magnitude or 0
+        return sa > sb
+    end)
+    return candidates[1]
+end
+
+local muscleThread
+local function startAutoMuscle()
+    if muscleThread then task.cancel(muscleThread) end
+    muscleThread = task.spawn(function()
+        while S.AutoMuscle do
+            pcall(function()
+                local item = findMuscleItem()
+                if item then
+                    local pos = getPos(item)
+                    if pos then
+                        tp(CFrame.new(pos + Vector3.new(0,3,0)))
+                        clickPart(item)
+                        fireRemote("Collect", item)
+                        fireRemote("Grab", item)
+                    end
+                end
+            end)
+            task.wait(0.15)
+        end
+    end)
+end
+
+-- =============================================================================
+--  MODULE 3 — AUTO VIOLET ×2
+-- =============================================================================
+local VIOLET_NAMES = {"Brainrot","Violet","Purple","Rare","Special","Brain","Rot","Aleatoire","Random"}
+
+local function isViolet(p)
+    if not p:IsA("BasePart") then return false end
+    local c = p.Color
+    return c.B > 0.4 and c.R > 0.2 and c.G < 0.4
+end
+
+local function findVioletItems()
+    local list = {}
+    for _, n in ipairs(VIOLET_NAMES) do
+        for _, v in ipairs(findParts(n)) do table.insert(list, v) end
+    end
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if isViolet(v) then table.insert(list, v) end
+    end
+    return list
+end
+
+local violetThread
+local function startAutoViolet()
+    if violetThread then task.cancel(violetThread) end
+    violetThread = task.spawn(function()
+        while S.AutoViolet do
+            pcall(function()
+                for _, item in ipairs(findVioletItems()) do
+                    local pos = getPos(item)
+                    if pos then
+                        tp(CFrame.new(pos + Vector3.new(0,3,0)))
+                        clickPart(item) fireRemote("Click", item)
+                        task.wait(0.05)
+                        clickPart(item) fireRemote("Click", item)
+                        task.wait(0.04)
+                    end
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+end
+
+-- =============================================================================
+--  MODULE 4 — AUTO MONEY
+-- =============================================================================
+local MONEY_NAMES = {"Cash","Money","Coin","Dollar","Bill","Gold","Drop","Credit","Token"}
+
+local function findMoneyDrops()
+    local list = {}
+    local r = root() if not r then return list end
+    for _, n in ipairs(MONEY_NAMES) do
+        for _, v in ipairs(findParts(n)) do
+            local pos = getPos(v)
+            if pos and (r.Position - pos).Magnitude <= 60 then
+                table.insert(list, v)
+            end
+        end
+    end
+    return list
+end
+
+local moneyThread
+local function startAutoMoney()
+    if moneyThread then task.cancel(moneyThread) end
+    moneyThread = task.spawn(function()
+        while S.AutoMoney do
+            pcall(function()
+                for _, drop in ipairs(findMoneyDrops()) do
+                    local pos = getPos(drop)
+                    if pos then
+                        tp(CFrame.new(pos + Vector3.new(0,2,0)))
+                        fireRemote("Collect", drop)
+                        task.wait(0.02)
+                    end
+                end
+            end)
+            task.wait(0.05)
+        end
+    end)
+end
+
+-- =============================================================================
+--  STOP ALL
+-- =============================================================================
+local function stopAll()
+    S.AutoFarm=false S.AutoMuscle=false S.AutoViolet=false S.AutoMoney=false
+    if farmThread   then task.cancel(farmThread)   farmThread=nil   end
+    if muscleThread then task.cancel(muscleThread) muscleThread=nil end
+    if violetThread then task.cancel(violetThread) violetThread=nil end
+    if moneyThread  then task.cancel(moneyThread)  moneyThread=nil  end
+end
+
+-- =============================================================================
+--  GUI — PHANTOM NOIR
+-- =============================================================================
+if CoreGui:FindFirstChild("AetherHub") then CoreGui:FindFirstChild("AetherHub"):Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name           = "AetherHub"
+ScreenGui.ResetOnSpawn   = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent         = CoreGui
+
+-- Couleurs phantom
+local C = {
+    Base    = Color3.fromRGB(10,  10,  12),   -- noir quasi-pur
+    Sidebar = Color3.fromRGB(14,  14,  17),   -- noir légèrement plus clair
+    Card    = Color3.fromRGB(18,  18,  22),   -- fond des cartes
+    Active  = Color3.fromRGB(22,  22,  28),   -- onglet actif
+    Border  = Color3.fromRGB(38,  38,  46),   -- bordure subtile
+    Accent  = Color3.fromRGB(220, 220, 230),  -- blanc froid (texte/accent)
+    Dim     = Color3.fromRGB(85,  85,  100),  -- texte secondaire
+    ON      = Color3.fromRGB(180, 255, 180),  -- vert très pâle = activé
+    OFF     = Color3.fromRGB(100, 100, 115),  -- gris = désactivé
+    Red     = Color3.fromRGB(200, 70,  70),
+    Stripe  = Color3.fromRGB(30,  30,  36),   -- séparateur
+}
+
+local function corner(p, r)
+    local c = Instance.new("UICorner") c.CornerRadius=UDim.new(0,r or 6) c.Parent=p return c
+end
+local function stroke(p, col, t)
+    local s = Instance.new("UIStroke") s.Color=col or C.Border s.Thickness=t or 1 s.Parent=p return s
+end
+local function lbl(p, txt, sz, col, xa, props)
+    local l = Instance.new("TextLabel")
+    l.BackgroundTransparency=1 l.Text=txt l.TextSize=sz or 13
+    l.TextColor3=col or C.Accent l.Font=Enum.Font.Gotham l.RichText=true
+    l.TextXAlignment=xa or Enum.TextXAlignment.Left
+    for k,v in pairs(props or {}) do l[k]=v end
+    l.Parent=p return l
+end
+
+-- ── Fenêtre principale ────────────────────────────────────────────
+local MainFrame = Instance.new("Frame")
+MainFrame.Size             = UDim2.new(0, 520, 0, 340)
+MainFrame.Position         = UDim2.new(0.5, -260, 0.5, -170)
+MainFrame.BackgroundColor3 = C.Base
+MainFrame.Active           = true
+MainFrame.Draggable        = true   -- drag natif Roblox
+MainFrame.Parent           = ScreenGui
+corner(MainFrame, 8)
+stroke(MainFrame, C.Border, 1)
+
+-- Séparateur vertical sidebar/content
+local Sep = Instance.new("Frame")
+Sep.Size             = UDim2.new(0,1,1,-10)
+Sep.Position         = UDim2.new(0,150,0,5)
+Sep.BackgroundColor3 = C.Stripe
+Sep.BorderSizePixel  = 0
+Sep.Parent           = MainFrame
+
+-- ── Sidebar ───────────────────────────────────────────────────────
+local Sidebar = Instance.new("Frame")
+Sidebar.Size             = UDim2.new(0,150,1,0)
+Sidebar.BackgroundColor3 = C.Sidebar
+Sidebar.BorderSizePixel  = 0
+Sidebar.Parent           = MainFrame
+corner(Sidebar, 8)
+-- Fix arrondi droit
+local SideFix = Instance.new("Frame")
+SideFix.Size=UDim2.new(0.5,0,1,0) SideFix.Position=UDim2.new(0.5,0,0,0)
+SideFix.BackgroundColor3=C.Sidebar SideFix.BorderSizePixel=0 SideFix.Parent=Sidebar
+
+-- Logo / titre sidebar
+local LogoArea = Instance.new("Frame")
+LogoArea.Size=UDim2.new(1,0,0,52) LogoArea.BackgroundTransparency=1 LogoArea.Parent=Sidebar
+
+lbl(LogoArea, "AETHER", 15, C.Accent, Enum.TextXAlignment.Center, {
+    Size=UDim2.new(1,0,0,28), Position=UDim2.new(0,0,0,12),
+    Font=Enum.Font.GothamBold,
+})
+lbl(LogoArea, "lucky block hub", 10, C.Dim, Enum.TextXAlignment.Center, {
+    Size=UDim2.new(1,0,0,18), Position=UDim2.new(0,0,0,34),
+})
+
+-- Ligne sous logo
+local LogoLine = Instance.new("Frame")
+LogoLine.Size=UDim2.new(1,-20,0,1) LogoLine.Position=UDim2.new(0,10,0,52)
+LogoLine.BackgroundColor3=C.Stripe LogoLine.BorderSizePixel=0 LogoLine.Parent=Sidebar
+
+-- Liste des onglets (sidebar)
+local TabList = Instance.new("Frame")
+TabList.Size=UDim2.new(1,0,1,-60) TabList.Position=UDim2.new(0,0,0,58)
+TabList.BackgroundTransparency=1 TabList.Parent=Sidebar
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.Padding=UDim.new(0,3) TabLayout.Parent=TabList
+Instance.new("UIPadding",TabList).PaddingLeft=UDim.new(0,8)
+
+-- ── Zone de contenu (droite) ──────────────────────────────────────
+local Content = Instance.new("Frame")
+Content.Size=UDim2.new(1,-160,1,-10)
+Content.Position=UDim2.new(0,158,0,5)
+Content.BackgroundTransparency=1
+Content.ClipsDescendants=true
+Content.Parent=MainFrame
+
+-- ── Pages ─────────────────────────────────────────────────────────
+local pages = {}
+
+local function newPage(name)
+    local p = Instance.new("Frame")
+    p.Size=UDim2.new(1,0,1,0) p.BackgroundTransparency=1 p.Visible=false p.Parent=Content
+    pages[name] = p
+    return p
+end
+
+-- ── Onglet helper ─────────────────────────────────────────────────
+local tabs = {}
+local activeTab = nil
+
+local function setPage(name)
+    for n, p in pairs(pages) do p.Visible = (n == name) end
+    for n, t in pairs(tabs) do
+        if n == name then
+            t.BackgroundColor3 = C.Active
+            t.TextColor3       = C.Accent
+        else
+            t.BackgroundColor3 = Color3.fromRGB(0,0,0)
+            t.BackgroundTransparency = 1
+            t.TextColor3       = C.Dim
+        end
+    end
+    activeTab = name
+end
+
+local function newTab(name, icon, pageName)
+    local btn = Instance.new("TextButton")
+    btn.Size             = UDim2.new(1,-4,0,32)
+    btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    btn.BackgroundTransparency = 1
+    btn.Text             = icon .. "  " .. name
+    btn.TextColor3       = C.Dim
+    btn.Font             = Enum.Font.Gotham
+    btn.TextSize         = 12
+    btn.TextXAlignment   = Enum.TextXAlignment.Left
+    btn.BorderSizePixel  = 0
+    btn.AutoButtonColor  = false
+    btn.Parent           = TabList
+    corner(btn, 5)
+    -- Padding texte
+    local pad = Instance.new("UIPadding") pad.PaddingLeft=UDim.new(0,10) pad.Parent=btn
+
+    btn.MouseButton1Click:Connect(function() setPage(pageName) end)
+    btn.MouseEnter:Connect(function()
+        if activeTab ~= pageName then
+            TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3=C.Accent}):Play()
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if activeTab ~= pageName then
+            TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3=C.Dim}):Play()
+        end
+    end)
+    tabs[pageName] = btn
+    return btn
+end
+
+-- =============================================================================
+--  PAGE : ACCUEIL
+-- =============================================================================
+local PageHome = newPage("home")
+newTab("Accueil", "⌂", "home")
+
+lbl(PageHome, "Bienvenue", 18, C.Accent, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,30), Position=UDim2.new(0,4,0,6),
+    Font=Enum.Font.GothamBold,
+})
+lbl(PageHome, "Sélectionne un onglet pour commencer.", 12, C.Dim, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,20), Position=UDim2.new(0,4,0,38),
+})
+
+-- Ligne séparateur
+local function hline(page, y)
+    local l=Instance.new("Frame") l.Size=UDim2.new(1,0,0,1) l.Position=UDim2.new(0,0,0,y)
+    l.BackgroundColor3=C.Stripe l.BorderSizePixel=0 l.Parent=page
+end
+hline(PageHome, 65)
+
+-- Stats live (kicks / argent)
+local StatKick = lbl(PageHome, "⚡  Kicks :", 12, C.Dim, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,22), Position=UDim2.new(0,4,0,76),
+})
+local StatMoney = lbl(PageHome, "💰  Argent :", 12, C.Dim, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,22), Position=UDim2.new(0,4,0,104),
+})
+
+-- Update stats chaque seconde
+task.spawn(function()
+    while ScreenGui.Parent do
+        task.wait(1)
+        pcall(function()
+            local ls = lp:FindFirstChild("leaderstats") or lp:FindFirstChild("Stats")
+            if not ls then return end
+            local kicks = ls:FindFirstChild("Kicks") or ls:FindFirstChild("TotalKicks") or ls:FindFirstChild("Blocks")
+            local money = ls:FindFirstChild("Cash")  or ls:FindFirstChild("Coins") or ls:FindFirstChild("Money")
+            if kicks then StatKick.Text  = "⚡  Kicks :   " .. tostring(kicks.Value) end
+            if money then
+                local v = money.Value
+                local f = v>=1e15 and ("$"..string.format("%.1f",v/1e15).."Q")
+                    or v>=1e12 and ("$"..string.format("%.1f",v/1e12).."T")
+                    or v>=1e9  and ("$"..string.format("%.1f",v/1e9).."B")
+                    or v>=1e6  and ("$"..string.format("%.1f",v/1e6).."M")
+                    or ("$"..tostring(v))
+                StatMoney.Text = "💰  Argent :   " .. f
+            end
+        end)
+    end
+end)
+
+-- =============================================================================
+--  PAGE : AUTO FARM
+-- =============================================================================
+local PageFarm = newPage("farm")
+newTab("Auto Farm", "▶", "farm")
+
+-- Description
+lbl(PageFarm, "Auto Farm", 16, C.Accent, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,26), Position=UDim2.new(0,4,0,4),
+    Font=Enum.Font.GothamBold,
+})
+hline(PageFarm, 34)
+
+-- =============================================================================
+--  TOGGLE helper (style phantom : ON = texte vert pâle, OFF = gris)
+-- =============================================================================
+local toggleSetters = {}
+
+local function newToggle(page, y, labelTxt, descTxt, settingKey, onEnable, onDisable)
     local card = Instance.new("Frame")
-    card.Size              = UDim2.new(1, 0, 0, 48)
-    card.BackgroundColor3  = C.Card
-    card.BorderSizePixel   = 0
-    card.LayoutOrder       = sectionOrder
-    card.Parent            = ScrollFrame
-    Corner(card, 10)
-    Stroke(card, C.Border, 1)
+    card.Size=UDim2.new(1,-8,0,46) card.Position=UDim2.new(0,4,0,y)
+    card.BackgroundColor3=C.Card card.BorderSizePixel=0 card.Parent=page
+    corner(card,6) stroke(card,C.Border,1)
 
-    -- Icon
-    local iconLbl = Label(card, icon, 20, C.Accent, Enum.Font.GothamBold, {
-        Size = UDim2.new(0, 36, 1, 0),
-        Position = UDim2.new(0, 6, 0, 0),
-        TextXAlignment = Enum.TextXAlignment.Center,
+    lbl(card, labelTxt, 13, C.Accent, Enum.TextXAlignment.Left, {
+        Size=UDim2.new(1,-70,0,20), Position=UDim2.new(0,10,0,5),
+        Font=Enum.Font.GothamSemibold,
+    })
+    lbl(card, descTxt, 10, C.Dim, Enum.TextXAlignment.Left, {
+        Size=UDim2.new(1,-70,0,16), Position=UDim2.new(0,10,0,26),
     })
 
-    -- Label
-    Label(card, labelText, 13, C.TextHi, Enum.Font.GothamBold, {
-        Size = UDim2.new(1, -100, 0, 20),
-        Position = UDim2.new(0, 46, 0, 8),
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-    Label(card, settingKey == "AntiAFK" and "Prevents inactivity kick" or
-                settingKey == "TweenMove" and "Smooth movement interpolation" or
-                "Auto " .. labelText:lower(), 10, C.TextLo, Enum.Font.Gotham, {
-        Size = UDim2.new(1, -100, 0, 16),
-        Position = UDim2.new(0, 46, 0, 28),
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    -- Toggle pill
-    local pillBG = Instance.new("Frame")
-    pillBG.Size             = UDim2.new(0, 50, 0, 26)
-    pillBG.Position         = UDim2.new(1, -62, 0.5, -13)
-    pillBG.BackgroundColor3 = DefaultSettings[settingKey] and C.Accent or Color3.fromRGB(40, 50, 70)
-    pillBG.BorderSizePixel  = 0
-    pillBG.Parent           = card
-    Corner(pillBG, 13)
-
+    -- Pill toggle (sobre)
+    local pill = Instance.new("Frame")
+    pill.Size=UDim2.new(0,44,0,22) pill.Position=UDim2.new(1,-52,0.5,-11)
+    pill.BackgroundColor3=Color3.fromRGB(28,28,33) pill.BorderSizePixel=0 pill.Parent=card
+    corner(pill,11)
     local knob = Instance.new("Frame")
-    knob.Size              = UDim2.new(0, 20, 0, 20)
-    knob.Position          = DefaultSettings[settingKey]
-        and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10)
-    knob.BackgroundColor3  = C.TextHi
-    knob.BorderSizePixel   = 0
-    knob.Parent            = pillBG
-    Corner(knob, 10)
+    knob.Size=UDim2.new(0,16,0,16) knob.Position=UDim2.new(0,3,0.5,-8)
+    knob.BackgroundColor3=C.Dim knob.BorderSizePixel=0 knob.Parent=pill
+    corner(knob,8)
 
-    -- Clickable area over the entire card
-    local clickBtn = Instance.new("TextButton")
-    clickBtn.Size              = UDim2.new(1, 0, 1, 0)
-    clickBtn.BackgroundTransparency = 1
-    clickBtn.Text              = ""
-    clickBtn.ZIndex            = 5
-    clickBtn.Parent            = card
+    local state = S[settingKey] or false
 
-    clickBtn.MouseButton1Click:Connect(function()
-        DefaultSettings[settingKey] = not DefaultSettings[settingKey]
-        local on = DefaultSettings[settingKey]
+    local function setVisual(on)
+        TweenService:Create(pill, TweenInfo.new(0.18,Enum.EasingStyle.Quad),
+            {BackgroundColor3 = on and Color3.fromRGB(40,60,40) or Color3.fromRGB(28,28,33)}):Play()
+        TweenService:Create(knob, TweenInfo.new(0.18,Enum.EasingStyle.Back),
+            {Position = on and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8),
+             BackgroundColor3 = on and C.ON or C.Dim}):Play()
+    end
+    setVisual(state)
+    toggleSetters[settingKey] = setVisual
 
-        -- Animate pill
-        TweenService:Create(pillBG, TweenInfo.new(0.2, Enum.EasingStyle.Quad),
-            { BackgroundColor3 = on and C.Accent or Color3.fromRGB(40, 50, 70) }):Play()
-        TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Back),
-            { Position = on and UDim2.new(1, -23, 0.5, -10) or UDim2.new(0, 3, 0.5, -10) }):Play()
+    local click = Instance.new("TextButton")
+    click.Size=UDim2.new(1,0,1,0) click.BackgroundTransparency=1 click.Text=""
+    click.ZIndex=5 click.Parent=card
+    click.AutoButtonColor=false
 
-        -- Card highlight pulse
-        TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad),
-            { BackgroundColor3 = on and Color3.fromRGB(16, 30, 65) or C.Card }):Play()
-
-        if onToggle then onToggle(on) end
-        SaveSettings()
-
-        ShowNotif(labelText, on and "✦ Enabled" or "✦ Disabled", 2)
+    click.MouseButton1Click:Connect(function()
+        state = not state
+        S[settingKey] = state
+        setVisual(state)
+        if state then if onEnable  then onEnable()  end
+        else          if onDisable then onDisable() end end
     end)
 
     return card
 end
 
--- ── Action button helper ──────────────────────────────────────────
-local function MakeActionBtn(labelText, icon, callback)
-    sectionOrder = sectionOrder + 1
+-- Toggles de la page Farm
+newToggle(PageFarm, 40,
+    "Auto Farm",
+    "Se téléporte dans la zone + kick auto",
+    "AutoFarm",
+    function() startAutoFarm() end,
+    function() S.AutoFarm=false end
+)
+newToggle(PageFarm, 94,
+    "Perfect Only",
+    "Attend que la barre soit en haut",
+    "PerfectOnly", nil, nil
+)
 
-    local btn = Instance.new("TextButton")
-    btn.Size              = UDim2.new(1, 0, 0, 42)
-    btn.BackgroundColor3  = C.AccentDim
-    btn.Text              = icon .. "  " .. labelText
-    btn.TextColor3        = C.TextHi
-    btn.TextSize          = 13
-    btn.Font              = Enum.Font.GothamBold
-    btn.BorderSizePixel   = 0
-    btn.LayoutOrder       = sectionOrder
-    btn.Parent            = ScrollFrame
-    Corner(btn, 10)
-    Stroke(btn, C.Accent, 1)
+-- =============================================================================
+--  PAGE : COLLECTE
+-- =============================================================================
+local PageCollect = newPage("collect")
+newTab("Collecte", "◈", "collect")
 
-    btn.MouseButton1Click:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.1), { BackgroundColor3 = C.Accent }):Play()
-        task.delay(0.15, function()
-            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = C.AccentDim }):Play()
-        end)
-        if callback then callback() end
-    end)
-
-    return btn
-end
-
--- ─────────────────────────────────────────────────────────────────
---  BUILD THE TOGGLE LIST
--- ─────────────────────────────────────────────────────────────────
-
-MakeSection("⬡  AUTO FARM")
-MakeToggle("Auto Farm",    "AutoFarm",    "🟩", function(on)
-    if on then StartAutoFarm() else StopAutoFarm() end
-end)
-MakeToggle("Auto Collect", "AutoCollect", "🪙", function(on)
-    if on then StartAutoCollect() else StopAutoCollect() end
-end)
-MakeToggle("Auto Rebirth", "AutoRebirth", "♻", nil)
-MakeToggle("Auto Equip Best", "AutoEquip", "⚔", nil)
-
-MakeSection("⬡  MOVEMENT")
-MakeToggle("Tween Movement", "TweenMove", "🌀", nil)
-
-MakeSection("⬡  SYSTEM")
-MakeToggle("Anti AFK",     "AntiAFK",    "🛡", function(on)
-    if on then StartAntiAFK() else StopAntiAFK() end
-end)
-
-MakeSection("⬡  TELEPORT")
-MakeActionBtn("Farm Zone",    "📍", function() TeleportTo("FarmZone") end)
-MakeActionBtn("Rebirth Zone", "🔁", function() TeleportTo("RebirthZone") end)
-
-MakeSection("⬡  ACTIONS")
-MakeActionBtn("Equip Best Now", "⚡", function()
-    AutoEquipBest()
-    ShowNotif("Auto Equip", "Best item equipped!", 2)
-end)
-MakeActionBtn("Collect All Now", "💰", function()
-    -- Immediate one-shot collect
-    pcall(function()
-        for _, n in ipairs(COLLECT_NAMES) do
-            local drops = GetBlocks(n)
-            for _, drop in ipairs(drops) do
-                if HumanoidRootPart then
-                    HumanoidRootPart.CFrame = CFrame.new(drop.Position)
-                end
-                FireRemote(REMOTES.Collect, drop)
-            end
-        end
-    end)
-    ShowNotif("Collect All", "Collected all drops!", 2)
-end)
-
--- ─────────────────────────────────────────────────────────────────
---  NOTIFICATION FRAME (bottom-right)
--- ─────────────────────────────────────────────────────────────────
-local NotifFrame = Instance.new("Frame")
-NotifFrame.Name             = "NotifFrame"
-NotifFrame.Size             = UDim2.new(0, 260, 0, 64)
-NotifFrame.Position         = UDim2.new(1, 10, 1, -80)  -- starts off screen
-NotifFrame.BackgroundColor3 = C.Panel
-NotifFrame.BorderSizePixel  = 0
-NotifFrame.ZIndex           = 100
-NotifFrame.Parent           = ScreenGui
-Corner(NotifFrame, 10)
-Stroke(NotifFrame, C.Accent, 1.5)
-
-local NotifAccent = Instance.new("Frame")
-NotifAccent.Size             = UDim2.new(0, 4, 1, -16)
-NotifAccent.Position         = UDim2.new(0, 8, 0, 8)
-NotifAccent.BackgroundColor3 = C.Accent
-NotifAccent.BorderSizePixel  = 0
-NotifAccent.Parent           = NotifFrame
-Corner(NotifAccent, 2)
-
-local NotifTitle = Label(NotifFrame, "Notification", 13, C.Accent, Enum.Font.GothamBold, {
-    Size = UDim2.new(1, -26, 0, 22),
-    Position = UDim2.new(0, 20, 0, 8),
-    TextXAlignment = Enum.TextXAlignment.Left,
-    ZIndex = 101,
+lbl(PageCollect, "Collecte", 16, C.Accent, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,26), Position=UDim2.new(0,4,0,4),
+    Font=Enum.Font.GothamBold,
 })
-local NotifMsg = Label(NotifFrame, "", 11, C.TextLo, Enum.Font.Gotham, {
-    Size = UDim2.new(1, -26, 0, 20),
-    Position = UDim2.new(0, 20, 0, 30),
-    TextXAlignment = Enum.TextXAlignment.Left,
-    ZIndex = 101,
+hline(PageCollect, 34)
+
+newToggle(PageCollect, 40,
+    "Auto Muscle Grab",
+    "Ramasse le gros item musclé",
+    "AutoMuscle",
+    function() startAutoMuscle() end,
+    function() S.AutoMuscle=false end
+)
+newToggle(PageCollect, 94,
+    "Auto Violet ×2",
+    "Clique les brainrots violets deux fois",
+    "AutoViolet",
+    function() startAutoViolet() end,
+    function() S.AutoViolet=false end
+)
+newToggle(PageCollect, 148,
+    "Auto Money",
+    "Ramasse l'argent et les pièces au sol",
+    "AutoMoney",
+    function() startAutoMoney() end,
+    function() S.AutoMoney=false end
+)
+
+-- =============================================================================
+--  PAGE : PARAMÈTRES
+-- =============================================================================
+local PageSettings = newPage("settings")
+newTab("Paramètres", "⚙", "settings")
+
+lbl(PageSettings, "Paramètres", 16, C.Accent, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,26), Position=UDim2.new(0,4,0,4),
+    Font=Enum.Font.GothamBold,
+})
+hline(PageSettings, 34)
+
+newToggle(PageSettings, 40,
+    "Anti AFK",
+    "Empêche le kick d'inactivité",
+    "AntiAFK", nil, nil
+)
+
+-- Bouton TOUT ACTIVER
+local AllBtn = Instance.new("TextButton")
+AllBtn.Size=UDim2.new(1,-8,0,34) AllBtn.Position=UDim2.new(0,4,0,140)
+AllBtn.BackgroundColor3=C.Card
+AllBtn.Text="▶  Tout activer"
+AllBtn.TextColor3=C.ON AllBtn.Font=Enum.Font.GothamSemibold AllBtn.TextSize=13
+AllBtn.BorderSizePixel=0 AllBtn.AutoButtonColor=false AllBtn.Parent=PageSettings
+corner(AllBtn,6) stroke(AllBtn,C.Border,1)
+AllBtn.MouseButton1Click:Connect(function()
+    S.AutoFarm=true S.AutoMuscle=true S.AutoViolet=true S.AutoMoney=true
+    for k,fn in pairs(toggleSetters) do
+        if k=="AutoFarm" or k=="AutoMuscle" or k=="AutoViolet" or k=="AutoMoney" then fn(true) end
+    end
+    startAutoFarm() startAutoMuscle() startAutoViolet() startAutoMoney()
+    TweenService:Create(AllBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(30,45,30)}):Play()
+    task.delay(0.3,function() TweenService:Create(AllBtn,TweenInfo.new(0.2),{BackgroundColor3=C.Card}):Play() end)
+end)
+
+-- Bouton TOUT STOPPER
+local StopBtn = Instance.new("TextButton")
+StopBtn.Size=UDim2.new(1,-8,0,34) StopBtn.Position=UDim2.new(0,4,0,182)
+StopBtn.BackgroundColor3=C.Card
+StopBtn.Text="■  Tout stopper"
+StopBtn.TextColor3=C.Red AllBtn.Font=Enum.Font.GothamSemibold StopBtn.TextSize=13
+StopBtn.BorderSizePixel=0 StopBtn.AutoButtonColor=false StopBtn.Parent=PageSettings
+corner(StopBtn,6) stroke(StopBtn,C.Border,1)
+StopBtn.MouseButton1Click:Connect(function()
+    stopAll()
+    for k,fn in pairs(toggleSetters) do
+        if k=="AutoFarm" or k=="AutoMuscle" or k=="AutoViolet" or k=="AutoMoney" then fn(false) end
+    end
+    TweenService:Create(StopBtn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(45,20,20)}):Play()
+    task.delay(0.3,function() TweenService:Create(StopBtn,TweenInfo.new(0.2),{BackgroundColor3=C.Card}):Play() end)
+end)
+
+-- Version
+lbl(PageSettings, "v3.0  —  AetherScripts", 10, C.Dim, Enum.TextXAlignment.Left, {
+    Size=UDim2.new(1,-10,0,18), Position=UDim2.new(0,4,1,-22),
 })
 
--- Poll notification queue
-RunService.Heartbeat:Connect(function()
-    ProcessNotifQueue(NotifFrame, NotifTitle, NotifMsg)
+-- =============================================================================
+--  BOUTON FERMER (coin haut droit de la fenêtre)
+-- =============================================================================
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size=UDim2.new(0,22,0,22) CloseBtn.Position=UDim2.new(1,-28,0,6)
+CloseBtn.BackgroundColor3=Color3.fromRGB(45,20,20)
+CloseBtn.Text="✕" CloseBtn.TextColor3=C.Red
+CloseBtn.Font=Enum.Font.GothamBold CloseBtn.TextSize=12
+CloseBtn.BorderSizePixel=0 CloseBtn.AutoButtonColor=false CloseBtn.ZIndex=10
+CloseBtn.Parent=MainFrame
+corner(CloseBtn,5)
+CloseBtn.MouseButton1Click:Connect(function()
+    stopAll()
+    TweenService:Create(MainFrame, TweenInfo.new(0.2,Enum.EasingStyle.Quad,Enum.EasingDirection.In),
+        {Size=UDim2.new(0,0,0,0), Position=UDim2.new(0.5,0,0.5,0)}):Play()
+    task.delay(0.25, function() ScreenGui:Destroy() end)
 end)
 
--- ─────────────────────────────────────────────────────────────────
---  DRAGGABLE GUI
--- ─────────────────────────────────────────────────────────────────
-local dragging, dragStart, startPos = false, nil, nil
+-- =============================================================================
+--  OUVERTURE ANIMÉE + PAGE PAR DÉFAUT
+-- =============================================================================
+MainFrame.Size=UDim2.new(0,0,0,0)
+MainFrame.Position=UDim2.new(0.5,0,0.5,0)
+TweenService:Create(MainFrame, TweenInfo.new(0.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
+    {Size=UDim2.new(0,520,0,340), Position=UDim2.new(0.5,-260,0.5,-170)}):Play()
 
-local function StartDrag(input)
-    dragging  = true
-    dragStart = input.Position
-    startPos  = MainFrame.Position
-end
+task.delay(0.05, function() setPage("home") end)
 
-local function UpdateDrag(input)
-    if not dragging then return end
-    local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
-TitleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        StartDrag(input)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement
-    or input.UserInputType == Enum.UserInputType.Touch then
-        UpdateDrag(input)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
--- ─────────────────────────────────────────────────────────────────
---  OPENING ANIMATION
--- ─────────────────────────────────────────────────────────────────
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-TweenService:Create(MainFrame,
-    TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-    { Size = expandedSize, Position = UDim2.new(0.5, -170, 0.5, -240) }
-):Play()
-
--- ─────────────────────────────────────────────────────────────────
---  STARTUP NOTIFICATION
--- ─────────────────────────────────────────────────────────────────
-task.delay(0.6, function()
-    ShowNotif("✦ AetherScripts", "Kick a Lucky Block v2.0.0 loaded!", 4)
-end)
-
--- ─────────────────────────────────────────────────────────────────
---  START LOOPS FOR ANY TOGGLES ALREADY ON (from saved settings)
--- ─────────────────────────────────────────────────────────────────
-if DefaultSettings.AutoFarm    then StartAutoFarm()    end
-if DefaultSettings.AutoCollect then StartAutoCollect() end
-
--- ─────────────────────────────────────────────────────────────────
---  DONE
--- ─────────────────────────────────────────────────────────────────
-print("[AetherKLB] Script loaded successfully — Kick a Lucky Block v2.0.0")
+print("[AetherHub] ✓ Kick a Lucky Block — chargé")
