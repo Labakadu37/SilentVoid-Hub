@@ -1,339 +1,467 @@
---[[
-    Framework de Visuels Compétitif Complet (ESP)
-    Style : Néon Cyberpunk
-    Engine : Roblox (Client-Side)
-    Optimisation : Maximale via Drawing API & Cache
---]]
+-- ╔══════════════════════════════════════════════╗
+-- ║        AETHER HUB  —  Visuals Update         ║
+-- ║  Style : dark hub vert/noir type Lucky Block  ║
+-- ║  ESP Boxes + Tracers (Ultra-compatible UI)    ║
+-- ╚══════════════════════════════════════════════╝
 
---// Services Roblox
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
+local Players       = game:GetService("Players")
+local UIS           = game:GetService("UserInputService")
+local RunService    = game:GetService("RunService")
+local TweenService  = game:GetService("TweenService")
+local Workspace     = game:GetService("Workspace")
 
---// Variables Globales
-local LocalPlayer = Players.LocalPlayer
+local player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
---// Configuration Centrale
-local Config = {
-    Enabled = true,
-    TeamCheck = true,
-    VisibilityCheck = true,
-    DistanceCheck = true,
-    MaxDistance = 600, -- Distance max en Studs
-    
-    Visuals = {
-        BoxColor = Color3.fromRGB(0, 255, 140),       -- Vert Néon (Visible)
-        HiddenColor = Color3.fromRGB(255, 30, 70),    -- Rouge Néon (Caché derrière un mur)
-        TracerColor = Color3.fromRGB(0, 180, 255),    -- Bleu Néon
-        Thickness = 1.5,
-        Transparency = 0.9,
-    }
+-- ══════════════════════════════════════════════
+--  CONSTANTES DESIGN (Inspiré de ton thème)
+-- ══════════════════════════════════════════════
+local C = {
+    BG          = Color3.fromRGB(14, 16, 14),
+    SIDEBAR     = Color3.fromRGB(18, 22, 18),
+    PANEL       = Color3.fromRGB(22, 28, 22),
+    ROW         = Color3.fromRGB(26, 34, 26),
+    GREEN       = Color3.fromRGB(80, 220, 60),
+    GREEN_DIM   = Color3.fromRGB(40, 120, 30),
+    GREEN_DARK  = Color3.fromRGB(20, 60, 15),
+    ACCENT      = Color3.fromRGB(100, 255, 70),
+    TEXT        = Color3.fromRGB(220, 235, 220),
+    TEXT_DIM    = Color3.fromRGB(120, 150, 110),
+    TEXT_BRIGHT = Color3.fromRGB(255, 255, 255),
+    RED         = Color3.fromRGB(220, 60, 60),
+    BORDER      = Color3.fromRGB(50, 100, 40),
 }
 
---// Cache de rendu et paramètres physiques
+-- ══════════════════════════════════════════════
+--  ÉTAT DES OPTIONS (ESP & COMPACT)
+-- ══════════════════════════════════════════════
+local espConfig = {
+    Enabled         = true,
+    TeamCheck       = false, -- Mis sur false par défaut pour Brookhaven
+    VisibilityCheck = true,
+    DistanceCheck   = true,
+    MaxDistance     = 800,
+    BoxColor        = Color3.fromRGB(80, 220, 60),
+    HiddenColor     = Color3.fromRGB(220, 60, 60),
+    TracerColor     = Color3.fromRGB(100, 255, 70)
+}
+
 local RenderCache = {}
 local RaycastParamsInstance = RaycastParams.new()
 RaycastParamsInstance.FilterType = Enum.RaycastFilterType.Exclude
 
---====================================================================
--- FONCTIONS UTILITAIRES & LOGIQUE INTERNE
---====================================================================
+-- ══════════════════════════════════════════════
+--  HELPERS GUI NATIVES
+-- ══════════════════════════════════════════════
+local function corner(r, p)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 8)
+    c.Parent = p
+    return c
+end
+local function stroke(col, thick, p)
+    local s = Instance.new("UIStroke")
+    s.Color = col or C.BORDER
+    s.Thickness = thick or 1
+    s.Parent = p
+    return s
+end
+local function lbl(props, parent)
+    local l = Instance.new("TextLabel")
+    l.BackgroundTransparency = 1
+    l.Font = Enum.Font.GothamSemibold
+    l.TextColor3 = C.TEXT
+    l.TextSize = 13
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    for k,v in pairs(props) do l[k]=v end
+    l.Parent = parent
+    return l
+end
+local function frame(props, parent)
+    local f = Instance.new("Frame")
+    f.BorderSizePixel = 0
+    for k,v in pairs(props) do f[k]=v end
+    f.Parent = parent
+    return f
+end
+local function btn(props, parent)
+    local b = Instance.new("TextButton")
+    b.BorderSizePixel = 0
+    b.Font = Enum.Font.GothamBold
+    b.TextColor3 = C.TEXT_BRIGHT
+    b.TextSize = 13
+    b.AutoButtonColor = false
+    for k,v in pairs(props) do b[k]=v end
+    b.Parent = parent
+    return b
+end
 
-local function IsAlive(player)
-    return player.Character 
-        and player.Character:FindFirstChild("HumanoidRootPart") 
-        and player.Character:FindFirstChild("Humanoid") 
-        and player.Character.Humanoid.Health > 0
+-- ══════════════════════════════════════════════
+--  SCREEN GUI PRINCIPAL
+-- ══════════════════════════════════════════════
+local sg = Instance.new("ScreenGui")
+sg.Name = "AetherHubVisuals"
+sg.ResetOnSpawn = false
+sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+sg.DisplayOrder = 999
+sg.Parent = player:WaitForChild("PlayerGui")
+
+-- Conteneur sécurisé pour le rendu des lignes et boîtes (évite les bugs d'affichage)
+local ESPContainer = Instance.new("Folder")
+ESPContainer.Name = "ESPContainer"
+ESPContainer.Parent = sg
+
+-- Fenêtre principale
+local win = frame({
+    Size = UDim2.new(0, 560, 0, 400),
+    Position = UDim2.new(0.5, -280, 0.5, -200),
+    BackgroundColor3 = C.BG,
+    Active = true,
+    Draggable = true,
+}, sg)
+corner(10, win)
+stroke(C.GREEN_DIM, 1.5, win)
+
+-- Barre titre
+local titleBar = frame({
+    Size = UDim2.new(1, 0, 0, 38),
+    BackgroundColor3 = C.SIDEBAR,
+}, win)
+corner(10, titleBar)
+
+local titleFix = frame({
+    Size = UDim2.new(1, 0, 0, 10),
+    Position = UDim2.new(0, 0, 1, -10),
+    BackgroundColor3 = C.SIDEBAR,
+}, titleBar)
+
+lbl({
+    Text = "⬡  Aether Hub — Shooter Edition",
+    Size = UDim2.new(0, 300, 1, 0),
+    Position = UDim2.new(0, 12, 0, 0),
+    TextColor3 = C.GREEN,
+    TextSize = 14,
+    Font = Enum.Font.GothamBold,
+}, titleBar)
+
+-- Bouton X (Fermeture)
+local closeB = btn({
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -36, 0, 5),
+    BackgroundColor3 = Color3.fromRGB(40, 20, 20),
+    Text = "✕",
+    TextSize = 14,
+    TextColor3 = C.RED,
+}, titleBar)
+corner(6, closeB)
+
+-- ── Sidebar ──────────────────────────────────
+local sidebar = frame({
+    Size = UDim2.new(0, 160, 1, -38),
+    Position = UDim2.new(0, 0, 0, 38),
+    BackgroundColor3 = C.SIDEBAR,
+}, win)
+
+frame({
+    Size = UDim2.new(0, 1, 1, 0),
+    Position = UDim2.new(1, 0, 0, 0),
+    BackgroundColor3 = C.BORDER,
+}, sidebar)
+
+-- Nav items
+local navItems = {
+    { icon = "⌂", label = "Home",        id = "home" },
+    { icon = "👁", label = "Visuals/ESP", id = "visuals" },
+}
+
+local navBtns = {}
+local navContainer = frame({
+    Size = UDim2.new(1, 0, 1, -50),
+    Position = UDim2.new(0, 0, 0, 20),
+    BackgroundTransparency = 1,
+}, sidebar)
+
+local navLayout = Instance.new("UIListLayout")
+navLayout.Padding = UDim.new(0, 4)
+navLayout.Parent = navContainer
+
+for _, item in ipairs(navItems) do
+    local nb = btn({
+        Size = UDim2.new(1, -16, 0, 40),
+        BackgroundColor3 = C.SIDEBAR,
+        Text = "",
+    }, navContainer)
+    corner(6, nb)
+
+    lbl({
+        Text = item.icon,
+        Size = UDim2.new(0, 30, 1, 0),
+        Position = UDim2.new(0, 8, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextColor3 = C.TEXT_DIM,
+        TextSize = 16,
+    }, nb)
+    
+    lbl({
+        Text = "| " .. item.label,
+        Size = UDim2.new(1, -44, 1, 0),
+        Position = UDim2.new(0, 38, 0, 0),
+        TextColor3 = C.TEXT_DIM,
+        TextSize = 13,
+    }, nb)
+
+    navBtns[item.id] = nb
+end
+
+local navPad = Instance.new("UIPadding")
+navPad.PaddingLeft = UDim.new(0, 8)
+navPad.PaddingRight = UDim.new(0, 8)
+navPad.Parent = navContainer
+
+-- ── Zone contenu ─────────────────────────────
+local content = frame({
+    Size = UDim2.new(1, -160, 1, -38),
+    Position = UDim2.new(0, 160, 0, 38),
+    BackgroundTransparency = 1,
+}, win)
+
+local pages = {}
+local function newPage(id)
+    local p = frame({
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false,
+    }, content)
+    pages[id] = p
+    return p
+end
+
+-- Row créateur type Aether Hub
+local function makeRow(parent, yOff, title, sub, rightWidget)
+    local row = frame({
+        Size = UDim2.new(1, -20, 0, 52),
+        Position = UDim2.new(0, 10, 0, yOff),
+        BackgroundColor3 = C.ROW,
+    }, parent)
+    corner(8, row)
+    stroke(Color3.fromRGB(35, 50, 30), 1, row)
+
+    lbl({ Text = title, Size = UDim2.new(1, -110, 0, 24), Position = UDim2.new(0, 14, 0, 6), TextColor3 = C.TEXT_BRIGHT, TextSize = 13, Font = Enum.Font.GothamBold }, row)
+    lbl({ Text = sub, Size = UDim2.new(1, -110, 0, 20), Position = UDim2.new(0, 14, 0, 28), TextColor3 = C.TEXT_DIM, TextSize = 11 }, row)
+
+    if rightWidget then rightWidget(row) end
+    return row
+end
+
+local function makeToggle(parent, initVal, onChange)
+    local state = initVal or false
+    local track = frame({
+        Size = UDim2.new(0, 44, 0, 24),
+        Position = UDim2.new(1, -55, 0.5, -12),
+        BackgroundColor3 = state and C.GREEN or C.PANEL,
+    }, parent)
+    corner(20, track)
+    stroke(C.BORDER, 1, track)
+
+    local knob = frame({
+        Size = UDim2.new(0, 18, 0, 18),
+        Position = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+        BackgroundColor3 = C.TEXT_BRIGHT,
+    }, track)
+    corner(20, knob)
+
+    local clickZone = btn({ Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Text = "" }, track)
+    clickZone.MouseButton1Click:Connect(function()
+        state = not state
+        TweenService:Create(track, TweenInfo.new(0.12), {BackgroundColor3 = state and C.GREEN or C.PANEL}):Play()
+        TweenService:Create(knob, TweenInfo.new(0.12), {Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)}):Play()
+        if onChange then onChange(state) end
+    end)
+end
+
+-- ══════════════════════════════════════════════
+--  PAGE 1 : HOME
+-- ══════════════════════════════════════════════
+local pHome = newPage("home")
+lbl({ Text = "Home", Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 14, 0, 10), TextColor3 = C.ACCENT, TextSize = 15, Font = Enum.Font.GothamBold }, pHome)
+
+local welcomeBox = frame({ Size = UDim2.new(1, -20, 0, 80), Position = UDim2.new(0, 10, 0, 40), BackgroundColor3 = C.GREEN_DARK }, pHome)
+corner(10, welcomeBox)
+stroke(C.GREEN_DIM, 1, welcomeBox)
+
+lbl({ Text = "⚡ Aether Hub — ESP Visuals chargé", Size = UDim2.new(1,-20,0,28), Position = UDim2.new(0,12,0,8), TextColor3 = C.GREEN, TextSize = 14, Font = Enum.Font.GothamBold }, welcomeBox)
+lbl({ Text = "Boîtes 2D dynamiques & Tracers hautes performances.\nAllez dans l'onglet 'Visuals/ESP' pour configurer.", Size = UDim2.new(1,-20,0,40), Position = UDim2.new(0,12,0,36), TextColor3 = C.TEXT_DIM, TextSize = 11 }, welcomeBox)
+
+-- ══════════════════════════════════════════════
+--  PAGE 2 : VISUALS (ESP CONTROLS)
+-- ══════════════════════════════════════════════
+local pVisuals = newPage("visuals")
+lbl({ Text = "Options de Vision (ESP)", Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 14, 0, 10), TextColor3 = C.ACCENT, TextSize = 15, Font = Enum.Font.GothamBold }, pVisuals)
+
+local r_esp = makeRow(pVisuals, 40, "🟢 Activer l'ESP", "Affiche les boîtes et les tracés", function(r)
+    makeToggle(r, espConfig.Enabled, function(v) espConfig.Enabled = v end)
+end)
+
+local r_team = makeRow(pVisuals, 98, "👥 Vérification d'Équipe", "Cache les membres de votre équipe", function(r)
+    makeToggle(r, espConfig.TeamCheck, function(v) espConfig.TeamCheck = v end)
+end)
+
+local r_wall = makeRow(pVisuals, 156, "🧱 Vérification des Murs", "Change de couleur si l'ennemi est caché", function(r)
+    makeToggle(r, espConfig.VisibilityCheck, function(v) espConfig.VisibilityCheck = v end)
+end)
+
+local r_dist = makeRow(pVisuals, 214, "📏 Limite de Distance", "Optimise le rendu à moins de 800 studs", function(r)
+    makeToggle(r, espConfig.DistanceCheck, function(v) espConfig.DistanceCheck = v end)
+end)
+
+-- ══════════════════════════════════════════════
+--  MOTEUR DE RENDU ESP (UI COMPATIBLE DELTA)
+-- ══════════════════════════════════════════════
+local function IsAlive(p)
+    return p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0
 end
 
 local function CheckVisibility(character, origin)
     local targetPart = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
     if not targetPart then return false end
-    
-    RaycastParamsInstance.FilterDescendantsInstances = {LocalPlayer.Character, character}
-    
+    RaycastParamsInstance.FilterDescendantsInstances = {player.Character, character}
     local direction = targetPart.Position - origin
     local raycastResult = Workspace:Raycast(origin, direction, RaycastParamsInstance)
-    
-    return raycastResult == nil -- Retourne vrai si aucun mur ne bloque le rayon
+    return raycastResult == nil
 end
 
---====================================================================
--- STRUCTURE DE RENDU POUR LES JOUEURS (Drawing API)
---====================================================================
-local PlayerVisual = {}
-PlayerVisual.__index = PlayerVisual
+-- Création des éléments de rendu
+local function CreateESP(targetPlayer)
+    if RenderCache[targetPlayer] then return end
 
-function PlayerVisual.new(player)
-    local self = setmetatable({}, PlayerVisual)
-    self.Player = player
-    
-    -- Création de la boîte 2D
-    self.Box = Drawing.new("Square")
-    self.Box.Visible = false
-    self.Box.Thickness = Config.Visuals.Thickness
-    self.Box.Color = Config.Visuals.BoxColor
-    self.Box.Filled = false
-    self.Box.Transparency = Config.Visuals.Transparency
-    
-    -- Création de la ligne (Tracer)
-    self.Tracer = Drawing.new("Line")
-    self.Tracer.Visible = false
-    self.Tracer.Thickness = Config.Visuals.Thickness
-    self.Tracer.Color = Config.Visuals.TracerColor
-    self.Tracer.Transparency = Config.Visuals.Transparency
-    
-    return self
+    local objects = {}
+
+    -- Boîte en éléments UI natifs (Parfaitement stable)
+    local box = Instance.new("Frame")
+    box.BackgroundTransparency = 1
+    box.BorderSizePixel = 0
+    box.Visible = false
+    box.Parent = ESPContainer
+    stroke(espConfig.BoxColor, 1.5, box)
+    objects.Box = box
+
+    -- Ligne en élément UI natif (Tracer via Frame orientée)
+    local tracer = Instance.new("Frame")
+    tracer.AnchorPoint = Vector2.new(0.5, 0)
+    tracer.BorderSizePixel = 0
+    tracer.BackgroundColor3 = espConfig.TracerColor
+    tracer.Visible = false
+    tracer.Parent = ESPContainer
+    objects.Tracer = tracer
+
+    RenderCache[targetPlayer] = objects
 end
 
-function PlayerVisual:Update()
-    -- Validation des conditions d'affichage globale et locale
-    if not Config.Enabled or not IsAlive(self.Player) or not IsAlive(LocalPlayer) then
-        self:Hide()
-        return
-    end
-    
-    -- Vérification d'équipe (Team Check)
-    if Config.TeamCheck and self.Player.Team == LocalPlayer.Team then
-        self:Hide()
-        return
-    end
-    
-    local character = self.Player.Character
-    local rootPart = character.HumanoidRootPart
-    local cameraPos = Camera.CFrame.Position
-    
-    -- Vérification de distance
-    local distance = (rootPart.Position - cameraPos).Magnitude
-    if Config.DistanceCheck and distance > Config.MaxDistance then
-        self:Hide()
-        return
-    end
-    
-    -- Projection de l'espace 3D vers l'écran 2D
-    local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-    if not onScreen then
-        self:Hide()
-        return
-    end
-    
-    -- Calcul précis de la taille de la boîte en fonction de la distance
-    local extentsHeight = 5.2
-    local scaleFactor = (extentsHeight * Camera.ViewportSize.Y) / (2 * distance * math.tan(math.rad(Camera.FieldOfView / 2)))
-    local boxWidth = scaleFactor * 0.85
-    local boxHeight = scaleFactor * 1.15
-    
-    local screenX = rootPos.X - (boxWidth / 2)
-    local screenY = rootPos.Y - (boxHeight / 2)
-    
-    -- Calcul de la visibilité (Raycast)
-    local isVisible = true
-    if Config.VisibilityCheck then
-        isVisible = CheckVisibility(character, cameraPos)
-    end
-    
-    -- Mise à jour de la Boîte
-    self.Box.Size = Vector2.new(boxWidth, boxHeight)
-    self.Box.Position = Vector2.new(screenX, screenY)
-    self.Box.Color = isVisible and Config.Visuals.BoxColor or Config.Visuals.HiddenColor
-    self.Box.Visible = true
-    
-    -- Mise à jour du Tracer (Part du haut-milieu de l'écran vers le haut de la boîte)
-    self.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, 0)
-    self.Tracer.To = Vector2.new(rootPos.X, screenY)
-    self.Tracer.Color = Config.Visuals.TracerColor
-    self.Tracer.Visible = true
-end
-
-function PlayerVisual:Hide()
-    self.Box.Visible = false
-    self.Tracer.Visible = false
-end
-
-function PlayerVisual:Destroy()
-    self:Hide()
-    self.Box:Remove()
-    self.Tracer:Remove()
-end
-
---====================================================================
--- GESTIONNAIRE DE CONNEXIONS DES JOUEURS
---====================================================================
-local function CharacterAdded(player)
-    if player == LocalPlayer then return end
-    if not RenderCache[player] then
-        RenderCache[player] = PlayerVisual.new(player)
+local function RemoveESP(targetPlayer)
+    if RenderCache[targetPlayer] then
+        if RenderCache[targetPlayer].Box then RenderCache[targetPlayer].Box:Destroy() end
+        if RenderCache[targetPlayer].Tracer then RenderCache[targetPlayer].Tracer:Destroy() end
+        RenderCache[targetPlayer] = nil
     end
 end
 
-local function PlayerAdded(player)
-    player.CharacterAdded:Connect(function()
-        task.wait(0.3) -- Attente du chargement complet des membres du personnage
-        CharacterAdded(player)
-    end)
-    if player.Character then
-        CharacterAdded(player)
-    end
-end
-
-local function PlayerRemoving(player)
-    if RenderCache[player] then
-        RenderCache[player]:Destroy()
-        RenderCache[player] = nil
-    end
-end
-
--- Initialisation de la liste des joueurs existants
-for _, player in ipairs(Players:GetPlayers()) do
-    PlayerAdded(player)
-end
-
-Players.PlayerAdded:Connect(PlayerAdded)
-Players.PlayerRemoving:Connect(PlayerRemoving)
-
--- Boucle de Rendu cadencée sur le rafraîchissement de l'écran (RenderStepped)
+-- Boucle de calcul synchrone sur l'écran
 RunService.RenderStepped:Connect(function()
-    for _, visualObject in pairs(RenderCache) do
-        pcall(function()
-            visualObject:Update()
-        end)
-    end
-end)
-
---====================================================================
--- INTERFACE GRAPHIQUE (PANEL DE CONTROLE NEON MOVIZBLE)
---====================================================================
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NeonVisualsMenu"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
-
--- Panel Principal
-local MainPanel = Instance.new("Frame")
-MainPanel.Name = "MainPanel"
-MainPanel.Parent = ScreenGui
-MainPanel.Size = UDim2.new(0, 220, 0, 270)
-MainPanel.Position = UDim2.new(0.05, 0, 0.2, 0)
-MainPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-MainPanel.BorderSizePixel = 2
-MainPanel.BorderColor3 = Color3.fromRGB(0, 255, 140)
-
--- Titre du Panel
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Name = "TitleLabel"
-TitleLabel.Parent = MainPanel
-TitleLabel.Size = UDim2.new(1, 0, 0, 40)
-TitleLabel.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
-TitleLabel.BorderSizePixel = 0
-TitleLabel.Text = "  CYBER VISUALS v1.0"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 13
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Fonction pour créer des boutons On/Off stylisés
-local function CreateToggleButton(name, text, positionY, defaultConfigValue, callback)
-    local Button = Instance.new("TextButton")
-    Button.Name = name
-    Button.Parent = MainPanel
-    Button.Size = UDim2.new(1, -20, 0, 35)
-    Button.Position = UDim2.new(0, 10, 0, positionY)
-    Button.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    Button.BorderSizePixel = 1
-    Button.Font = Enum.Font.GothamSemibold
-    Button.TextSize = 12
-    
-    local function UpdateStyle(state)
-        if state then
-            Button.Text = text .. " : ACTIF"
-            Button.TextColor3 = Color3.fromRGB(0, 255, 140)
-            Button.BorderColor3 = Color3.fromRGB(0, 255, 140)
-        else
-            Button.Text = text .. " : INACTIF"
-            Button.TextColor3 = Color3.fromRGB(255, 50, 70)
-            Button.BorderColor3 = Color3.fromRGB(255, 50, 70)
+    for targetPlayer, visual in pairs(RenderCache) do
+        if not espConfig.Enabled or not IsAlive(targetPlayer) or not IsAlive(player) then
+            visual.Box.Visible = false
+            visual.Tracer.Visible = false
+            continue
         end
-    end
-    
-    local active = defaultConfigValue
-    UpdateStyle(active)
-    
-    Button.MouseButton1Click:Connect(function()
-        active = not active
-        UpdateStyle(active)
-        callback(active)
-    end)
-    
-    return Button
-end
 
--- Création des contrôles dans le Panel
-CreateToggleButton("ToggleMain", "ESP SYSTEM", 55, Config.Enabled, function(state)
-    Config.Enabled = state
-    if not state then
-        for _, visualObject in pairs(RenderCache) do visualObject:Hide() end
-    end
-end)
+        if espConfig.TeamCheck and targetPlayer.Team == player.Team then
+            visual.Box.Visible = false
+            visual.Tracer.Visible = false
+            continue
+        end
 
-CreateToggleButton("ToggleTeam", "TEAM CHECK", 100, Config.TeamCheck, function(state)
-    Config.TeamCheck = state
-end)
+        local character = targetPlayer.Character
+        local rootPart = character.HumanoidRootPart
+        local cameraPos = Camera.CFrame.Position
+        local distance = (rootPart.Position - cameraPos).Magnitude
 
-CreateToggleButton("ToggleVis", "WALL CHECK", 145, Config.VisibilityCheck, function(state)
-    Config.VisibilityCheck = state
-end)
+        if espConfig.DistanceCheck and distance > espConfig.MaxDistance then
+            visual.Box.Visible = false
+            visual.Tracer.Visible = false
+            continue
+        end
 
-CreateToggleButton("ToggleDist", "DIST LIMIT", 190, Config.DistanceCheck, function(state)
-    Config.DistanceCheck = state
-end)
+        local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+        if not onScreen then
+            visual.Box.Visible = false
+            visual.Tracer.Visible = false
+            continue
+        end
 
--- Note d'information en bas du menu
-local FooterLabel = Instance.new("TextLabel")
-FooterLabel.Parent = MainPanel
-FooterLabel.Size = UDim2.new(1, 0, 0, 20)
-FooterLabel.Position = UDim2.new(0, 0, 1, -25)
-FooterLabel.BackgroundTransparency = 1
-FooterLabel.Text = "Insert / Mettez le script dans votre exécuteur"
-FooterLabel.TextColor3 = Color3.fromRGB(100, 100, 110)
-FooterLabel.TextSize = 9
-FooterLabel.Font = Enum.Font.SourceSansItalic
+        -- Calcul de taille de la boîte proportionnelle
+        local scaleFactor = (5.2 * Camera.ViewportSize.Y) / (2 * distance * math.tan(math.rad(Camera.FieldOfView / 2)))
+        local boxWidth, boxHeight = scaleFactor * 0.85, scaleFactor * 1.15
 
---====================================================================
--- SYSTÈME DRAG-AND-DROP (Glisser-Déposer le Menu)
---====================================================================
-local dragging, dragInput, dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    MainPanel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-MainPanel.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainPanel.Position
+        -- Placement de la boîte UI
+        visual.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
+        visual.Box.Position = UDim2.new(0, rootPos.X - (boxWidth / 2), 0, rootPos.Y - (boxHeight / 2))
         
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+        -- Changement de couleur dynamique (murs)
+        local isVisible = true
+        if espConfig.VisibilityCheck then
+            isVisible = CheckVisibility(character, cameraPos)
+        end
+        visual.Box:FindFirstChildOfClass("UIStroke").Color = isVisible and espConfig.BoxColor or espConfig.HiddenColor
+        visual.Box.Visible = true
+
+        -- Dessin mathématique du Tracer (De l'UI haut-milieu vers l'ennemi)
+        local startX, startY = Camera.ViewportSize.X / 2, 0
+        local endX, endY = rootPos.X, rootPos.Y - (boxHeight / 2)
+
+        local distanceX = endX - startX
+        local distanceY = endY - startY
+        local lineLength = math.sqrt(distanceX^2 + distanceY^2)
+        local angle = math.atan2(distanceY, distanceX)
+
+        visual.Tracer.Size = UDim2.new(0, 1.5, 0, lineLength)
+        visual.Tracer.Position = UDim2.new(0, startX, 0, startY)
+        visual.Tracer.Rotation = math.deg(angle) - 90
+        visual.Tracer.Visible = true
     end
 end)
 
-MainPanel.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
+-- ══════════════════════════════════════════════
+--  INITIALISATION ET SUPPORTS JOUEURS
+-- ══════════════════════════════════════════════
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= player then CreateESP(p) end
+end
+Players.PlayerAdded:Connect(function(p)
+    if p ~= player then CreateESP(p) end
+end)
+Players.PlayerRemoving:Connect(function(p)
+    RemoveESP(p)
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
+-- ══════════════════════════════════════════════
+--  NAVIGATION & NETTOYAGE
+-- ══════════════════════════════════════════════
+local function switchPage(id)
+    for pid, p in pairs(pages) do p.Visible = (pid == id) end
+    for nid, nb in pairs(navBtns) do
+        local active = (nid == id)
+        TweenService:Create(nb, TweenInfo.new(0.12), {BackgroundColor3 = active and C.GREEN_DARK or C.SIDEBAR}):Play()
     end
-end)
+end
 
-print("[Cyber Visuals] Chargé avec succès. Menu disponible à l'écran.")
+switchPage("home")
+
+for id, nb in pairs(navBtns) do
+    nb.MouseButton1Click:Connect(function() switchPage(id) end)
+end
+
+closeB.MouseButton1Click:Connect(function()
+    espConfig.Enabled = false
+    sg:Destroy()
+end)
