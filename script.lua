@@ -1,7 +1,7 @@
 -- ╔══════════════════════════════════════════════╗
 -- ║         SILENTVOID HUB & MULTI GAMES         ║
 -- ║  Style : Dark Premium Noir Semi-Transparent  ║
--- ║       Fix Tracers Mobile & Custom RGB        ║
+-- ║        ESP, AIMBOT, FLY, NOCLIP & MINIMIZE   ║
 -- ╚══════════════════════════════════════════════╝
 
 local Players       = game:GetService("Players")
@@ -13,8 +13,16 @@ local Workspace     = game:GetService("Workspace")
 local player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+-- Antécédent de nettoyage (Permet de relancer le script sans bug)
+if game:GetService("CoreGui"):FindFirstChild("SilentVoidHubV4") then
+    game:GetService("CoreGui").SilentVoidHubV4:Destroy()
+end
+if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidHubV4") then
+    player.PlayerGui.SilentVoidHubV4:Destroy()
+end
+
 -- ══════════════════════════════════════════════
---  DESIGN ET COULEURS INITIALES
+--  DESIGN ET CONFIGURATION (Décoché par défaut)
 -- ══════════════════════════════════════════════
 local C = {
     BG          = Color3.fromRGB(10, 10, 12),      
@@ -28,24 +36,28 @@ local C = {
     BORDER      = Color3.fromRGB(40, 40, 45),      
 }
 
--- Tout est décoché par défaut au démarrage
-local espConfig = {
-    Enabled         = false,
-    BoxVisible      = false,
-    TracerVisible   = false,
-    ShowName        = false,
-    ShowDistance    = false,
-    TeamCheck       = false,
+local config = {
+    -- Visuals
+    EspEnabled     = false,
+    BoxVisible     = false,
+    TracerVisible  = false,
+    ShowName       = false,
+    ShowDistance   = false,
     
-    -- Valeurs de base pour le créateur RGB personnalisé
-    R = 0,
-    G = 210,
-    B = 255
+    -- Combat
+    AimbotEnabled  = false,
+    
+    -- Fun
+    FlyEnabled     = false,
+    FlySpeed       = 50,
+    NoClipEnabled  = false,
+    
+    -- Couleurs par défaut
+    R = 0, G = 210, B = 255
 }
 
--- Fonction pour obtenir la couleur personnalisée choisie par le joueur
 local function GetCustomColor()
-    return Color3.fromRGB(espConfig.R, espConfig.G, espConfig.B)
+    return Color3.fromRGB(config.R, config.G, config.B)
 end
 
 local RenderCache = {}
@@ -101,10 +113,10 @@ local function btn(props, parent)
 end
 
 -- ══════════════════════════════════════════════
---  INTERFACE GRAPHIQUE PRINCIPALE
+--  CREATION DES INTERFACES GRAPHICK
 -- ══════════════════════════════════════════════
 local sg = Instance.new("ScreenGui")
-sg.Name = "SilentVoidHubV3"
+sg.Name = "SilentVoidHub V1"
 sg.ResetOnSpawn = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 sg.DisplayOrder = 999
@@ -112,6 +124,7 @@ sg.Parent = player:WaitForChild("PlayerGui")
 
 local ESPContainer = frame({ Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1 }, sg)
 
+-- Fenêtre principale
 local win = frame({
     Size = UDim2.new(0, 560, 0, 420),
     Position = UDim2.new(0.5, -280, 0.5, -210),
@@ -123,15 +136,31 @@ local win = frame({
 corner(10, win)
 stroke(C.BORDER, 1.5, win)
 
+-- Bouton de réouverture (Discret)
+local openB = btn({
+    Size = UDim2.new(0, 110, 0, 32),
+    Position = UDim2.new(0, 10, 0, 10),
+    BackgroundColor3 = C.BG,
+    BackgroundTransparency = 0.3,
+    Text = "SV Hub 👁",
+    Visible = false
+}, sg)
+corner(6, openB)
+stroke(C.CYAN, 1, openB)
+
 local titleBar = frame({ Size = UDim2.new(1, 0, 0, 42), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 0.25 }, win)
 corner(10, titleBar)
-
 frame({ Size = UDim2.new(1, 0, 0, 10), Position = UDim2.new(0, 0, 1, -10), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 0.25 }, titleBar)
 
-lbl({ Text = " ✕  SilentVoid Hub & Multi Games", Size = UDim2.new(0, 400, 1, 0), Position = UDim2.new(0, 12, 0, 0), TextColor3 = C.WHITE, TextSize = 14, Font = Enum.Font.GothamBold }, titleBar)
+lbl({ Text = " ✕  SilentVoid Hub & Multi Games", Size = UDim2.new(0, 350, 1, 0), Position = UDim2.new(0, 12, 0, 0), TextColor3 = C.WHITE, TextSize = 14, Font = Enum.Font.GothamBold }, titleBar)
 
+-- Bouton Fermer (Croix)
 local closeB = btn({ Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -38, 0, 6), BackgroundColor3 = Color3.fromRGB(30, 15, 15), Text = "✕", TextColor3 = C.RED }, titleBar)
 corner(6, closeB)
+
+-- Bouton Réduire (Moins)
+local minimizeB = btn({ Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -74, 0, 6), BackgroundColor3 = Color3.fromRGB(20, 20, 25), Text = "—", TextColor3 = C.WHITE }, titleBar)
+corner(6, minimizeB)
 
 -- Sidebar
 local sidebar = frame({ Size = UDim2.new(0, 160, 1, -42), Position = UDim2.new(0, 0, 0, 42), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 0.3 }, win)
@@ -148,16 +177,25 @@ local navBtns = {}
 local function addTab(id, icon, name)
     local nb = btn({ Size = UDim2.new(1, -16, 0, 38), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 1, Text = "" }, navContainer)
     corner(6, nb)
-    lbl({ Text = icon, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 8, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = C.GRAY }, nb)
+    
+    -- Indicateur lumineux sur la catégorie active
+    local indicator = frame({ Size = UDim2.new(0, 4, 0, 16), Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = C.CYAN, BackgroundTransparency = 1 }, nb)
+    corner(2, indicator)
+
+    lbl({ Text = icon, Size = UDim2.new(0, 24, 1, 0), Position = UDim2.new(0, 10, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = C.GRAY }, nb)
     lbl({ Text = "| " .. name, Size = UDim2.new(1, -44, 1, 0), Position = UDim2.new(0, 38, 0, 0), TextColor3 = C.GRAY }, nb)
+    
     local p = frame({ Size = UDim2.new(1, -160, 1, -42), Position = UDim2.new(0, 160, 0, 42), BackgroundTransparency = 1, Visible = false }, win)
-    pages[id] = p; navBtns[id] = nb
+    
+    pages[id] = p
+    navBtns[id] = {btn = nb, ind = indicator}
     return p
 end
 
-local pHome = addTab("home", "⌂", "Accueil")
+local pHome    = addTab("home", "⌂", "Accueil")
 local pVisuals = addTab("visuals", "👁", "Visuals / ESP")
-local pColors = addTab("colors", "🎨", "Couleurs RGB")
+local pCombat  = addTab("combat", "⚔", "Combat / Aimbot")
+local pFun     = addTab("fun", "🚀", "Options Fun")
 
 -- Créateur de Toggles
 local function makeRow(parent, yOff, title, sub, initVal, onChange)
@@ -180,80 +218,30 @@ local function makeRow(parent, yOff, title, sub, initVal, onChange)
     end)
 end
 
--- Créateur de Sliders de Couleur (Pour configurer ton RGB proprement sur Mobile)
-local function makeColorSlider(parent, yOff, channelName, maxVal, initVal, onSliderChange)
-    local row = frame({ Size = UDim2.new(1, -20, 0, 40), Position = UDim2.new(0, 10, 0, yOff), BackgroundColor3 = C.ROW, BackgroundTransparency = 0.2 }, parent)
-    corner(6, row); stroke(C.BORDER, 1, row)
-    
-    local title = lbl({ Text = channelName .. " : " .. initVal, Size = UDim2.new(0, 80, 1, 0), Position = UDim2.new(0, 12, 0, 0), Font = Enum.Font.GothamBold }, row)
-    
-    local slideBg = frame({ Size = UDim2.new(1, -120, 0, 6), Position = UDim2.new(0, 100, 0.5, -3), BackgroundColor3 = C.PANEL }, row)
-    corner(3, slideBg)
-    
-    local slideFill = frame({ Size = UDim2.new(initVal/maxVal, 0, 1, 0), BackgroundColor3 = C.CYAN }, slideBg)
-    corner(3, slideFill)
-    
-    local targetButton = btn({ Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "" }, slideBg)
-    
-    local function updateSlider(input)
-        local percentage = math.clamp((input.Position.X - slideBg.AbsolutePosition.X) / slideBg.AbsoluteSize.X, 0, 1)
-        slideFill.Size = UDim2.new(percentage, 0, 1, 0)
-        local calculatedValue = math.floor(percentage * maxVal)
-        title.Text = channelName .. " : " .. calculatedValue
-        onSliderChange(calculatedValue)
-    end
-    
-    local dragging = false
-    targetButton.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            updateSlider(input)
-        end
-    end)
-    UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            updateSlider(input)
-        end
-    end)
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-end
+-- ── UNIFICATION DES CATEGORIES EN PAGES DETAILEES ───────────────────────────
+-- PAGE HOME
+lbl({ Text = "SilentVoid Hub & Multi Games", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
+lbl({ Text = "Tout est désactivé au lancement.\nCliquez sur les catégories à gauche.\nL'indicateur bleu vous montre où vous êtes.\n\nUtilisez '—' pour cacher l'interface sans la couper !", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
 
--- ── CONTENU ACCUEIL ───────────────────────────
-lbl({ Text = "SilentVoid Hub", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
-lbl({ Text = "Correctif Tracers Mobile appliqué.\n\nTout est décoché au démarrage.\nCochez vos options dans 'Visuals / ESP'.\nCréez votre propre couleur dans 'Couleurs RGB'.", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
+-- PAGE VISUALS
+local scrVis = Instance.new("ScrollingFrame")
+scrVis.Size = UDim2.new(1, 0, 1, -10); scrVis.BackgroundTransparency = 1; scrVis.BorderSizePixel = 0; scrVis.CanvasSize = UDim2.new(0, 0, 0, 300); scrVis.Parent = pVisuals
+makeRow(scrVis, 10, "Activer l'ESP Global", "Doit être coché pour voir les éléments", config.EspEnabled, function(v) config.EspEnabled = v end)
+makeRow(scrVis, 65, "Afficher les Boîtes (Boxes)", "Cadre autour des vrais membres", config.BoxVisible, function(v) config.BoxVisible = v end)
+makeRow(scrVis, 120, "Afficher les Lignes (Tracers)", "Ligne droite parfaite depuis le haut", config.TracerVisible, function(v) config.TracerVisible = v end)
+makeRow(scrVis, 175, "Afficher le Pseudo", "Affiche le vrai nom au-dessus", config.ShowName, function(v) config.ShowName = v end)
+makeRow(scrVis, 230, "Afficher la Distance", "Affiche la distance exacte en Studs", config.ShowDistance, function(v) config.ShowDistance = v end)
 
--- ── CONTENU VISUALS ───────────────────────────
-local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, 0, 1, -10); scroll.BackgroundTransparency = 1; scroll.BorderSizePixel = 0
-scroll.CanvasSize = UDim2.new(0, 0, 0, 360); scroll.ScrollBarThickness = 2; scroll.Parent = pVisuals
+-- PAGE COMBAT
+makeRow(pCombat, 15, "Activer l'Aimbot Mobile", "Verrouille automatiquement la vue sur le plus proche", config.AimbotEnabled, function(v) config.AimbotEnabled = v end)
 
-makeRow(scroll, 10, "Activer l'ESP Global", "Doit être coché pour voir les éléments", espConfig.Enabled, function(v) espConfig.Enabled = v end)
-makeRow(scroll, 65, "Afficher les Boîtes (Boxes)", "Cadre autour des vrais membres de la map", espConfig.BoxVisible, function(v) espConfig.BoxVisible = v end)
-makeRow(scroll, 120, "Afficher les Lignes (Tracers)", "Ligne droite parfaite depuis le haut", espConfig.TracerVisible, function(v) espConfig.TracerVisible = v end)
-makeRow(scroll, 175, "Afficher le Pseudo", "Affiche le vrai nom au-dessus du joueur", espConfig.ShowName, function(v) espConfig.ShowName = v end)
-makeRow(scroll, 230, "Afficher la Distance", "Affiche la distance exacte en temps réel", espConfig.ShowDistance, function(v) espConfig.ShowDistance = v end)
-makeRow(scroll, 285, "Filtre d'Équipe", "Ignore les alliés", espConfig.TeamCheck, function(v) espConfig.TeamCheck = v end)
+-- PAGE FUN
+makeRow(pFun, 15, "Activer le Mode Fly", "Saute pour t'envoler, dirige avec le Joystick", config.FlyEnabled, function(v) config.FlyEnabled = v end)
+makeRow(pFun, 75, "Activer le NoClip", "Passe à travers les structures sans tomber sous le sol", config.NoClipEnabled, function(v) config.NoClipEnabled = v end)
 
--- ── CONTENU COULEURS RGB ──────────────────────
-lbl({ Text = "Créateur de couleur ESP personnalisée (RGB)", Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold }, pColors)
-
-local previewColor = frame({ Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0, 14, 0, 45), BackgroundColor3 = GetCustomColor() }, pColors)
-corner(8, previewColor); stroke(C.WHITE, 1, previewColor)
-
-local function updatePreview()
-    previewColor.BackgroundColor3 = GetCustomColor()
-end
-
-makeColorSlider(pColors, 120, "Rouge (R)", 255, espConfig.R, function(v) espConfig.R = v updatePreview() end)
-makeColorSlider(pColors, 165, "Vert (G)", 255, espConfig.G, function(v) espConfig.G = v updatePreview() end)
-makeColorSlider(pColors, 210, "Bleu (B)", 255, espConfig.B, function(v) espConfig.B = v updatePreview() end)
 
 -- ══════════════════════════════════════════════
---  MOTEUR ESP STABLE CORRIGÉ POUR MOBILE
+--  MOTEURS DE JEU (ESP, AIMBOT, FLY, NOCLIP)
 -- ══════════════════════════════════════════════
 local function IsPlayerValid(p)
     local char = p.Character
@@ -269,41 +257,46 @@ local function CreateVisualElements(p)
     stroke(GetCustomColor(), 1.5, box)
     elements.Box = box
     
-    -- Le Tracer utilise maintenant un Frame d'épaisseur fixe sans rotation compliquée (Correction mobile complète)
     local tracer = frame({ BackgroundColor3 = GetCustomColor(), Visible = false }, ESPContainer)
     elements.Tracer = tracer
     
-    local infoTag = lbl({ Size = UDim2.new(0, 200, 0, 30), Text = "", TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, Visible = false }, ESPContainer)
+    local infoTag = lbl({ Size = UDim2.new(0, 200, 0, 30), Text = "", TextSize = 11, TextXAlignment = Enum.TextXAlignment.Center, Visible = false }, ESPContainer)
     infoTag.Font = Enum.Font.GothamBold
-    stroke(Color3.fromRGB(0,0,0), 1.5, infoTag) -- Contour noir anti-aliasing pour mobile
+    stroke(Color3.fromRGB(0,0,0), 1.5, infoTag)
     elements.InfoTag = infoTag
     
     RenderCache[p] = elements
 end
 
-local function ClearVisualElements(p)
-    if RenderCache[p] then
-        if RenderCache[p].Box then RenderCache[p].Box:Destroy() end
-        if RenderCache[p].Tracer then RenderCache[p].Tracer:Destroy() end
-        if RenderCache[p].InfoTag then RenderCache[p].InfoTag:Destroy() end
-        RenderCache[p] = nil
+-- Récupération du joueur le plus proche pour l'Aimbot
+local function GetClosestPlayer()
+    local closest, maxDist = nil, math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and IsPlayerValid(p) and IsPlayerValid(player) then
+            local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist < maxDist then
+                maxDist = dist
+                closest = p
+            end
+        end
     end
+    return closest
 end
 
+-- Variables Fly
+local bodyGyro, bodyVelocity
+
+-- Boucle générale de rendu
 RunService.RenderStepped:Connect(function()
     local customColor = GetCustomColor()
     
+    -- MOTEUR ESP
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         if not RenderCache[p] then CreateVisualElements(p) end
         local visual = RenderCache[p]
         
-        if not espConfig.Enabled or not IsPlayerValid(p) or not IsPlayerValid(player) then
-            visual.Box.Visible = false; visual.Tracer.Visible = false; visual.InfoTag.Visible = false
-            continue
-        end
-        
-        if espConfig.TeamCheck and p.Team == player.Team then
+        if not config.EspEnabled or not IsPlayerValid(p) or not IsPlayerValid(player) then
             visual.Box.Visible = false; visual.Tracer.Visible = false; visual.InfoTag.Visible = false
             continue
         end
@@ -317,79 +310,135 @@ RunService.RenderStepped:Connect(function()
             local scale = (5.2 * Camera.ViewportSize.Y) / (2 * distance * math.tan(math.rad(Camera.FieldOfView / 2)))
             local w, h = scale * 0.85, scale * 1.15
             
-            -- 1. AFFICHAGE DES CADRES (BOXES)
-            if espConfig.BoxVisible then
+            if config.BoxVisible then
                 visual.Box.Size = UDim2.new(0, w, 0, h)
                 visual.Box.Position = UDim2.new(0, screenPos.X - (w / 2), 0, screenPos.Y - (h / 2))
                 visual.Box:FindFirstChildOfClass("UIStroke").Color = customColor
                 visual.Box.Visible = true
-            else
-                visual.Box.Visible = false
-            end
+            else visual.Box.Visible = false end
             
-            -- 2. AFFICHAGE DES LIGNES (TRACERS) — FIX MOBILE ABSOLU
-            if espConfig.TracerVisible then
-                local startX, startY = Camera.ViewportSize.X / 2, 0 -- Haut-Milieu exact
-                local endX, endY = screenPos.X, screenPos.Y - (h / 2) -- Tête du joueur
-                
-                local dx = endX - startX
-                local dy = endY - startY
+            if config.TracerVisible then
+                local startX, startY = Camera.ViewportSize.X / 2, 0
+                local endX, endY = screenPos.X, screenPos.Y - (h / 2)
+                local dx, dy = endX - startX, endY - startY
                 local length = math.sqrt(dx^2 + dy^2)
                 
-                -- Positionnement par géométrie vectorielle directe pour éviter les sauts d'écrans mobiles
                 visual.Tracer.Size = UDim2.new(0, length, 0, 2)
                 visual.Tracer.Position = UDim2.new(0, startX + dx / 2, 0, startY + dy / 2)
                 visual.Tracer.AnchorPoint = Vector2.new(0.5, 0.5)
                 visual.Tracer.Rotation = math.deg(math.atan2(dy, dx))
                 visual.Tracer.BackgroundColor3 = customColor
                 visual.Tracer.Visible = true
-            else
-                visual.Tracer.Visible = false
-            end
+            else visual.Tracer.Visible = false end
             
-            -- 3. AFFICHAGE DES PSEUDOS ET DISTANCES
-            if espConfig.ShowName or espConfig.ShowDistance then
-                local labelText = ""
-                if espConfig.ShowName then labelText = labelText .. p.Name end
-                if espConfig.ShowDistance then
-                    if labelText ~= "" then labelText = labelText .. " [" .. math.floor(distance) .. "s]" else labelText = math.floor(distance) .. "s" end
-                end
-                
-                visual.InfoTag.Text = labelText
+            if config.ShowName or config.ShowDistance then
+                local txt = ""
+                if config.ShowName then txt = txt .. p.Name end
+                if config.ShowDistance then txt = (txt ~= "" and txt .. " | " or "") .. math.floor(distance) .. "s" end
+                visual.InfoTag.Text = txt
                 visual.InfoTag.TextColor3 = customColor
                 visual.InfoTag.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 25)
                 visual.InfoTag.Visible = true
-            else
-                visual.InfoTag.Visible = false
-            end
+            else visual.InfoTag.Visible = false end
         else
             visual.Box.Visible = false; visual.Tracer.Visible = false; visual.InfoTag.Visible = false
         end
     end
+    
+    -- MOTEUR AIMBOT
+    if config.AimbotEnabled then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+        end
+    end
+    
+    -- MOTEUR NOCLIP (Vérification et exécution sécurisée du sol)
+    if config.NoClipEnabled and IsPlayerValid(player) then
+        for _, child in ipairs(player.Character:GetChildren()) do
+            if child:IsA("BasePart") and child.Name ~= "HumanoidRootPart" then
+                child.CanCollide = false
+            end
+        end
+    end
+    
+    -- MOTEUR FLY (Mouvements calqués sur la direction du Joystick et Caméra)
+    if config.FlyEnabled and IsPlayerValid(player) then
+        local root = player.Character.HumanoidRootPart
+        local hum = player.Character.Humanoid
+        
+        if not bodyGyro then
+            bodyGyro = Instance.new("BodyGyro", root)
+            bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bodyGyro.cframe = root.CFrame
+            
+            bodyVelocity = Instance.new("BodyVelocity", root)
+            bodyVelocity.maxForce = Vector3.new(9e9, 9e9, 9e9)
+            bodyVelocity.velocity = Vector3.new(0, 0.1, 0)
+        end
+        
+        bodyGyro.cframe = Camera.CFrame
+        local moveDir = hum.MoveDirection
+        
+        if moveDir.Magnitude > 0 then
+            bodyVelocity.velocity = moveDir * config.FlySpeed
+        else
+            bodyVelocity.velocity = Vector3.new(0, 0.1, 0)
+        end
+    else
+        if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+        if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    end
 end)
 
-Players.PlayerRemoving:Connect(ClearVisualElements)
-
 -- ══════════════════════════════════════════════
---  NAVIGATION INTERFACE
+--  GESTION DE LA NAVIGATION & COMMANDE ETATS
 -- ══════════════════════════════════════════════
 local function showPage(id)
     for pid, p in pairs(pages) do p.Visible = (pid == id) end
-    for nid, b in pairs(navBtns) do
+    for nid, data in pairs(navBtns) do
         local active = (nid == id)
-        b.BackgroundTransparency = active and 0.85 or 1
-        b:FindFirstChildOfClass("TextLabel").TextColor3 = active and C.CYAN or C.GRAY
+        data.btn.BackgroundTransparency = active and 0.85 or 1
+        data.btn:FindFirstChildOfClass("TextLabel").TextColor3 = active and C.CYAN or C.GRAY
+        data.ind.BackgroundTransparency = active and 0 or 1 -- Allume le témoin bleu
     end
 end
 
 showPage("home")
 
-for id, b in pairs(navBtns) do
-    b.MouseButton1Click:Connect(function() showPage(id) end)
+for id, data in pairs(navBtns) do
+    data.btn.MouseButton1Click:Connect(function() showPage(id) end)
 end
 
+-- Logique Réduire (—)
+minimizeB.MouseButton1Click:Connect(function()
+    win.Visible = false
+    openB.Visible = true
+end)
+
+openB.MouseButton1Click:Connect(function()
+    win.Visible = true
+    openB.Visible = false
+end)
+
+-- Logique Quitter (Croix définitive)
 closeB.MouseButton1Click:Connect(function()
-    espConfig.Enabled = false
-    for _, p in ipairs(Players:GetPlayers()) do ClearVisualElements(p) end
+    config.EspEnabled = false
+    config.AimbotEnabled = false
+    config.FlyEnabled = false
+    config.NoClipEnabled = false
+    if bodyGyro then bodyGyro:Destroy() end
+    if bodyVelocity then bodyVelocity:Destroy() end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if RenderCache[p] then
+            if RenderCache[p].Box then RenderCache[p].Box:Destroy() end
+            if RenderCache[p].Tracer then RenderCache[p].Tracer:Destroy() end
+            if RenderCache[p].InfoTag then RenderCache[p].InfoTag:Destroy() end
+        end
+    end
     sg:Destroy()
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+    if RenderCache[p] then RenderCache[p] = nil end
 end)
