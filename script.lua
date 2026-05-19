@@ -1,11 +1,10 @@
 -- ╔══════════════════════════════════════════════╗
 -- ║         SILENTVOID HUB & MULTI GAMES         ║
 -- ║  Style : Dark Premium Noir Semi-Transparent  ║
--- ║  ESP Stable & Fluide pour Delta (Brookhaven) ║
+-- ║  ESP Boxes, Tracers, Names & Distance v2     ║
 -- ╚══════════════════════════════════════════════╝
 
 local Players       = game:GetService("Players")
-local UIS           = game:GetService("UserInputService")
 local RunService    = game:GetService("RunService")
 local TweenService  = game:GetService("TweenService")
 local Workspace     = game:GetService("Workspace")
@@ -14,38 +13,49 @@ local player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- ══════════════════════════════════════════════
---  DESIGN NOIR SEMI-TRANSPARENT
+--  DESIGN ET COULEURS INITIALES
 -- ══════════════════════════════════════════════
 local C = {
-    BG          = Color3.fromRGB(10, 10, 12),      -- Noir Profond
-    SIDEBAR     = Color3.fromRGB(14, 14, 16),      -- Noir Sidebar
-    PANEL       = Color3.fromRGB(18, 18, 22),      -- Fond des options
-    ROW         = Color3.fromRGB(22, 22, 26),      -- Lignes
-    WHITE       = Color3.fromRGB(255, 255, 255),   -- Blanc Lumineux
-    GRAY        = Color3.fromRGB(150, 150, 160),   -- Texte secondaire
-    CYAN        = Color3.fromRGB(0, 210, 255),     -- Couleur Tracer/Box actif
-    RED         = Color3.fromRGB(255, 60, 60),      -- Couleur Box caché / Éteint
-    BORDER      = Color3.fromRGB(40, 40, 45),      -- Bordures discrètes
+    BG          = Color3.fromRGB(10, 10, 12),      
+    SIDEBAR     = Color3.fromRGB(14, 14, 16),      
+    PANEL       = Color3.fromRGB(18, 18, 22),      
+    ROW         = Color3.fromRGB(22, 22, 26),      
+    WHITE       = Color3.fromRGB(255, 255, 255),   
+    GRAY        = Color3.fromRGB(150, 150, 160),   
+    CYAN        = Color3.fromRGB(0, 210, 255),     
+    RED         = Color3.fromRGB(255, 60, 60),      
+    BORDER      = Color3.fromRGB(40, 40, 45),      
 }
 
 -- ══════════════════════════════════════════════
 --  CONFIGURATION : TOUT EST DÉCOCHÉ PAR DÉFAUT
 -- ══════════════════════════════════════════════
 local espConfig = {
-    Enabled         = false, -- Décoché
-    TeamCheck       = false, -- Décoché
-    VisibilityCheck = false, -- Décoché
-    DistanceCheck   = false, -- Décoché
-    MaxDistance     = 1000,
-    BoxColor        = Color3.fromRGB(0, 255, 150),
-    HiddenColor     = Color3.fromRGB(255, 50, 70),
-    TracerColor     = Color3.fromRGB(0, 200, 255)
+    Enabled         = false,
+    BoxVisible      = false,
+    TracerVisible   = false,
+    ShowName        = false,
+    ShowDistance    = false,
+    TeamCheck       = false,
+    VisibilityCheck = false,
+    
+    -- Couleurs par défaut (Modifiables via le menu)
+    ActiveColor     = Color3.fromRGB(0, 210, 255),
+    HiddenColor     = Color3.fromRGB(255, 60, 60)
 }
 
 local RenderCache = {}
 
+-- Palette de couleurs sélectionnables
+local ColorPalette = {
+    {Name = "Cyan", Color = Color3.fromRGB(0, 210, 255)},
+    {Name = "Vert", Color = Color3.fromRGB(0, 255, 120)},
+    {Name = "Rouge", Color = Color3.fromRGB(255, 50, 70)},
+    {Name = "Rose", Color = Color3.fromRGB(255, 0, 180)}
+}
+
 -- ══════════════════════════════════════════════
---  FONCTIONS DE SÉCURITÉ ET INTERFACE
+--  FONCTIONS INTERFACE UTILITAIRES
 -- ══════════════════════════════════════════════
 local function corner(r, p)
     local c = Instance.new("UICorner")
@@ -54,11 +64,10 @@ local function corner(r, p)
     return c
 end
 
-local function stroke(col, thick, p, trans)
+local function stroke(col, thick, p)
     local s = Instance.new("UIStroke")
     s.Color = col or C.BORDER
     s.Thickness = thick or 1
-    s.Transparency = trans or 0
     s.Parent = p
     return s
 end
@@ -96,10 +105,10 @@ local function btn(props, parent)
 end
 
 -- ══════════════════════════════════════════════
---  INTERFACE INTERNE
+--  INTERFACE GRAPHIQUE PRINCIPALE
 -- ══════════════════════════════════════════════
 local sg = Instance.new("ScreenGui")
-sg.Name = "SilentVoidHub"
+sg.Name = "SilentVoidHubV2"
 sg.ResetOnSpawn = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 sg.DisplayOrder = 999
@@ -110,10 +119,9 @@ local ESPContainer = frame({
     BackgroundTransparency = 1,
 }, sg)
 
--- Fenêtre principale (Noir transparent à 0.25)
 local win = frame({
-    Size = UDim2.new(0, 560, 0, 400),
-    Position = UDim2.new(0.5, -280, 0.5, -200),
+    Size = UDim2.new(0, 560, 0, 420),
+    Position = UDim2.new(0.5, -280, 0.5, -210),
     BackgroundColor3 = C.BG,
     BackgroundTransparency = 0.25,
     Active = true,
@@ -122,7 +130,6 @@ local win = frame({
 corner(10, win)
 stroke(C.BORDER, 1.5, win)
 
--- Barre de titre
 local titleBar = frame({
     Size = UDim2.new(1, 0, 0, 42),
     BackgroundColor3 = C.SIDEBAR,
@@ -163,18 +170,9 @@ local sidebar = frame({
     BackgroundTransparency = 0.3,
 }, win)
 
-frame({
-    Size = UDim2.new(0, 1, 1, 0),
-    Position = UDim2.new(1, 0, 0, 0),
-    BackgroundColor3 = C.BORDER,
-}, sidebar)
+frame({ Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, 0, 0, 0), BackgroundColor3 = C.BORDER }, sidebar)
 
-local navContainer = frame({
-    Size = UDim2.new(1, 0, 1, -40),
-    Position = UDim2.new(0, 0, 0, 15),
-    BackgroundTransparency = 1,
-}, sidebar)
-
+local navContainer = frame({ Size = UDim2.new(1, 0, 1, -40), Position = UDim2.new(0, 0, 0, 15), BackgroundTransparency = 1 }, sidebar)
 local navLayout = Instance.new("UIListLayout")
 navLayout.Padding = UDim.new(0, 4)
 navLayout.Parent = navContainer
@@ -183,12 +181,7 @@ local pages = {}
 local navBtns = {}
 
 local function addTab(id, icon, name)
-    local nb = btn({
-        Size = UDim2.new(1, -16, 0, 38),
-        BackgroundColor3 = C.SIDEBAR,
-        BackgroundTransparency = 1,
-        Text = "",
-    }, navContainer)
+    local nb = btn({ Size = UDim2.new(1, -16, 0, 38), BackgroundColor3 = C.SIDEBAR, BackgroundTransparency = 1, Text = "" }, navContainer)
     corner(6, nb)
     
     lbl({ Text = icon, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 8, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = C.GRAY }, nb)
@@ -203,10 +196,12 @@ end
 
 local pHome = addTab("home", "⌂", "Accueil")
 local pVisuals = addTab("visuals", "👁", "Visuals / ESP")
+local pColors = addTab("colors", "🎨", "Couleurs ESP")
 
+-- Constructeur de lignes d'options (Toggles)
 local function makeRow(parent, yOff, title, sub, initVal, onChange)
     local row = frame({
-        Size = UDim2.new(1, -20, 0, 52),
+        Size = UDim2.new(1, -20, 0, 48),
         Position = UDim2.new(0, 10, 0, yOff),
         BackgroundColor3 = C.ROW,
         BackgroundTransparency = 0.2,
@@ -214,21 +209,21 @@ local function makeRow(parent, yOff, title, sub, initVal, onChange)
     corner(8, row)
     stroke(C.BORDER, 1, row)
 
-    lbl({ Text = title, Size = UDim2.new(1, -110, 0, 24), Position = UDim2.new(0, 14, 0, 6), Font = Enum.Font.GothamBold }, row)
-    lbl({ Text = sub, Size = UDim2.new(1, -110, 0, 20), Position = UDim2.new(0, 14, 0, 26), TextColor3 = C.GRAY, TextSize = 11 }, row)
+    lbl({ Text = title, Size = UDim2.new(1, -110, 0, 22), Position = UDim2.new(0, 12, 0, 4), Font = Enum.Font.GothamBold }, row)
+    lbl({ Text = sub, Size = UDim2.new(1, -110, 0, 18), Position = UDim2.new(0, 12, 0, 24), TextColor3 = C.GRAY, TextSize = 11 }, row)
 
     local state = initVal
     local track = frame({
-        Size = UDim2.new(0, 44, 0, 24),
-        Position = UDim2.new(1, -58, 0.5, -12),
+        Size = UDim2.new(0, 42, 0, 22),
+        Position = UDim2.new(1, -54, 0.5, -11),
         BackgroundColor3 = state and C.CYAN or C.PANEL,
     }, row)
     corner(20, track)
     stroke(C.BORDER, 1, track)
 
     local knob = frame({
-        Size = UDim2.new(0, 18, 0, 18),
-        Position = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+        Size = UDim2.new(0, 16, 0, 16),
+        Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8),
         BackgroundColor3 = C.WHITE,
     }, track)
     corner(20, knob)
@@ -237,30 +232,60 @@ local function makeRow(parent, yOff, title, sub, initVal, onChange)
     click.MouseButton1Click:Connect(function()
         state = not state
         TweenService:Create(track, TweenInfo.new(0.1), {BackgroundColor3 = state and C.CYAN or C.PANEL}):Play()
-        TweenService:Create(knob, TweenInfo.new(0.1), {Position = state and UDim2.new(1,-21,0.5,-9) or UDim2.new(0,3,0.5,-9)}):Play()
+        TweenService:Create(knob, TweenInfo.new(0.1), {Position = state and UDim2.new(1,-19,0.5,-8) or UDim2.new(0,3,0.5,-8)}):Play()
         onChange(state)
     end)
 end
 
--- Contenu Accueil
+-- ── CONTENU ACCUEIL ───────────────────────────
 lbl({ Text = "SilentVoid Hub", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
-lbl({ Text = "Bienvenue. Tout est désactivé par défaut.\nUtilisez l'onglet de gauche pour activer les fonctions.", Size = UDim2.new(1, -20, 0, 60), Position = UDim2.new(0, 14, 0, 45), TextColor3 = C.GRAY }, pHome)
+lbl({ Text = "Système ESP v2 chargé.\n\nTout est désactivé au démarrage par sécurité.\nActivez les éléments dans l'onglet 'Visuals / ESP'\net gérez vos couleurs dans l'onglet 'Couleurs ESP'.", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
 
--- Contenu Options (Tout sur false)
-makeRow(pVisuals, 15, "Activer ESP Core", "Affiche la boîte et la ligne sur les vrais joueurs", espConfig.Enabled, function(v) espConfig.Enabled = v end)
-makeRow(pVisuals, 73, "Filtre d'Équipe (Team)", "Masque vos alliés si le jeu possède des équipes", espConfig.TeamCheck, function(v) espConfig.TeamCheck = v end)
-makeRow(pVisuals, 131, "Filtre de Visibilité", "Boîte rouge si le joueur est derrière un mur", espConfig.VisibilityCheck, function(v) espConfig.VisibilityCheck = v end)
-makeRow(pVisuals, 189, "Limite de Distance", "Masque les cibles à plus de 1000 Studs", espConfig.DistanceCheck, function(v) espConfig.DistanceCheck = v end)
+-- ── CONTENU VISUALS (Décoché par défaut) ───────
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, 0, 1, -10)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.CanvasSize = UDim2.new(0, 0, 0, 360)
+scroll.ScrollBarThickness = 2
+scroll.Parent = pVisuals
 
--- ══════════════════════════════════════════════
---  MOTEUR DE DÉTECTION ET RENDU RÉEL (Membres Map)
--- ══════════════════════════════════════════════
-local function GetCharacter(p)
-    return p.Character
+makeRow(scroll, 10, "Activer le Système ESP", "Maître d'activation global des visuels", espConfig.Enabled, function(v) espConfig.Enabled = v end)
+makeRow(scroll, 65, "Afficher les Boîtes (Boxes)", "Dessine des cadres autour des joueurs", espConfig.BoxVisible, function(v) espConfig.BoxVisible = v end)
+makeRow(scroll, 120, "Afficher les Lignes (Tracers)", "Lignes depuis le haut-milieu de l'écran", espConfig.TracerVisible, function(v) espConfig.TracerVisible = v end)
+makeRow(scroll, 175, "Afficher les Pseudos", "Affiche le nom d'utilisateur au-dessus", espConfig.ShowName, function(v) espConfig.ShowName = v end)
+makeRow(scroll, 230, "Afficher la Distance", "Affiche la distance exacte en Studs", espConfig.ShowDistance, function(v) espConfig.ShowDistance = v end)
+makeRow(scroll, 285, "Filtre d'Équipe (Team Check)", "Ignore les membres de votre propre équipe", espConfig.TeamCheck, function(v) espConfig.TeamCheck = v end)
+
+-- ── CONTENU COULEURS ──────────────────────────
+lbl({ Text = "Choisir la couleur de l'ESP actif", Size = UDim2.new(1, -20, 0, 24), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold }, pColors)
+
+local colorContainer = frame({ Size = UDim2.new(1, -20, 0, 60), Position = UDim2.new(0, 10, 0, 45), BackgroundTransparency = 1 }, pColors)
+local colorLayout = Instance.new("UIListLayout")
+colorLayout.FillDirection = Enum.FillDirection.Horizontal
+colorLayout.Padding = UDim.new(0, 10)
+colorLayout.Parent = colorContainer
+
+for _, choice in ipairs(ColorPalette) do
+    local cBtn = btn({
+        Size = UDim2.new(0, 80, 0, 35),
+        BackgroundColor3 = choice.Color,
+        Text = choice.Name,
+        TextSize = 12,
+    }, colorContainer)
+    corner(6, cBtn)
+    stroke(C.WHITE, 1, cBtn)
+    
+    cBtn.MouseButton1Click:Connect(function()
+        espConfig.ActiveColor = choice.Color
+    end)
 end
 
+-- ══════════════════════════════════════════════
+--  MOTEUR ESP AVANCÉ : FLUIDE & ULTRA-PRÉCIS
+-- ══════════════════════════════════════════════
 local function IsPlayerValid(p)
-    local char = GetCharacter(p)
+    local char = p.Character
     return char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0
 end
 
@@ -269,19 +294,33 @@ local function CreateVisualElements(p)
     
     local elements = {}
     
+    -- Cadre Box
     local box = Instance.new("Frame")
     box.BackgroundTransparency = 1
     box.Visible = false
     box.Parent = ESPContainer
-    stroke(espConfig.BoxColor, 1.5, box)
+    stroke(espConfig.ActiveColor, 1.5, box)
     elements.Box = box
     
+    -- Traceur de Ligne (Nouvelle méthode d'orientation parfaite)
     local tracer = frame({
-        AnchorPoint = Vector2.new(0.5, 0),
-        BackgroundColor3 = espConfig.TracerColor,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = espConfig.ActiveColor,
         Visible = false,
     }, ESPContainer)
     elements.Tracer = tracer
+    
+    -- Texte d'informations (Nom + Distance)
+    local infoTag = lbl({
+        Size = UDim2.new(0, 200, 0, 28),
+        Text = "",
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        Visible = false,
+    }, ESPContainer)
+    infoTag.Font = Enum.Font.GothamBold
+    stroke(Color3.fromRGB(0,0,0), 1, infoTag) -- Contour noir pour lisibilité
+    elements.InfoTag = infoTag
     
     RenderCache[p] = elements
 end
@@ -290,24 +329,24 @@ local function ClearVisualElements(p)
     if RenderCache[p] then
         if RenderCache[p].Box then RenderCache[p].Box:Destroy() end
         if RenderCache[p].Tracer then RenderCache[p].Tracer:Destroy() end
+        if RenderCache[p].InfoTag then RenderCache[p].InfoTag:Destroy() end
         RenderCache[p] = nil
     end
 end
 
--- Boucle de synchronisation forcée
+-- Boucle principale de rendu graphique synchrone
 RunService.RenderStepped:Connect(function()
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         
-        -- Crée les éléments s'ils n'existent pas encore pour ce joueur réel
         if not RenderCache[p] then CreateVisualElements(p) end
-        
         local visual = RenderCache[p]
         
-        -- Si l'interrupteur principal est éteint ou si le joueur n'est pas valide
+        -- Extinction forcée si non activé ou joueur invalide
         if not espConfig.Enabled or not IsPlayerValid(p) or not IsPlayerValid(player) then
             visual.Box.Visible = false
             visual.Tracer.Visible = false
+            visual.InfoTag.Visible = false
             continue
         end
         
@@ -315,6 +354,7 @@ RunService.RenderStepped:Connect(function()
         if espConfig.TeamCheck and p.Team == player.Team then
             visual.Box.Visible = false
             visual.Tracer.Visible = false
+            visual.InfoTag.Visible = false
             continue
         end
         
@@ -322,59 +362,70 @@ RunService.RenderStepped:Connect(function()
         local root = char.HumanoidRootPart
         local distance = (root.Position - Camera.CFrame.Position).Magnitude
         
-        -- Distance Check
-        if espConfig.DistanceCheck and distance > espConfig.MaxDistance then
-            visual.Box.Visible = false
-            visual.Tracer.Visible = false
-            continue
-        end
-        
-        -- Traduction de la position 3D réelle en coordonnées écran
+        -- Projection 3D -> Écran 2D
         local screenPos, onScreen = Camera:WorldToScreenPoint(root.Position)
         
         if onScreen then
-            -- Calcul de dimensionnement de la boîte
+            -- Calcul d'échelle dynamique de la taille
             local scale = (5.2 * Camera.ViewportSize.Y) / (2 * distance * math.tan(math.rad(Camera.FieldOfView / 2)))
             local w, h = scale * 0.85, scale * 1.15
             
-            -- Affichage de la boîte
-            visual.Box.Size = UDim2.new(0, w, 0, h)
-            visual.Box.Position = UDim2.new(0, screenPos.X - (w / 2), 0, screenPos.Y - (h / 2))
+            -- Couleur dynamique selon configuration choisie
+            local currentRenderColor = espConfig.ActiveColor
             
-            -- Visibilité des murs (Raycast)
-            local isVisible = true
-            if espConfig.VisibilityCheck then
-                local params = RaycastParams.new()
-                params.FilterType = Enum.RaycastFilterType.Exclude
-                params.FilterDescendantsInstances = {player.Character, char}
-                local ray = Workspace:Raycast(Camera.CFrame.Position, root.Position - Camera.CFrame.Position, params)
-                if ray then isVisible = false end
+            -- 1. RENDU DE LA BOX
+            if espConfig.BoxVisible then
+                visual.Box.Size = UDim2.new(0, w, 0, h)
+                visual.Box.Position = UDim2.new(0, screenPos.X - (w / 2), 0, screenPos.Y - (h / 2))
+                visual.Box:FindFirstChildOfClass("UIStroke").Color = currentRenderColor
+                visual.Box.Visible = true
+            else
+                visual.Box.Visible = false
             end
             
-            visual.Box:FindFirstChildOfClass("UIStroke").Color = isVisible and espConfig.BoxColor or espConfig.HiddenColor
-            visual.Box.Visible = true
+            -- 2. RENDU DES TRACERS (Correction mathématique absolue d'alignement)
+            if espConfig.TracerVisible then
+                local startX, startY = Camera.ViewportSize.X / 2, 0 -- Pile au milieu en haut
+                local endX, endY = screenPos.X, screenPos.Y - (h / 2) -- Tête de la box
+                
+                local dx, dy = endX - startX, endY - startY
+                local length = math.sqrt(dx^2 + dy^2)
+                
+                visual.Tracer.Size = UDim2.new(0, length, 0, 1.5) -- Épaisseur fixe
+                visual.Tracer.Position = UDim2.new(0, startX + dx/2, 0, startY + dy/2)
+                visual.Tracer.Rotation = math.deg(math.atan2(dy, dx))
+                visual.Tracer.BackgroundColor3 = currentRenderColor
+                visual.Tracer.Visible = true
+            else
+                visual.Tracer.Visible = false
+            end
             
-            -- Tracé de la ligne (Haut de l'écran vers la tête du joueur)
-            local startX, startY = Camera.ViewportSize.X / 2, 0
-            local endX, endY = screenPos.X, screenPos.Y - (h / 2)
-            
-            local dx = endX - startX
-            local dy = endY - startY
-            local length = math.sqrt(dx^2 + dy^2)
-            local angle = math.atan2(dy, dx)
-            
-            visual.Tracer.Size = UDim2.new(0, 1.5, 0, length)
-            visual.Tracer.Position = UDim2.new(0, startX, 0, startY)
-            visual.Tracer.Rotation = math.deg(angle) - 90
-            visual.Tracer.Visible = true
+            -- 3. RENDU TEXTE INFO (PSEUDO & DISTANCE)
+            if espConfig.ShowName or espConfig.ShowDistance then
+                local textBuild = ""
+                if espConfig.ShowName then textBuild = textBuild .. p.Name end
+                if espConfig.ShowDistance then 
+                    if textBuild ~= "" then textBuild = textBuild .. " | " end
+                    textBuild = textBuild .. math.floor(distance) .. "s"
+                end
+                
+                visual.InfoTag.Text = textBuild
+                visual.InfoTag.TextColor3 = currentRenderColor
+                -- Placé légèrement au-dessus de la box du joueur
+                visual.InfoTag.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 30)
+                visual.InfoTag.Visible = true
+            else
+                visual.InfoTag.Visible = false
+            end
         else
             visual.Box.Visible = false
             visual.Tracer.Visible = false
+            visual.InfoTag.Visible = false
         end
     end
 end)
 
--- Nettoyage automatique des déco
+-- Gestion nettoyage
 Players.PlayerRemoving:Connect(ClearVisualElements)
 
 -- ══════════════════════════════════════════════
@@ -397,9 +448,6 @@ end
 
 closeB.MouseButton1Click:Connect(function()
     espConfig.Enabled = false
-    for _, v in pairs(RenderCache) do
-        if v.Box then v.Box:Destroy() end
-        if v.Tracer then v.Tracer:Destroy() end
-    end
+    for _, p in ipairs(Players:GetPlayers()) do ClearVisualElements(p) end
     sg:Destroy()
 end)
