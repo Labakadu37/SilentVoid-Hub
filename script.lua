@@ -1,7 +1,7 @@
 -- ╔══════════════════════════════════════════════╗
 -- ║         SILENTVOID HUB & MULTI GAMES         ║
 -- ║  Style : Dark Premium Noir Semi-Transparent  ║
--- ║   Fix Fly Gravité, ESP Global & Aimbot V7    ║
+-- ║    Aimbot Raycast Direct & Clear ESP V8      ║
 -- ╚══════════════════════════════════════════════╝
 
 local Players       = game:GetService("Players")
@@ -15,8 +15,8 @@ local Camera = Workspace.CurrentCamera
 local originalGravity = Workspace.Gravity
 
 -- Nettoyage automatique au lancement
-if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidHubV7") then
-    player.PlayerGui.SilentVoidHubV7:Destroy()
+if player:WaitForChild("PlayerGui"):FindFirstChild("SilentVoidHubV8") then
+    player.PlayerGui.SilentVoidHubV8:Destroy()
 end
 
 -- ══════════════════════════════════════════════
@@ -43,7 +43,7 @@ local config = {
     
     AimbotEnabled  = false,
     FovEnabled     = false,
-    FovRadius      = 150, 
+    FovRadius      = 140, 
     
     FlyEnabled     = false,
     FlySpeed       = 2, 
@@ -109,10 +109,10 @@ local function btn(props, parent)
 end
 
 -- ══════════════════════════════════════════════
---  CREATION DE L'INTERFACE GRAPHIK
+--  CREATION DE L'INTERFACE INTERNE
 -- ══════════════════════════════════════════════
 local sg = Instance.new("ScreenGui")
-sg.Name = "SilentVoidHubV7"
+sg.Name = "SilentVoidHubV8"
 sg.ResetOnSpawn = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 sg.DisplayOrder = 999
@@ -120,7 +120,7 @@ sg.Parent = player:WaitForChild("PlayerGui")
 
 local ESPContainer = frame({ Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1 }, sg)
 
--- Rond du FOV
+-- Rond du FOV Centré
 local fovCircle = frame({
     Size = UDim2.new(0, config.FovRadius * 2, 0, config.FovRadius * 2),
     AnchorPoint = Vector2.new(0.5, 0.5),
@@ -218,28 +218,28 @@ local function makeRow(parent, yOff, title, sub, initVal, onChange)
     end)
 end
 
-lbl({ Text = "SilentVoid Hub - Version 7", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
-lbl({ Text = "Corrections v7 Appliquées :\n- Suppression définitive du filtre d'équipe (Cible tout le monde).\n- Fix Fly Gravité Zéro : Plus aucune descente involontaire.", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
+lbl({ Text = "SilentVoid Hub - Version 8 (Mobile)", Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 14, 0, 15), Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = C.CYAN }, pHome)
+lbl({ Text = "Correctifs V8 :\n- Aimbot silencieux par Raycast (Plus de caméra forcée qui tremble).\n- ESP global ultra stable recalibré pour tout exécuteur mobile.", Size = UDim2.new(1, -20, 0, 100), Position = UDim2.new(0, 14, 0, 50), TextColor3 = C.GRAY }, pHome)
 
 local scrVis = Instance.new("ScrollingFrame")
 scrVis.Size = UDim2.new(1, 0, 1, -10); scrVis.BackgroundTransparency = 1; scrVis.BorderSizePixel = 0; scrVis.CanvasSize = UDim2.new(0, 0, 0, 300); scrVis.Parent = pVisuals
-makeRow(scrVis, 10, "Activer l'ESP Global", "Affiche l'ESP sur ABSOLUMENT TOUS les joueurs", config.EspEnabled, function(v) config.EspEnabled = v end)
-makeRow(scrVis, 65, "Afficher les Boîtes (Boxes)", "Cadre autour des joueurs", config.BoxVisible, function(v) config.BoxVisible = v end)
-makeRow(scrVis, 120, "Afficher les Lignes (Tracers)", "Lignes depuis le haut de l'écran", config.TracerVisible, function(v) config.TracerVisible = v end)
-makeRow(scrVis, 175, "Afficher le Pseudo", "Affiche le nom", config.ShowName, function(v) config.ShowName = v end)
-makeRow(scrVis, 230, "Afficher la Distance", "Affiche la distance exacte", config.ShowDistance, function(v) config.ShowDistance = v end)
+makeRow(scrVis, 10, "Activer l'ESP Global", "Trace l'intégralité des joueurs présents", config.EspEnabled, function(v) config.EspEnabled = v end)
+makeRow(scrVis, 65, "Afficher les Boîtes (Boxes)", "Délimitation carrée sur la cible", config.BoxVisible, function(v) config.BoxVisible = v end)
+makeRow(scrVis, 120, "Afficher les Lignes (Tracers)", "Lignes de visée directes", config.TracerVisible, function(v) config.TracerVisible = v end)
+makeRow(scrVis, 175, "Afficher le Pseudo", "Affiche l'identité", config.ShowName, function(v) config.ShowName = v end)
+makeRow(scrVis, 230, "Afficher la Distance", "Affiche l'éloignement en Studs", config.ShowDistance, function(v) config.ShowDistance = v end)
 
-makeRow(pCombat, 15, "Activer l'Aimbot Global", "Verrouille et tire sur TOUS les joueurs proches", config.AimbotEnabled, function(v) config.AimbotEnabled = v end)
-makeRow(pCombat, 70, "Afficher le Rond FOV", "Cercle de détection à l'écran", config.FovEnabled, function(v) config.FovEnabled = v fovCircle.Visible = v end)
+makeRow(pCombat, 15, "Activer l'Aimbot Raycast", "Simule l'impact de tir directement sur la cible", config.AimbotEnabled, function(v) config.AimbotEnabled = v end)
+makeRow(pCombat, 70, "Afficher le Rond FOV", "Périmètre de détection de l'aimbot", config.FovEnabled, function(v) config.FovEnabled = v fovCircle.Visible = v end)
 
-makeRow(pFun, 15, "Activer le Fly Stable v7", "Gravité coupée. SAUT pour monter, Joystick pour avancer", config.FlyEnabled, function(v) 
+makeRow(pFun, 15, "Activer le Fly Mobile Stable", "Aucune chute. SAUT pour monter, Joystick pour bouger", config.FlyEnabled, function(v) 
     config.FlyEnabled = v 
-    if not v then Workspace.Gravity = originalGravity end -- Remet la gravité normale si on éteint
+    if not v then Workspace.Gravity = originalGravity end
 end)
-makeRow(pFun, 75, "Activer le NoClip v7", "Passe à travers les parois sans tomber sous le sol", config.NoClipEnabled, function(v) config.NoClipEnabled = v end)
+makeRow(pFun, 75, "Activer le NoClip Stable", "Franchit les structures en gardant l'ancrage au sol", config.NoClipEnabled, function(v) config.NoClipEnabled = v end)
 
 -- ══════════════════════════════════════════════
---  MOTEURS ENTIÈREMENT CORRIGÉS ET SANS FILTRES
+--  MOTEURS PHYSIQUES ET LOGIQUES CORRIGÉS
 -- ══════════════════════════════════════════════
 local function IsPlayerValid(p)
     local char = p.Character
@@ -264,7 +264,7 @@ local function CreateVisualElements(p)
     RenderCache[p] = elements
 end
 
--- Recherche de n'importe quel joueur le plus proche dans le FOV (Sans distinction d'équipe)
+-- Recherche du joueur le plus proche présent à l'intérieur du cercle
 local function GetClosestPlayerInFOV()
     local closest, maxScreenDist = nil, config.FovRadius
     local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -288,11 +288,36 @@ local function GetClosestPlayerInFOV()
     return closest
 end
 
+-- Hook d'activation pour l'Aimbot Silencieux Mobile
+local metatable = getrawmetatable(game)
+local oldNamecall = metatable.__namecall
+setreadonly(metatable, false)
+
+metatable.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    if config.AimbotEnabled and (method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" or method == "Raycast") then
+        local target = GetClosestPlayerInFOV()
+        if target and IsPlayerValid(target) then
+            -- Redirige l'impact physique de l'outil vers le torse de la cible
+            local targetPart = target.Character.HumanoidRootPart
+            if args[1] and typeof(args[1]) == "Ray" then
+                args[1] = Ray.new(Camera.CFrame.Position, (targetPart.Position - Camera.CFrame.Position).Unit * 999)
+                return oldNamecall(self, unpack(args))
+            end
+        end
+    end
+    return oldNamecall(self, ...)
+end)
+setreadonly(metatable, true)
+
+-- Traitement Rendu et ESP synchrone
 RunService.RenderStepped:Connect(function()
     local customColor = GetCustomColor()
     fovStroke.Color = customColor
     
-    -- SYSTEME ESP GLOBAL TOUT JOUEUR
+    -- MOTEUR ESP
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         if not RenderCache[p] then CreateVisualElements(p) end
@@ -347,20 +372,19 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- AIMBOT UNIVERSEL COMPLET
+    -- SIMULATION DE CLIC AUTOMATIQUE (Pas de tremblement d'écran)
     if config.AimbotEnabled then
         local target = GetClosestPlayerInFOV()
         if target and IsPlayerValid(target) and IsPlayerValid(player) then
-            local targetPos = target.Character.HumanoidRootPart.Position
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
-            
             local tool = player.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
+            if tool then 
+                tool:Activate() 
+            end
         end
     end
 end)
 
--- Gestion Fly CFrame avec Gravité Zéro Évitant les Chutes
+-- Fly CFrame Mobile Synchrone
 RunService.Heartbeat:Connect(function()
     if not IsPlayerValid(player) then return end
     local char = player.Character
@@ -368,7 +392,7 @@ RunService.Heartbeat:Connect(function()
     local hum = char.Humanoid
     
     if config.FlyEnabled then
-        Workspace.Gravity = 0 -- Coupe toute descente causée par le moteur physique
+        Workspace.Gravity = 0
         hum.PlatformStand = true
         
         local moveDir = hum.MoveDirection
@@ -382,12 +406,12 @@ RunService.Heartbeat:Connect(function()
     else
         if hum.PlatformStand then 
             hum.PlatformStand = false 
-            Workspace.Gravity = originalGravity -- Restaure la physique normale
+            Workspace.Gravity = originalGravity
         end
     end
 end)
 
--- NoClip Forcé Stable
+-- NoClip Physique Forcé
 RunService.Stepped:Connect(function()
     if config.NoClipEnabled and IsPlayerValid(player) then
         for _, part in ipairs(player.Character:GetChildren()) do
@@ -401,7 +425,7 @@ RunService.Stepped:Connect(function()
 end)
 
 -- ══════════════════════════════════════════════
---  GESTION NAVIGATION ET CONTROLE
+--  GESTION DE L'INTERFACE GRAPHIQUE
 -- ══════════════════════════════════════════════
 local function showPage(id)
     for pid, p in pairs(pages) do p.Visible = (pid == id) end
