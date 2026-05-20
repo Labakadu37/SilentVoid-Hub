@@ -7,7 +7,24 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 -- =============================================================================
--- INTERFACE GRAPHIQUE (UI STYLE SOMBRE & VERT)
+-- CONFIGURATION
+-- =============================================================================
+
+local CONFIG = {
+    FovRadius = 400,
+    FovMaxRadius = 800,
+    FovMinRadius = 100,
+    FovColor = Color3.fromRGB(100, 255, 150),
+    EspBoxThickness = 2,
+    EspBoxColor = Color3.fromRGB(0, 255, 100),
+    AimbotEnabled = false,
+    EspEnabled = false,
+    FovEnabled = false,
+    EspUpdateSpeed = 0.016
+}
+
+-- =============================================================================
+-- INTERFACE GRAPHIQUE (UI STYLE SOMBRE & VIOLET)
 -- =============================================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -17,69 +34,39 @@ ScreenGui.Parent = CoreGui -- Utiliser player:WaitForChild("PlayerGui") si test�
 
 -- Fenêtre Principale
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 500, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Size = UDim2.new(0, 450, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(0, 255, 100)
-MainStroke.Thickness = 1.5
+MainStroke.Color = Color3.fromRGB(150, 80, 200)
+MainStroke.Thickness = 2
 MainStroke.Parent = MainFrame
-
--- Barre Latérale (Menu de Gauche)
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 140, 1, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-Sidebar.Parent = MainFrame
-
-local SideCorner = Instance.new("UICorner")
-SideCorner.CornerRadius = UDim.new(0, 8)
-SideCorner.Parent = Sidebar
 
 -- Titre
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, -40, 0, 40)
+Title.Position = UDim2.new(0, 20, 0, 10)
 Title.BackgroundTransparency = 1
-Title.Text = "DEVELOPER HUB"
-Title.TextColor3 = Color3.fromRGB(0, 255, 100)
+Title.Text = "🖤 ADVANCED AIMBOT SUITE 🖤"
+Title.TextColor3 = Color3.fromRGB(200, 100, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
-Title.Parent = Sidebar
+Title.TextSize = 16
+Title.Parent = MainFrame
 
--- Zones de Contenu (Pages de Droite)
+-- Conteneur principal
 local Container = Instance.new("Frame")
-Container.Size = UDim2.new(1, -150, 1, -20)
-Container.Position = UDim2.new(0, 145, 0, 10)
+Container.Size = UDim2.new(1, -30, 1, -70)
+Container.Position = UDim2.new(0, 15, 0, 60)
 Container.BackgroundTransparency = 1
 Container.Parent = MainFrame
-
-local PageAccueil = Instance.new("Frame")
-PageAccueil.Size = UDim2.new(1, 0, 1, 0)
-PageAccueil.BackgroundTransparency = 1
-PageAccueil.Visible = true
-PageAccueil.Parent = Container
-
-local WelcomeText = Instance.new("TextLabel")
-WelcomeText.Size = UDim2.new(1, 0, 0, 50)
-WelcomeText.BackgroundTransparency = 1
-WelcomeText.Text = "Bienvenue dans votre outil de test"
-WelcomeText.TextColor3 = Color3.fromRGB(255, 255, 255)
-WelcomeText.Font = Enum.Font.GothamSemibold
-WelcomeText.TextSize = 16
-WelcomeText.Parent = PageAccueil
-
-local PageMultigame = Instance.new("Frame")
-PageMultigame.Size = UDim2.new(1, 0, 1, 0)
-PageMultigame.BackgroundTransparency = 1
-PageMultigame.Visible = false
-PageMultigame.Parent = Container
 
 -- =============================================================================
 -- LOGIQUE DU FLY & VARIABLES DE CONTROLE
@@ -91,6 +78,190 @@ local currentWalkspeed = 16
 
 local bodyGyro, bodyVelocity
 local keysDown = {}
+
+-- =============================================================================
+-- SYSTEME ESP (BOITES DE DETECTION)
+-- =============================================================================
+
+local espFrames = {}
+
+local function getPlayerBoundingBox(character)
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    
+    local humanoidRootSize = root.Size
+    local minPos = root.Position - (humanoidRootSize / 2)
+    local maxPos = root.Position + (humanoidRootSize / 2)
+    
+    return minPos, maxPos
+end
+
+local function worldToScreenPoint(worldPos)
+    local screenSize = ScreenGui.AbsoluteSize
+    local viewport = camera.ViewportSize
+    local unitRay = camera:ScreenPointToRay(0, 0)
+    
+    local camPos = camera.CFrame.Position
+    local offset = worldPos - camPos
+    local dist = offset:Dot(camera.CFrame.LookVector)
+    
+    if dist <= 0 then return nil end
+    
+    local projected = camera:WorldToScreenPoint(worldPos)
+    return Vector2.new(projected.X, projected.Y)
+end
+
+local function createOrUpdateEspBox(character, plr)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+    
+    local key = plr.UserId
+    local minPos, maxPos = getPlayerBoundingBox(character)
+    if not minPos then return end
+    
+    -- Créer ou récupérer le frame ESP
+    if not espFrames[key] then
+        local frame = Instance.new("Frame")
+        frame.Name = "EspBox_" .. plr.Name
+        frame.BackgroundTransparency = 0.8
+        frame.BackgroundColor3 = CONFIG.EspBoxColor
+        frame.BorderSizePixel = CONFIG.EspBoxThickness
+        frame.BorderColor3 = CONFIG.EspBoxColor
+        frame.Parent = ScreenGui
+        espFrames[key] = frame
+    end
+    
+    local topLeft = worldToScreenPoint(minPos)
+    local bottomRight = worldToScreenPoint(maxPos)
+    
+    if topLeft and bottomRight then
+        local frame = espFrames[key]
+        local width = math.abs(bottomRight.X - topLeft.X)
+        local height = math.abs(bottomRight.Y - topLeft.Y)
+        
+        frame.Position = UDim2.new(0, math.min(topLeft.X, bottomRight.X), 0, math.min(topLeft.Y, bottomRight.Y))
+        frame.Size = UDim2.new(0, width, 0, height)
+        frame.Visible = true
+    else
+        espFrames[key].Visible = false
+    end
+end
+
+local function clearEspBoxes()
+    for _, frame in pairs(espFrames) do
+        if frame then frame:Destroy() end
+    end
+    espFrames = {}
+end
+
+-- =============================================================================
+-- SYSTEME FOV CIRCULAIRE
+-- =============================================================================
+
+local fovCircle = Instance.new("Frame")
+fovCircle.Name = "FovCircle"
+fovCircle.BackgroundTransparency = 0.7
+fovCircle.BackgroundColor3 = CONFIG.FovColor
+fovCircle.BorderSizePixel = 2
+fovCircle.BorderColor3 = CONFIG.FovColor
+fovCircle.Parent = ScreenGui
+
+local fovCorner = Instance.new("UICorner")
+fovCorner.CornerRadius = UDim.new(0.5, 0)
+fovCorner.Parent = fovCircle
+
+fovCircle.Visible = false
+
+local function updateFovCircle()
+    if not CONFIG.FovEnabled then
+        fovCircle.Visible = false
+        return
+    end
+    
+    local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+    local size = CONFIG.FovRadius * 2
+    
+    fovCircle.Size = UDim2.new(0, size, 0, size)
+    fovCircle.Position = UDim2.new(0, mousePos.X - CONFIG.FovRadius, 0, mousePos.Y - CONFIG.FovRadius)
+    fovCircle.Visible = true
+end
+
+-- =============================================================================
+-- SYSTEME AIMBOT / VISEUR LOCK
+-- =============================================================================
+
+local function isPlayerInFov(playerChar)
+    local root = playerChar:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+    local screenPos = camera:WorldToScreenPoint(root.Position)
+    
+    local distance = math.sqrt((screenPos.X - mousePos.X)^2 + (screenPos.Y - mousePos.Y)^2)
+    return distance <= CONFIG.FovRadius
+end
+
+local function lockOnToHead(playerChar)
+    local head = playerChar:FindFirstChild("Head")
+    if not head then return end
+    
+    -- Utiliser CFrame pour orienter la caméra vers la tête
+    local targetPos = head.Position + head.CFrame.LookVector * 5
+    camera.CFrame = CFrame.new(camera.CFrame.Position, head.Position)
+end
+
+-- =============================================================================
+-- BOUCLE DE MISE À JOUR
+-- =============================================================================
+
+task.spawn(function()
+    while true do
+        RunService.RenderStepped:Wait()
+        
+        -- Mise à jour ESP
+        if CONFIG.EspEnabled then
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character then
+                    createOrUpdateEspBox(plr.Character, plr)
+                end
+            end
+        else
+            clearEspBoxes()
+        end
+        
+        -- Mise à jour FOV
+        updateFovCircle()
+        
+        -- Mise à jour Aimbot
+        if CONFIG.AimbotEnabled and CONFIG.FovEnabled then
+            local targetPlayer = nil
+            local closestDistance = math.huge
+            
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character and isPlayerInFov(plr.Character) then
+                    local head = plr.Character:FindFirstChild("Head")
+                    if head then
+                        local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+                        if humanoid and humanoid.Health > 0 then
+                            local screenPos = camera:WorldToScreenPoint(head.Position)
+                            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                            local dist = math.sqrt((screenPos.X - mousePos.X)^2 + (screenPos.Y - mousePos.Y)^2)
+                            
+                            if dist < closestDistance then
+                                closestDistance = dist
+                                targetPlayer = plr
+                            end
+                        end
+                    end
+                end
+            end
+            
+            if targetPlayer and targetPlayer.Character then
+                lockOnToHead(targetPlayer.Character)
+            end
+        end
+    end
+end)
 
 local function startFly()
 	local character = player.Character
@@ -171,136 +342,156 @@ local function startFly()
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     end)
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -- =============================================================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -- ÉLÉMENTS DE LA PAGE MULTIGAME (BOUTONS & COMMANDES)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -- =============================================================================
+-- ÉLÉMENTS DE L'INTERFACE (BOUTONS & CONTROLES)
+-- =============================================================================
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -- Bouton d'activation du Fly
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    local FlyBtn = Instance.new("TextButton")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.Size = UDim2.new(0, 200, 0, 40)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.Position = UDim2.new(0, 10, 0, 20)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.Text = "Activer Fly : OFF"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.Font = Enum.Font.Gotham
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.TextSize = 14
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyBtn.Parent = PageMultigame
+-- Fonction utilitaire pour créer un bouton
+local function createButton(name, position, size, text, color)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = size
+    button.Position = position
+    button.BackgroundColor3 = color
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamSemibold
+    button.TextSize = 13
+    button.Parent = Container
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Thickness = 1
+    stroke.Parent = button
+    
+    return button
+end
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    local FlyCorner = Instance.new("UICorner")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyCorner.CornerRadius = UDim.new(0, 6)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    FlyCorner.Parent = FlyBtn
+-- Bouton Principal: Activer Tout
+local MasterToggle = createButton("MasterToggle", UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0, 50), 
+    "🔴 ACTIVER TOUT", Color3.fromRGB(40, 40, 50))
 
+local featureActive = false
+
+MasterToggle.MouseButton1Click:Connect(function()
+    featureActive = not featureActive
+    CONFIG.EspEnabled = featureActive
+    CONFIG.FovEnabled = featureActive
+    CONFIG.AimbotEnabled = featureActive
+    
+    if featureActive then
+        MasterToggle.Text = "🟢 TOUT ACTIF"
+        MasterToggle.TextColor3 = Color3.fromRGB(100, 255, 100)
+    else
+        MasterToggle.Text = "🔴 ACTIVER TOUT"
+        MasterToggle.TextColor3 = Color3.fromRGB(255, 100, 100)
+        clearEspBoxes()
+        fovCircle.Visible = false
+    end
+end)
+
+-- Section ESP
+local EspLabel = Instance.new("TextLabel")
+EspLabel.Name = "EspLabel"
+EspLabel.Size = UDim2.new(1, 0, 0, 20)
+EspLabel.Position = UDim2.new(0, 0, 0, 60)
+EspLabel.BackgroundTransparency = 1
+EspLabel.Text = "📦 ESP Box"
+EspLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+EspLabel.Font = Enum.Font.GothamSemibold
+EspLabel.TextSize = 12
+EspLabel.TextXAlignment = Enum.TextXAlignment.Left
+EspLabel.Parent = Container
+
+-- Section FOV
+local FovLabel = Instance.new("TextLabel")
+FovLabel.Name = "FovLabel"
+FovLabel.Size = UDim2.new(1, 0, 0, 20)
+FovLabel.Position = UDim2.new(0, 0, 0, 85)
+FovLabel.BackgroundTransparency = 1
+FovLabel.Text = "⭕ FOV Radius: " .. CONFIG.FovRadius
+FovLabel.TextColor3 = Color3.fromRGB(0, 150, 255)
+FovLabel.Font = Enum.Font.GothamSemibold
+FovLabel.TextSize = 12
+FovLabel.TextXAlignment = Enum.TextXAlignment.Left
+FovLabel.Parent = Container
+
+-- Boutons FOV
+local FovMinusBtn = createButton("FovMinus", UDim2.new(0, 0, 0, 110), UDim2.new(0.3, -5, 0, 35), 
+    "FOV -", Color3.fromRGB(50, 50, 60))
+
+local FovPlusBtn = createButton("FovPlus", UDim2.new(0.7, 5, 0, 110), UDim2.new(0.3, -5, 0, 35), 
+    "FOV +", Color3.fromRGB(50, 50, 60))
+
+FovMinusBtn.MouseButton1Click:Connect(function()
+    CONFIG.FovRadius = math.max(CONFIG.FovRadius - 50, CONFIG.FovMinRadius)
+    FovLabel.Text = "⭕ FOV Radius: " .. CONFIG.FovRadius
+end)
+
+FovPlusBtn.MouseButton1Click:Connect(function()
+    CONFIG.FovRadius = math.min(CONFIG.FovRadius + 50, CONFIG.FovMaxRadius)
+    FovLabel.Text = "⭕ FOV Radius: " .. CONFIG.FovRadius
+end)
+
+-- Section Vitesse
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Name = "SpeedLabel"
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 155)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "⚡ Fly Speed: " .. flySpeed
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 200, 50)
+SpeedLabel.Font = Enum.Font.GothamSemibold
+SpeedLabel.TextSize = 12
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedLabel.Parent = Container
+
+-- Boutons Vitesse
+local SpeedMinusBtn = createButton("SpeedMinus", UDim2.new(0, 0, 0, 180), UDim2.new(0.3, -5, 0, 35), 
+    "SPEED -", Color3.fromRGB(50, 50, 60))
+
+local SpeedPlusBtn = createButton("SpeedPlus", UDim2.new(0.7, 5, 0, 180), UDim2.new(0.3, -5, 0, 35), 
+    "SPEED +", Color3.fromRGB(50, 50, 60))
+
+SpeedMinusBtn.MouseButton1Click:Connect(function()
+    flySpeed = math.max(flySpeed - 10, 10)
+    SpeedLabel.Text = "⚡ Fly Speed: " .. flySpeed
+end)
+
+SpeedPlusBtn.MouseButton1Click:Connect(function()
+    flySpeed = math.min(flySpeed + 10, 250)
+    SpeedLabel.Text = "⚡ Fly Speed: " .. flySpeed
+end)
+
+-- Bouton Fly
+local FlyBtn = createButton("FlyToggle", UDim2.new(0, 0, 0, 225), UDim2.new(1, 0, 0, 40), 
+    "✈️ Fly: OFF", Color3.fromRGB(40, 40, 50))
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     FlyBtn.MouseButton1Click:Connect(function()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	if not flying then
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        		startFly()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                		FlyBtn.Text = "Activer Fly : ON"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        		FlyBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	else
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    		stopFly()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            		FlyBtn.Text = "Activer Fly : OFF"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    		FlyBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	end
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                end)
+    if not flying then
+        startFly()
+        FlyBtn.Text = "✈️ Fly: ON"
+        FlyBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+    else
+        stopFly()
+        FlyBtn.Text = "✈️ Fly: OFF"
+        FlyBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -- Gestion de la Vitesse (WalkSpeed)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                local SpeedLabel = Instance.new("TextLabel")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.Size = UDim2.new(0, 200, 0, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.Position = UDim2.new(0, 10, 0, 80)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.BackgroundTransparency = 1
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.Text = "Vitesse : " .. currentWalkspeed
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.Font = Enum.Font.Gotham
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.TextSize = 14
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                SpeedLabel.Parent = PageMultigame
+-- Gestion de la vitesse fly
+local function updateFlySpeed()
+    if flying and bodyVelocity then
+        bodyVelocity.velocity = bodyVelocity.velocity.Unit * flySpeed
+    end
+end
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                local function updateSpeed(value)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	currentWalkspeed = math.clamp(currentWalkspeed + value, 0, 250)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	SpeedLabel.Text = "Vitesse : " .. currentWalkspeed
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        	local character = player.Character
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	if character then
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                		local humanoid = character:FindFirstChildOfClass("Humanoid")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        		if humanoid then humanoid.WalkSpeed = currentWalkspeed end
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	end
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    end
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    local BtnPlus = Instance.new("TextButton")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.Size = UDim2.new(0, 40, 0, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.Position = UDim2.new(0, 10, 0, 120)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.Text = "+"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.Font = Enum.Font.GothamBold
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.TextSize = 16
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.Parent = PageMultigame
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    Instance.new("UICorner", BtnPlus).CornerRadius = UDim.new(0, 4)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    BtnPlus.MouseButton1Click:Connect(function()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	updateSpeed(10)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        end)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        local BtnMoins = Instance.new("TextButton")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.Size = UDim2.new(0, 40, 0, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.Position = UDim2.new(0, 60, 0, 120)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.Text = "-"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.Font = Enum.Font.GothamBold
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.TextSize = 16
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.Parent = PageMultigame
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Instance.new("UICorner", BtnMoins).CornerRadius = UDim.new(0, 4)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        BtnMoins.MouseButton1Click:Connect(function()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        	updateSpeed(-10)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            end)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -- Mettre à jour la vitesse si le personnage réapparaît
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            player.CharacterAdded:Connect(function(char)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	local humanoid = char:WaitForChild("Humanoid")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	humanoid.WalkSpeed = currentWalkspeed
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	if flying then stopFly() FlyBtn.Text = "Activer Fly : OFF" FlyBtn.TextColor3 = Color3.fromRGB(255, 100, 100) end
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        end)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -- =============================================================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -- SYSTEME D'ONGLETS DE NAVIGATION
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -- =============================================================================
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        local TabAccueil = Instance.new("TextButton")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.Size = UDim2.new(1, -20, 0, 35)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.Position = UDim2.new(0, 10, 0, 50)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.Text = "Accueil"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.Font = Enum.Font.GothamSemibold
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.TextSize = 12
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.Parent = Sidebar
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Instance.new("UICorner", TabAccueil).CornerRadius = UDim.new(0, 4)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        local TabMultigame = Instance.new("TextButton")
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.Size = UDim2.new(1, -20, 0, 35)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.Position = UDim2.new(0, 10, 0, 95)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.Text = "Multigame"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.TextColor3 = Color3.fromRGB(180, 180, 180)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.Font = Enum.Font.GothamSemibold
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.TextSize = 12
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabMultigame.Parent = Sidebar
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Instance.new("UICorner", TabMultigame).CornerRadius = UDim.new(0, 4)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        TabAccueil.MouseButton1Click:Connect(function()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        	PageAccueil.Visible = true
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	PageMultigame.Visible = false
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	TabAccueil.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	TabAccueil.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        	TabMultigame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	TabMultigame.TextColor3 = Color3.fromRGB(180, 180, 180)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                end)
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                TabMultigame.MouseButton1Click:Connect(function()
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	PageAccueil.Visible = false
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	PageMultigame.Visible = true
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        	TabMultigame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	TabMultigame.TextColor3 = Color3.fromRGB(255, 255, 255)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                	TabAccueil.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    	TabAccueil.TextColor3 = Color3.fromRGB(180, 180, 180)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        end)
+-- Nettoyage des ressources
+player.CharacterAdded:Connect(function(char)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if flying then stopFly() end
+    end)
+end)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
