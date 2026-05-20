@@ -26,7 +26,7 @@ if player:WaitForChild("PlayerGui"):FindFirstChild("ZentyVoidHub") then
 end
 
 local Hub = {
-    GameMode = "Universel",
+    GameMode = "Murder Mystery 2", -- Forcé par défaut pour garantir l'affichage de l'onglet MM2
     PlaceId = game.PlaceId,
     GameId = game.GameId,
     Config = {
@@ -55,11 +55,6 @@ local Hub = {
         Border = Color3.fromRGB(35, 35, 40)        
     }
 }
-
--- Vérification par GameId ou PlaceId pour MM2
-if Hub.GameId == 66654135 or Hub.PlaceId == 142823291 then 
-    Hub.GameMode = "Murder Mystery 2" 
-end
 
 -- ══════════════════════════════════════════════
 --  INTERFACE GRAPHIQUE GHOST TRANSLUCIDE
@@ -234,7 +229,7 @@ local pCombat = CreatePage("combat", "CRITICAL COMBAT")
 local pVisuals = CreatePage("visuals", "OVERLAY RENDERER")
 local pLocal = CreatePage("local", "PHYSICS MANIPULATOR")
 local pFun = CreatePage("fun", "BLATANT MODS & FUN")
-local pGameMod = CreatePage("gamemod", "TARGET MODULE")
+local pGameMod = CreatePage("gamemod", "MURDER MASTER") -- Renommé pour correspondre à MM2 directement
 
 -- Combat
 AddToggle(pCombat, "Engine Lock-On", "Assistance de visée angulaire stricte", "Aimbot", function() end)
@@ -271,23 +266,14 @@ AddToggle(pFun, "Click Map Teleport", "Pressez CTRL + Clic gauche pour vous tél
 AddToggle(pFun, "View Spy Target", "Clône la caméra sur le joueur ciblé", "ViewSpy", function() end)
 
 -- ══════════════════════════════════════════════
---  ONGLET INTERACTIF MURDER MYSTERY 2
+--  ONGLET INTERACTIF FORCÉ (MURDER MASTER)
 -- ══════════════════════════════════════════════
-if Hub.GameMode == "Murder Mystery 2" then
-    AddToggle(pGameMod, "Role Wallhack Chams", "Coloration stricte à travers les murs (Rouge: Murder, Bleu: Sheriff)", "Mm2ShowRoles", function() end)
-    AddToggle(pGameMod, "Murderer Proximity Alert", "Alerte texte dynamique à l'écran si le Meurtrier approche", "Mm2MurderAlert", function() end)
-    AddToggle(pGameMod, "Sheriff Weapon Lock", "Restreint l'aimbot uniquement sur le Meurtrier", "Mm2SheriffLock", function() end)
-    AddToggle(pGameMod, "Coin Geometric Grabber", "Téléporte automatiquement toutes les pièces du round sur vous", "Mm2AutoCollect", function() end)
-    AddToggle(pGameMod, "Auto Grab Dropped Gun", "Se téléporte instantanément sur l'arme tombée au sol si le Shérif meurt", "Mm2GrabGun", function() end)
-    AddToggle(pGameMod, "Instant Kill Murderer", "Shoote automatiquement le Meurtrier si vous avez l'arme", "Mm2KillMurderer", function() end)
-else
-    local NoModTxt = Instance.new("TextLabel")
-    NoModTxt.Size = UDim2.new(1, 0, 0, 50)
-    NoModTxt.BackgroundTransparency = 1
-    NoModTxt.Text = "AUCUN MODULE COMPATIBLE DETECTE POUR CE JEU"
-    NoModTxt.Font = Enum.Font.Code; NoModTxt.TextSize = 11; NoModTxt.TextColor3 = Hub.Themes.TextDark
-    NoModTxt.Parent = pGameMod
-end
+AddToggle(pGameMod, "Role Wallhack Chams", "Coloration stricte à travers les murs (Rouge: Murder, Bleu: Sheriff)", "Mm2ShowRoles", function() end)
+AddToggle(pGameMod, "Murderer Proximity Alert", "Alerte texte dynamique à l'écran si le Meurtrier approche", "Mm2MurderAlert", function() end)
+AddToggle(pGameMod, "Sheriff Weapon Lock", "Restreint l'aimbot uniquement sur le Meurtrier", "Mm2SheriffLock", function() end)
+AddToggle(pGameMod, "Coin Geometric Grabber", "Téléporte automatiquement toutes les pièces du round sur vous", "Mm2AutoCollect", function() end)
+AddToggle(pGameMod, "Auto Grab Dropped Gun", "Se téléporte instantanément sur l'arme tombée au sol si le Shérif meurt", "Mm2GrabGun", function() end)
+AddToggle(pGameMod, "Instant Kill Murderer", "Shoote automatiquement le Meurtrier si vous avez l'arme", "Mm2KillMurderer", function() end)
 
 -- ══════════════════════════════════════════════
 --  FONCTIONS TECHNIQUES DE CAPTURE
@@ -333,7 +319,7 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Position = UDim2.new(0, UIS:GetMouseLocation().X, 0, UIS:GetMouseLocation().Y)
     
     local target = nil
-    if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2SheriffLock then
+    if Hub.Config.Mm2SheriffLock then
         target = getMurderer()
     elseif Hub.Config.Aimbot then
         target = getClosestPlayer()
@@ -341,13 +327,13 @@ RunService.RenderStepped:Connect(function()
 
     if target and isAlive(target) then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Hub.Config.AimbotPart].Position)
-        if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2KillMurderer and player.Character:FindFirstChild("Gun") then
+        if Hub.Config.Mm2KillMurderer and player.Character:FindFirstChild("Gun") then
             game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0), Camera.CFrame)
         end
     end
 
     -- Radar d'alerte de proximité
-    if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2MurderAlert then
+    if Hub.Config.Mm2MurderAlert then
         local m = getMurderer()
         if m and m ~= player and isAlive(m) then
             local dist = (m.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
@@ -360,7 +346,7 @@ RunService.RenderStepped:Connect(function()
 
     -- Caméra espion (ViewSpy)
     if Hub.Config.ViewSpy then
-        local spyTarget = (Hub.GameMode == "Murder Mystery 2") and getMurderer() or getClosestPlayer()
+        local spyTarget = getMurderer() or getClosestPlayer()
         if spyTarget and isAlive(spyTarget) then
             Camera.CameraSubject = spyTarget.Character.Humanoid
         end
@@ -391,7 +377,7 @@ RunService.RenderStepped:Connect(function()
         end
 
         -- Appliquer les couleurs d'identification MM2
-        if Hub.Config.Mm2ShowRoles and Hub.GameMode == "Murder Mystery 2" then
+        if Hub.Config.Mm2ShowRoles then
             cache.Chams.Parent = p.Character
             if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then
                 cache.Chams.FillColor = Color3.fromRGB(255, 35, 35)
@@ -435,10 +421,9 @@ RunService.RenderStepped:Connect(function()
 
             if Hub.Config.EspNames then
                 local tag = "[INNOCENT]"
-                if Hub.GameMode == "Murder Mystery 2" then
-                    if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then tag = "[MURDER]"
-                    elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then tag = "[SHERIFF]" end
-                end
+                if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then tag = "[MURDER]"
+                elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then tag = "[SHERIFF]" end
+                
                 cache.Name.Text = tag .. " " .. p.Name:upper() .. " // [" .. math.floor(dist) .. "M]"
                 cache.Name.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 14)
                 cache.Name.Size = UDim2.new(0, 200, 0, 10)
@@ -471,23 +456,19 @@ RunService.Heartbeat:Connect(function()
         end
     end
 
-    -- AUTOMATIONS EXCLUSIVES MM2
-    if Hub.GameMode == "Murder Mystery 2" then
-        -- Ramassage automatique de pièces (Coin Magnet)
-        if Hub.Config.Mm2AutoCollect then
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj.Name == "Coin" and obj:IsA("BasePart") then
-                    obj.CFrame = root.CFrame
-                end
+    -- AUTOMATIONS INTERNES MM2
+    if Hub.Config.Mm2AutoCollect then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name == "Coin" and obj:IsA("BasePart") then
+                obj.CFrame = root.CFrame
             end
         end
+    end
 
-        -- Téléportation instantanée sur le pistolet au sol
-        if Hub.Config.Mm2GrabGun then
-            local gunDrop = Workspace:FindFirstChild("GunDrop")
-            if gunDrop and gunDrop:IsA("BasePart") then
-                root.CFrame = gunDrop.CFrame + Vector3.new(0, 2, 0)
-            end
+    if Hub.Config.Mm2GrabGun then
+        local gunDrop = Workspace:FindFirstChild("GunDrop")
+        if gunDrop and gunDrop:IsA("BasePart") then
+            root.CFrame = gunDrop.CFrame + Vector3.new(0, 2, 0)
         end
     end
 
@@ -522,7 +503,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Initialisation de la première page par défaut
+-- Initialisation forcée de l'affichage
 if firstPage then
     Pages[firstPage].Visible = true
     Buttons[firstPage].Btn.TextColor3 = Hub.Themes.Text
@@ -530,3 +511,4 @@ if firstPage then
     Buttons[firstPage].Btn.BackgroundColor3 = Hub.Themes.Accent
     Buttons[firstPage].Ind.BackgroundTransparency = 0
 end
+
