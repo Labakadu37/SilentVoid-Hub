@@ -1,15 +1,17 @@
 --[[
-    SilentVoid Hub - Édition Phantom (Top Navigation)
-    Interface moderne semi-transparente avec catégories horizontales.
-    Utilisation exclusive des API légitimes de Roblox.
+    SilentVoid Hub - Édition Phantom avec Assistance Visuelle Avancée
+    Interface transparente avec onglets en haut.
+    Système de cadres 2D (Boxes), Distances et Lignes de suivi (Tracers) 100% Légitime.
 --]]
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --------------------------------------------------------------------------------
@@ -17,7 +19,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 --------------------------------------------------------------------------------
 local Theme = {
     Background = Color3.fromRGB(15, 12, 22),
-    BackgroundTransparency = 0.35, -- Effet transparent "Phantom"
+    BackgroundTransparency = 0.35,
     Topbar = Color3.fromRGB(10, 8, 15),
     Accent = Color3.fromRGB(150, 50, 255), -- Violet Néon
     Text = Color3.fromRGB(245, 240, 255),
@@ -29,11 +31,9 @@ local Theme = {
 
 local HubState = {
     Visible = true,
-    CurrentTab = "Assistance Visual",
-    SelectedPlayer = nil,
-    VisualsEnabled = false,
+    CurrentTab = "Esp Visual",
     InfiniteJump = false,
-    HighlightColor = Color3.fromRGB(150, 50, 255)
+    VisualsEnabled = false -- Activé via le bouton de l'interface
 }
 
 --------------------------------------------------------------------------------
@@ -45,7 +45,11 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
--- Main Frame (Le Panel Violet Transparent)
+-- Dossier de stockage pour les éléments visuels de repérage
+local VisualsFolder = Instance.new("Folder")
+VisualsFolder.Name = "SV_Visuals"
+VisualsFolder.Parent = ScreenGui
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 580, 0, 380)
@@ -56,12 +60,10 @@ MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
--- Coins arrondis du panel
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Bordure Néon Violette très fine
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Color = Theme.Accent
 UIStroke.Thickness = 1.2
@@ -83,20 +85,18 @@ local TopbarCorner = Instance.new("UICorner")
 TopbarCorner.CornerRadius = UDim.new(0, 12)
 TopbarCorner.Parent = Topbar
 
--- Titre "SilentVoid" à gauche
 local Title = Instance.new("TextLabel")
 Title.Name = "Title"
-Title.Size = UDim2.new(0.3, 0, 0, 40)
+Title.Size = UDim2.new(0.5, 0, 0, 40)
 Title.Position = UDim2.new(0, 15, 0, 5)
 Title.BackgroundTransparency = 1
 Title.Font = Theme.Font
-Title.Text = "SILENTVOID // PHANTOM"
+Title.Text = "SILENTVOID // ASSISTANCE ACCESSIBILITÉ"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = Topbar
 
--- Conteneur horizontal pour les catégories (Onglets)
 local TabsContainer = Instance.new("Frame")
 TabsContainer.Name = "TabsContainer"
 TabsContainer.Size = UDim2.new(1, -20, 0, 35)
@@ -110,7 +110,6 @@ TabsLayout.FillDirection = Enum.FillDirection.Horizontal
 TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 TabsLayout.Padding = UDim.new(0, 8)
 
--- Zone de contenu sous la barre supérieure
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Name = "ContentContainer"
 ContentContainer.Position = UDim2.new(0, 15, 0, 100)
@@ -155,16 +154,15 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --------------------------------------------------------------------------------
--- 📂 CRÉATION LOGIQUE DES CATÉGORIES (TOP TABS)
+-- 📂 GESTION DES CATÉGORIES
 --------------------------------------------------------------------------------
 local Pages = {}
 local TabButtons = {}
 
 local function CreateCategory(name, order)
-    -- Bouton de l'onglet en haut
     local Button = Instance.new("TextButton")
     Button.Name = name .. "Tab"
-    Button.Size = UDim2.new(0, 130, 1, 0)
+    Button.Size = UDim2.new(0, 140, 1, 0)
     Button.BackgroundColor3 = Theme.ButtonBg
     Button.BackgroundTransparency = 0.5
     Button.Font = Theme.Font
@@ -174,11 +172,8 @@ local function CreateCategory(name, order)
     Button.LayoutOrder = order
     Button.Parent = TabsContainer
     
-    local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Button
+    Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
 
-    -- Page de contenu (Vertical Scrolling)
     local Page = Instance.new("ScrollingFrame")
     Page.Name = name .. "Page"
     Page.Size = UDim2.new(1, 0, 1, 0)
@@ -201,7 +196,6 @@ local function CreateCategory(name, order)
     Pages[name] = Page
     TabButtons[name] = Button
 
-    -- Interaction des onglets
     Button.MouseButton1Click:Connect(function()
         for _, v in pairs(Pages) do v.Visible = false end
         for _, v in pairs(TabButtons) do 
@@ -218,19 +212,17 @@ local function CreateCategory(name, order)
     end)
 end
 
--- Création des 3 catégories majeures en haut
 CreateCategory("Esp Visual", 1)
 CreateCategory("Fun Outils", 2)
 CreateCategory("Paramètres", 3)
 
--- Activer la première catégorie par défaut
 TabButtons["Esp Visual"].TextColor3 = Theme.Text
 TabButtons["Esp Visual"].BackgroundTransparency = 0
 TabButtons["Esp Visual"].BackgroundColor3 = Theme.ButtonHover
 Pages["Esp Visual"].Visible = true
 
 --------------------------------------------------------------------------------
--- 🎨 CONSTRUCTEURS DE COMPOSANTS MODERNES
+-- 🎨 CONSTRUCTEURS DE COMPOSANTS CONTRÔLES
 --------------------------------------------------------------------------------
 local function CreateToggle(parent, text, default, callback)
     local ToggleFrame = Instance.new("Frame")
@@ -240,7 +232,6 @@ local function CreateToggle(parent, text, default, callback)
     ToggleFrame.Parent = parent
 
     Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
-    ToggleFrame.Parent = parent
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(0.7, 0, 1, 0)
@@ -261,7 +252,6 @@ local function CreateToggle(parent, text, default, callback)
     Switch.Parent = ToggleFrame
     
     Instance.new("UICorner").CornerRadius = UDim.new(1, 0)
-    Switch.Parent = ToggleFrame
 
     local State = default
     Switch.MouseButton1Click:Connect(function()
@@ -279,7 +269,6 @@ local function CreateSlider(parent, text, min, max, default, callback)
     SliderFrame.Parent = parent
 
     Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
-    SliderFrame.Parent = parent
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1, -20, 0, 25)
@@ -327,52 +316,147 @@ local function CreateSlider(parent, text, min, max, default, callback)
 end
 
 --------------------------------------------------------------------------------
--- 👁️ CATEGORY 1 : ESP VISUAL (Aide légitime au repérage)
+-- 👁️ LOGIQUE AVANCÉE : RECTANGLES, TEXTES ET TRACERS (100% LÉGITIME)
 --------------------------------------------------------------------------------
 
--- Système d'affichage d'aide avec l'instance Highlight officielle
-local HighlightActive = false
-local TrackingHighlights = {}
+local ActiveVisuals = {}
 
-local function ApplyHighlightToPlayer(player)
-    if player == LocalPlayer then return end
-    if player.Character then
-        if not player.Character:FindFirstChild("SV_Highlight") then
-            local hl = Instance.new("Highlight")
-            hl.Name = "SV_Highlight"
-            hl.FillColor = Theme.Accent
-            hl.FillTransparency = 0.6
-            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-            hl.OutlineTransparency = 0.2
-            hl.Adornee = player.Character
-            hl.Parent = player.Character
-            TrackingHighlights[player] = hl
+-- Fonction de nettoyage d'un joueur déconnecté ou mort
+local function RemovePlayerVisual(player)
+    if ActiveVisuals[player] then
+        if ActiveVisuals[player].Box then ActiveVisuals[player].Box:Destroy() end
+        if ActiveVisuals[player].Tracer then ActiveVisuals[player].Tracer:Destroy() end
+        if ActiveVisuals[player].Label then ActiveVisuals[player].Label:Destroy() end
+        ActiveVisuals[player] = nil
+    end
+end
+
+-- Création des conteneurs visuels pour un joueur
+local function CreateVisualElements(player)
+    if ActiveVisuals[player] then RemovePlayerVisual(player) end
+
+    -- 1. Le Rectangle (Box)
+    local Box = Instance.new("Frame")
+    Box.BackgroundTransparency = 1
+    Box.BorderSizePixel = 0
+    Box.Visible = false
+    Box.Parent = VisualsFolder
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Theme.Accent
+    Stroke.Thickness = 1.5
+    Stroke.Parent = Box
+
+    -- 2. La ligne de suivi (Tracer)
+    local Tracer = Instance.new("Frame")
+    Tracer.BackgroundColor3 = Theme.Accent
+    Tracer.BorderSizePixel = 0
+    Tracer.AnchorPoint = Vector2.new(0.5, 1)
+    Tracer.Visible = false
+    Tracer.Parent = VisualsFolder
+
+    -- 3. Le Texte (Pseudo + Distance)
+    local InfoLabel = Instance.new("TextLabel")
+    InfoLabel.BackgroundTransparency = 1
+    InfoLabel.Font = Theme.Font
+    InfoLabel.TextSize = 12
+    InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoLabel.TextStrokeTransparency = 0.5
+    InfoLabel.Visible = false
+    InfoLabel.Parent = VisualsFolder
+
+    ActiveVisuals[player] = {
+        Box = Box,
+        Tracer = Tracer,
+        Label = InfoLabel
+    }
+end
+
+-- Boucle de rendu mathématique pour aligner la 2D de l'écran avec la 3D du jeu
+RunService.RenderStepped:Connect(function()
+    if not HubState.VisualsEnabled then
+        VisualsFolder:ClearAllChildren()
+        table.clear(ActiveVisuals)
+        return
+    end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local char = player.Character
+            local hrp = char.HumanoidRootPart
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+
+            if humanoid and humanoid.Health > 0 then
+                if not ActiveVisuals[player] then
+                    CreateVisualElements(player)
+                end
+
+                -- Calcul des coordonnées écran
+                local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+                if onScreen then
+                    -- Calcul de la taille de la boite selon la distance
+                    local distance = (Camera.CFrame.Position - hrp.Position).Magnitude
+                    local factor = (1 / distance) * 1000
+                    local boxWidth = math.clamp(factor * 3.5, 20, 150)
+                    local boxHeight = math.clamp(factor * 5, 30, 220)
+
+                    local elements = ActiveVisuals[player]
+
+                    -- Mise à jour du Rectangle (Box)
+                    elements.Box.Visible = true
+                    elements.Box.Size = UDim2.new(0, boxWidth, 0, boxHeight)
+                    elements.Box.Position = UDim2.new(0, hrpPos.X - (boxWidth / 2), 0, hrpPos.Y - (boxHeight / 2))
+
+                    -- Mise à jour des Textes (Pseudo @Nom [Distance])
+                    elements.Label.Visible = true
+                    elements.Label.Text = string.format("%s\n[%d Mètres]", player.DisplayName, math.floor(distance))
+                    elements.Label.Position = UDim2.new(0, hrpPos.X, 0, hrpPos.Y - (boxHeight / 2) - 25)
+                    
+                    -- Alerte couleur de danger si trop proche
+                    if distance < 30 then
+                        elements.Label.TextColor3 = Color3.fromRGB(255, 50, 50) -- Rouge danger
+                    else
+                        elements.Label.TextColor3 = Theme.Text
+                    end
+
+                    -- Mise à jour du Tracer (Ligne partant du bas de l'écran vers le bas du rectangle)
+                    elements.Tracer.Visible = true
+                    local startX = Camera.ViewportSize.X / 2
+                    local startY = Camera.ViewportSize.Y -- Bas de l'écran
+                    local endX = hrpPos.X
+                    local endY = hrpPos.Y + (boxHeight / 2) -- Bas du rectangle
+
+                    local distance2D = math.sqrt((endX - startX)^2 + (endY - startY)^2)
+                    local angle = math.atan2(endY - startY, endX - startX)
+
+                    elements.Tracer.Size = UDim2.new(0, 1.5, 0, distance2D)
+                    elements.Tracer.Position = UDim2.new(0, startX, 0, startY)
+                    elements.Tracer.Rotation = math.deg(angle) - 90
+                else
+                    -- Si le joueur sort de l'écran, on cache ses éléments
+                    if ActiveVisuals[player] then
+                        ActiveVisuals[player].Box.Visible = false
+                        ActiveVisuals[player].Tracer.Visible = false
+                        ActiveVisuals[player].Label.Visible = false
+                    end
+                end
+            else
+                RemovePlayerVisual(player)
+            end
+        else
+            RemovePlayerVisual(player)
         end
-    end
-end
-
-local function RemoveHighlights()
-    for player, hl in pairs(TrackingHighlights) do
-        if hl then hl:Destroy() end
-    end
-    table.clear(TrackingHighlights)
-end
-
-CreateToggle(Pages["Esp Visual"], "Mettre en surbrillance les joueurs (Highlight)", false, function(state)
-    HighlightActive = state
-    if state then
-        for _, p in pairs(Players:GetPlayers()) do ApplyHighlightToPlayer(p) end
-    else
-        RemoveHighlights()
     end
 end)
 
--- Actualisation dynamique des personnages pour le repérage visuel
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function()
-        task.wait(1)
-        if HighlightActive then ApplyHighlightToPlayer(p) end
-    end)
+-- Activer / Désactiver l'assistance visuelle
+CreateToggle(Pages["Esp Visual"], "Activer les Rectangles d'Aide Visuelle", false, function(state)
+    HubState.VisualsEnabled = state
+    if not state then
+        VisualsFolder:ClearAllChildren()
+        table.clear(ActiveVisuals)
+    end
 end)
 
 --------------------------------------------------------------------------------
@@ -396,11 +480,10 @@ CreateSlider(Pages["Fun Outils"], "Hauteur / Puissance de Saut", 50, 250, 50, fu
     end
 end)
 
-CreateToggle(Pages["Fun Outils"], "Saut Infini (Anti-Difficulté)", false, function(state)
+CreateToggle(Pages["Fun Outils"], "Saut Infini (Anti-Chute)", false, function(state)
     HubState.InfiniteJump = state
 end)
 
--- Logique du saut infini déclenché proprement par l'utilisateur
 UserInputService.JumpRequest:Connect(function()
     if HubState.InfiniteJump and LocalPlayer.Character then
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -418,16 +501,16 @@ local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0.98, 0, 0, 35)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 40)
 CloseBtn.Font = Theme.Font
-CloseBtn.Text = "Désactiver et Fermer le Hub"
+CloseBtn.Text = "Désactiver et Fermer proprement le Hub"
 CloseBtn.TextColor3 = Theme.Text
 CloseBtn.TextSize = 13
 CloseBtn.Parent = Pages["Paramètres"]
 
 Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
-CloseBtn.Parent = Pages["Paramètres"]
 
 CloseBtn.MouseButton1Click:Connect(function()
-    RemoveHighlights()
+    HubState.VisualsEnabled = false
+    VisualsFolder:ClearAllChildren()
     ScreenGui:Destroy()
 end)
 
@@ -439,7 +522,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         HubState.Visible = not HubState.Visible
         
         local targetSize = HubState.Visible and UDim2.new(0, 580, 0, 380) or UDim2.new(0, 580, 0, 0)
-        local targetTransparency = HubState.Visible and Theme.BackgroundTransparency or 1
         
         TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Size = targetSize
@@ -447,4 +529,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("SilentVoid Phantom Edition chargé avec succès.")
+print("SilentVoid Phantom (Aide Visuelle Avancée) chargé.")
