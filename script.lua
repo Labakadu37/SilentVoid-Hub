@@ -6,8 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 3.0 : Fix Bug d'affichage & Crash Parent Loop
-    [+] Système Anti-Crash Exécuteur Intégré
+    [+] Version 4.0 : FOV Centré Fixe + Target Line Ajustée + ESP Ultra-Compatible
 --]]
 
 local Players = game:GetService("Players")
@@ -18,22 +17,16 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 
--- Nettoyage des anciennes instances pour éviter les doublons
+-- Nettoyage des anciennes instances
 local oldUI = CoreGui:FindFirstChild("ZentyHub_Premium") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ZentyHub_Premium")
 if oldUI then oldUI:Destroy() end
 
--- --- CRÉATION DE LA SCREEN GUI ---
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
 
--- Injection ultra-sécurisée
-local success, err = pcall(function()
-    ScreenGui.Parent = CoreGui
-end)
-if not success then
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-end
+local success, err = pcall(function() ScreenGui.Parent = CoreGui end)
+if not success then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
 -- --- CONFIGURATION GLOBALE ---
 local ZentyConfig = {
@@ -53,12 +46,13 @@ local ZentyConfig = {
     }
 }
 
--- --- CERCLE DE FOV (UI) ---
+-- --- CERCLE DE FOV (FIXE AU CENTRE) ---
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "ZentyFOV"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFrame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Centre absolu de l'écran
 FOVFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
-FOVFrame.BackgroundTransparency = 0.95
+FOVFrame.BackgroundTransparency = 0.98
 FOVFrame.Visible = false
 FOVFrame.Parent = ScreenGui
 
@@ -71,7 +65,7 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- TARGET LINE (UI) ---
+-- --- TARGET LINE (DEPUIS LE CENTRE) ---
 local LineFrame = Instance.new("Frame")
 LineFrame.Name = "ZentyTargetLine"
 LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
@@ -80,7 +74,7 @@ LineFrame.AnchorPoint = Vector2.new(0, 0.5)
 LineFrame.Visible = false
 LineFrame.Parent = ScreenGui
 
--- --- MAIN FRAME (MENU PHANTOM VIOLET) ---
+-- --- MAIN FRAME (MENU) ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -89,9 +83,9 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 22)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Parent = ScreenGui -- FIX: Parent direct à la ScreenGui
+MainFrame.Parent = ScreenGui
 
--- Script de Drag (Déplacement) moderne sans .Draggable (Anti-Crash PC/Mobile)
+-- Dragging System
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -158,7 +152,7 @@ CloseCorner.Parent = CloseBtn
 
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
--- --- NAVIGATION MULTI-ONGLETS ---
+-- --- NAVIGATION ---
 local Navigation = Instance.new("Frame")
 Navigation.Size = UDim2.new(0, 130, 1, -60)
 Navigation.Position = UDim2.new(0, 10, 0, 50)
@@ -365,24 +359,24 @@ end
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Ligne de Cible (Target Line)", ZentyConfig.Aimbot.TargetLine, function(v) ZentyConfig.Aimbot.TargetLine = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 400, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
 
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP (Contours Violet)", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
--- --- RECHERCHE DU JOUEUR LE PLUS PROCHE ---
-local function GetClosestPlayer()
+-- --- LOGIQUE DE TRI TARGET (BASEE SUR LE CENTRE DE L'ECRAN) ---
+local function GetClosestPlayerToCenter()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
+    local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
             local screenPos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
             if onScreen then
-                local mouseLocation = UserInputService:GetMouseLocation()
-                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mouseLocation).Magnitude
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - centerScreen).Magnitude
                 if distance < maxDistance then
                     closestTarget = player
                     maxDistance = distance
@@ -393,10 +387,10 @@ local function GetClosestPlayer()
     return closestTarget
 end
 
--- --- ESP NATIVE ANTI-CRASH ---
-local EspContainer = Instance.new("Folder")
-local successContainer = pcall(function() EspContainer.Parent = CoreGui end)
-if not successContainer then EspContainer.Parent = ScreenGui end
+-- --- COMPATIBILITÉ DOSSIER ESP ---
+local EspContainer = ScreenGui:FindFirstChild("ZentyESP_Folder") or Instance.new("Folder")
+EspContainer.Name = "ZentyESP_Folder"
+EspContainer.Parent = ScreenGui
 
 local function UpdateESP()
     for _, player in pairs(Players:GetPlayers()) do
@@ -410,14 +404,13 @@ local function UpdateESP()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
                 
                 if onScreen and (ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) then
-                    local sizeX = 1300 / screenPos.Z
-                    local sizeY = 1800 / screenPos.Z
+                    local sizeX = math.clamp(2000 / screenPos.Z, 10, 300)
+                    local sizeY = math.clamp(2800 / screenPos.Z, 15, 400)
                     
                     if not existingEsp then
                         existingEsp = Instance.new("Frame")
                         existingEsp.Name = espName
                         existingEsp.BackgroundTransparency = 1
-                        existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
                         existingEsp.AnchorPoint = Vector2.new(0.5, 0.5)
                         existingEsp.Parent = EspContainer
                         
@@ -430,7 +423,6 @@ local function UpdateESP()
                         local textLabel = Instance.new("TextLabel")
                         textLabel.Name = "EspText"
                         textLabel.Size = UDim2.new(1, 0, 0, 20)
-                        textLabel.Position = UDim2.new(0, 0, 0, -25)
                         textLabel.BackgroundTransparency = 1
                         textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
                         textLabel.Font = Enum.Font.GothamBold
@@ -441,6 +433,7 @@ local function UpdateESP()
                     existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
                     existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
                     existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
+                    existingEsp.EspText.Position = UDim2.new(0, 0, 0, -(sizeY/2) - 15)
                     
                     if ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local labelText = ""
@@ -466,44 +459,41 @@ local function UpdateESP()
     end
 end
 
--- --- BOUCLE UNIVERSELLE ---
+-- --- BOUCLE PRINCIPALE GENERALE ---
 RunService.RenderStepped:Connect(function()
-    local mouseLoc = UserInputService:GetMouseLocation()
+    local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     
-    -- Cercle de FOV
+    -- 1. MAJ du Cercle FOV (Reste parfaitement centré)
     if ZentyConfig.Aimbot.ShowFOV then
-        FOVFrame.Position = UDim2.new(0, mouseLoc.X, 0, mouseLoc.Y)
         FOVFrame.Size = UDim2.new(0, ZentyConfig.Aimbot.FOV * 2, 0, ZentyConfig.Aimbot.FOV * 2)
         FOVFrame.Visible = true
     else
         FOVFrame.Visible = false
     end
 
-    -- Gestion Cible & Lock Viseur
-    local target = GetClosestPlayer()
+    -- 2. Recherche et Lock Target
+    local target = GetClosestPlayerToCenter()
     
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
         local head = target.Character.Head
         local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
         
         if onScreen then
-            -- Target Line
+            -- Target Line part du centre de l'écran vers l'ennemi
             if ZentyConfig.Aimbot.TargetLine then
-                local startPos = Vector2.new(mouseLoc.X, mouseLoc.Y)
                 local endPos = Vector2.new(headPos.X, headPos.Y)
-                local distance = (endPos - startPos).Magnitude
-                local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
+                local distance = (endPos - centerScreen).Magnitude
+                local angle = math.atan2(endPos.Y - centerScreen.Y, endPos.X - centerScreen.X)
                 
                 LineFrame.Size = UDim2.new(0, distance, 0, 2)
-                LineFrame.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+                LineFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
                 LineFrame.Rotation = math.deg(angle)
                 LineFrame.Visible = true
             else
                 LineFrame.Visible = false
             end
             
-            -- Lock Caméra (Valide PC & Mobile)
-            -- S'active automatiquement lorsque tu maintiens le clic droit/gauche ou appuie sur ton écran tactile
+            -- Lock Caméra Direct et Fluide
             if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
                 local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
                 Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
@@ -515,6 +505,6 @@ RunService.RenderStepped:Connect(function()
         LineFrame.Visible = false
     end
 
+    -- 3. Mise à jour de l'ESP
     UpdateESP()
 end)
-
