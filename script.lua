@@ -6,7 +6,8 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version Sécurisée (Fix Affichage)
+    [+] Version 2.0 : Correction Aimbot & ESP (Sans API Drawing)
+    [+] Support universel : PC / Mobile / Tous exécuteurs
 --]]
 
 local Players = game:GetService("Players")
@@ -17,18 +18,15 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 
--- --- SÉCURITÉ D'AFFICHAGE (FIX) ---
+-- --- SÉCURITÉ D'AFFICHAGE ---
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
 
--- Test d'injection sécurisé pour éviter le crash silencieux
 local success, err = pcall(function()
     ScreenGui.Parent = CoreGui
 end)
-
 if not success then
-    -- Si le CoreGui est bloqué par l'exécuteur, on force l'affichage dans le PlayerGui classique
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
@@ -50,7 +48,34 @@ local ZentyConfig = {
     }
 }
 
--- Main Frame (Le Hub)
+-- --- CRÉATION DU CERCLE DE FOV NATIF (ROBLOX UI) ---
+local FOVFrame = Instance.new("Frame")
+FOVFrame.Name = "ZentyFOV"
+FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
+FOVFrame.BackgroundTransparency = 0.9 -- Transparent à l'intérieur
+FOVFrame.Visible = false
+FOVFrame.Parent = ScreenGui
+
+local FOVCorner = Instance.new("UICorner")
+FOVCorner.CornerRadius = UDim.new(1, 0) -- Cercle parfait
+FOVCorner.Parent = FOVFrame
+
+local FOVStroke = Instance.new("UIStroke")
+FOVStroke.Thickness = 1.5
+FOVStroke.Color = ZentyConfig.Aimbot.Color
+FOVStroke.Parent = FOVFrame
+
+-- --- CRÉATION DE LA TARGET LINE NATIVE ---
+local LineFrame = Instance.new("Frame")
+LineFrame.Name = "ZentyTargetLine"
+LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
+LineFrame.BorderSizePixel = 0
+LineFrame.AnchorPoint = Vector2.new(0, 0.5)
+LineFrame.Visible = false
+LineFrame.Parent = ScreenGui
+
+-- --- INTERFACE : MAIN FRAME ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -60,18 +85,41 @@ MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true 
+MainFrame.Parent = MainFrame
+
+-- Permettre le déplacement du menu de manière fluide (PC & Mobile)
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
 MainFrame.Parent = ScreenGui
 
--- Coins arrondis premium
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Bordure Glow Violet
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Color = Color3.fromRGB(130, 0, 255)
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 MainStroke.Parent = MainFrame
 
 -- Topbar
@@ -93,7 +141,6 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.BackgroundTransparency = 1
 Title.Parent = TopBar
 
--- Bouton de fermeture
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -40, 0.5, -15)
@@ -107,13 +154,10 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseBtn
 
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
--- --- NAVIGATION ---
+-- --- NAVIGATION MULTI-ONGLETS ---
 local Navigation = Instance.new("Frame")
-Navigation.Name = "Navigation"
 Navigation.Size = UDim2.new(0, 130, 1, -60)
 Navigation.Position = UDim2.new(0, 10, 0, 50)
 Navigation.BackgroundTransparency = 1
@@ -124,7 +168,6 @@ NavLayout.Padding = UDim.new(0, 8)
 NavLayout.Parent = Navigation
 
 local PagesContainer = Instance.new("Frame")
-PagesContainer.Name = "PagesContainer"
 PagesContainer.Size = UDim2.new(1, -160, 1, -60)
 PagesContainer.Position = UDim2.new(0, 150, 0, 50)
 PagesContainer.BackgroundTransparency = 1
@@ -135,7 +178,6 @@ local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Settings"}
 
 for i, catName in ipairs(Categories) do
     local NavBtn = Instance.new("TextButton")
-    NavBtn.Name = catName .. "_Btn"
     NavBtn.Size = UDim2.new(1, 0, 0, 35)
     NavBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
     NavBtn.BackgroundTransparency = 0.5
@@ -156,7 +198,6 @@ for i, catName in ipairs(Categories) do
     BtnStroke.Parent = NavBtn
 
     local Page = Instance.new("ScrollingFrame")
-    Page.Name = catName .. "_Page"
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.Visible = false
@@ -318,34 +359,18 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
     UserInputService.InputChanged:Connect(function(input) if Sliding and input.UserInputType == Enum.UserInputType.MouseMovement then UpdateSlider() end end)
 end
 
--- Injecter les options
+-- Remplissage UI
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Ligne de Cible (Target Line)", ZentyConfig.Aimbot.TargetLine, function(v) ZentyConfig.Aimbot.TargetLine = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 400, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Fluidité)", 1, 20, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Plus bas = plus fort)", 1, 20, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
 
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP (Contours Violet)", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
--- --- VERIFICATION ET INITIALISATION DE L'API DRAWING ---
-local FOVCircle = nil
-local TargetLine = nil
-
-pcall(function()
-    FOVCircle = Drawing.new("Circle")
-    FOVCircle.Thickness = 1.5
-    FOVCircle.Filled = false
-    FOVCircle.Transparency = 0.6
-    FOVCircle.Color = ZentyConfig.Aimbot.Color
-
-    TargetLine = Drawing.new("Line")
-    TargetLine.Thickness = 1.5
-    TargetLine.Transparency = 0.8
-    TargetLine.Color = ZentyConfig.Aimbot.Color
-end)
-
+-- --- LOGIQUE DU CIBLEUR (GET CLOSEST PLAYER) ---
 local function GetClosestPlayer()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
@@ -366,127 +391,132 @@ local function GetClosestPlayer()
     return closestTarget
 end
 
-local EspCache = {}
+-- --- GESTION ESP NATIVE (SANS DRAWING API) ---
+local EspContainer = Instance.new("Folder")
+local successContainer = pcall(function() EspContainer.Parent = CoreGui end)
+if not successContainer then EspContainer.Parent = ScreenGui end
 
-local function CreateEspObjects(player)
-    if EspCache[player] or not Drawing then return end
-    
-    local successObj, result = pcall(function()
-        local box = Drawing.new("Square")
-        box.Thickness = 1.5
-        box.Filled = false
-        box.Color = ZentyConfig.Visuals.Color
-        box.Visible = false
+local function UpdateESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            local espName = player.Name .. "_ZentyESP"
+            local existingEsp = EspContainer:FindFirstChild(espName)
+            
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+                local root = char.HumanoidRootPart
+                local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                
+                if onScreen and (ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) then
+                    local sizeX = 1300 / screenPos.Z
+                    local sizeY = 1800 / screenPos.Z
+                    
+                    if not existingEsp then
+                        existingEsp = Instance.new("Frame")
+                        existingEsp.Name = espName
+                        existingEsp.BackgroundTransparency = 1
+                        existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
+                        existingEsp.AnchorPoint = Vector2.new(0.5, 0.5)
+                        existingEsp.Parent = EspContainer
+                        
+                        -- Contours violets pures requis
+                        local stroke = Instance.new("UIStroke")
+                        stroke.Thickness = 1.5
+                        stroke.Color = ZentyConfig.Visuals.Color
+                        stroke.Name = "BoxOutline"
+                        stroke.Parent = existingEsp
 
-        local text = Drawing.new("Text")
-        text.Size = 14
-        text.Center = true
-        text.Outline = true
-        text.Color = Color3.fromRGB(255, 255, 255)
-        text.Visible = false
-
-        EspCache[player] = {Box = box, Text = text}
-    end)
-end
-
-local function RemoveEsp(player)
-    if EspCache[player] then
-        pcall(function()
-            EspCache[player].Box:Destroy()
-            EspCache[player].Text:Destroy()
-        end)
-        EspCache[player] = nil
+                        local textLabel = Instance.new("TextLabel")
+                        textLabel.Name = "EspText"
+                        textLabel.Size = UDim2.new(1, 0, 0, 20)
+                        textLabel.Position = UDim2.new(0, 0, 0, -25)
+                        textLabel.BackgroundTransparency = 1
+                        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        textLabel.Font = Enum.Font.GothamBold
+                        textLabel.TextSize = 12
+                        textLabel.Parent = existingEsp
+                    end
+                    
+                    existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+                    existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
+                    existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
+                    
+                    -- Gestion Textes (Pseudo + Distance)
+                    if ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
+                        local labelText = ""
+                        if ZentyConfig.Visuals.EspNames then labelText = player.Name end
+                        if ZentyConfig.Visuals.EspDistances then
+                            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                            local distance = myRoot and math.floor((myRoot.Position - root.Position).Magnitude) or 0
+                            labelText = labelText .. " [" .. distance .. "m]"
+                        end
+                        existingEsp.EspText.Text = labelText
+                        existingEsp.EspText.Visible = true
+                    else
+                        existingEsp.EspText.Visible = false
+                    end
+                    existingEsp.Visible = true
+                else
+                    if existingEsp then existingEsp.Visible = false end
+                end
+            else
+                if existingEsp then existingEsp.Visible = false end
+            end
+        end
     end
 end
 
-Players.PlayerRemoving:Connect(RemoveEsp)
-
+-- --- BOUCLE DE RENDU ET AIMBOT ---
 RunService.RenderStepped:Connect(function()
     local mouseLoc = UserInputService:GetMouseLocation()
     
-    -- Update FOV si l'API Drawing existe
-    if FOVCircle then
-        FOVCircle.Position = mouseLoc
-        FOVCircle.Radius = ZentyConfig.Aimbot.FOV
-        FOVCircle.Visible = ZentyConfig.Aimbot.ShowFOV
+    -- Rafraîchir le cercle de FOV d'UI
+    if ZentyConfig.Aimbot.ShowFOV then
+        FOVFrame.Position = UDim2.new(0, mouseLoc.X, 0, mouseLoc.Y)
+        FOVFrame.Size = UDim2.new(0, ZentyConfig.Aimbot.FOV * 2, 0, ZentyConfig.Aimbot.FOV * 2)
+        FOVFrame.Visible = true
+    else
+        FOVFrame.Visible = false
     end
 
+    -- Chercher une cible
     local target = GetClosestPlayer()
     
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
-        local headPos, onScreen = Camera:WorldToViewportPoint(target.Character.Head.Position)
+        local head = target.Character.Head
+        local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
         
         if onScreen then
-            if TargetLine and ZentyConfig.Aimbot.TargetLine then
-                TargetLine.From = mouseLoc
-                TargetLine.To = Vector2.new(headPos.X, headPos.Y)
-                TargetLine.Visible = true
-            elseif TargetLine then
-                TargetLine.Visible = false
+            -- Mettre à jour la ligne de ciblage native
+            if ZentyConfig.Aimbot.TargetLine then
+                local startPos = Vector2.new(mouseLoc.X, mouseLoc.Y)
+                local endPos = Vector2.new(headPos.X, headPos.Y)
+                local distance = (endPos - startPos).Magnitude
+                local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
+                
+                LineFrame.Size = UDim2.new(0, distance, 0, 2)
+                LineFrame.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+                LineFrame.Rotation = math.deg(angle)
+                LineFrame.Visible = true
+            else
+                LineFrame.Visible = false
             end
             
-            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-                local targetInput = Vector2.new(headPos.X, headPos.Y)
-                local currentMouse = UserInputService:GetMouseLocation()
-                if mousemoverel then
-                    mousemoverel((targetInput.X - currentMouse.X) / ZentyConfig.Aimbot.Smoothness, (targetInput.Y - currentMouse.Y) / ZentyConfig.Aimbot.Smoothness)
-                end
+            -- EXECUTION DU LOCK CAMERA (Fonctionne sur TOUS les supports/exécuteurs)
+            -- S'active si le clic gauche (PC) ou un appui écran (Mobile) est maintenu
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)[1] then
+                local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+                -- Lissage caméra basé sur le paramètre Smoothness
+                Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
             end
-        elseif TargetLine then
-            TargetLine.Visible = false
+        else
+            LineFrame.Visible = false
         end
-    elseif TargetLine then
-        TargetLine.Visible = false
+    else
+        LineFrame.Visible = false
     end
 
-    -- Loop ESP
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            CreateEspObjects(player)
-            local components = EspCache[player]
-            
-            if components then
-                local char = player.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-                    local rootPart = char.HumanoidRootPart
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                    
-                    if onScreen and (ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) then
-                        local sizeX = 1000 / screenPos.Z
-                        local sizeY = 1400 / screenPos.Z
-                        
-                        if ZentyConfig.Visuals.EspBoxes and components.Box then
-                            components.Box.Size = Vector2.new(sizeX, sizeY)
-                            components.Box.Position = Vector2.new(screenPos.X - (sizeX / 2), screenPos.Y - (sizeY / 2))
-                            components.Box.Color = ZentyConfig.Visuals.Color
-                            components.Box.Visible = true
-                        elseif components.Box then
-                            components.Box.Visible = false
-                        end
-                        
-                        if (ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) and components.Text then
-                            local infoString = ""
-                            if ZentyConfig.Visuals.EspNames then infoString = infoString .. player.Name end
-                            if ZentyConfig.Visuals.EspDistances then 
-                                local distance = math.floor((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude) or 0)
-                                infoString = infoString .. (ZentyConfig.Visuals.EspNames and " [" or "") .. distance .. "m" .. (ZentyConfig.Visuals.EspNames and "]" or "")
-                            end
-                            
-                            components.Text.Text = infoString
-                            components.Text.Position = Vector2.new(screenPos.X, screenPos.Y - (sizeY / 2) - 18)
-                            components.Text.Visible = true
-                        elseif components.Text then
-                            components.Text.Visible = false
-                        end
-                    else
-                        if components.Box then components.Box.Visible = false end
-                        if components.Text then components.Text.Visible = false end
-                    end
-                else
-                    if components.Box then components.Box.Visible = false end
-                    if components.Text then components.Text.Visible = false end
-                end
-            end
-        end
-    end
+    -- Rafraîchir l'ESP nativement
+    UpdateESP()
 end)
+
