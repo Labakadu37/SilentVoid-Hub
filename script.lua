@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 7.0 : Target Line Centre Fixe + Menu Réduire (–) + Fonctions Players/Fun/Settings
+    [+] Version 7.2 : Fix PlayerGui + Target Line Centre Fixe + Dropdown Dynamique
 --]]
 
 local Players = game:GetService("Players")
@@ -15,18 +15,16 @@ local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
 
--- Nettoyage des anciennes instances
-local oldUI = CoreGui:FindFirstChild("ZentyHub_Premium") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ZentyHub_Premium")
+-- Parent sécurisé dans PlayerGui pour éviter les blocages de clics
+local TargetParent = LocalPlayer:WaitForChild("PlayerGui")
+local oldUI = TargetParent:FindFirstChild("ZentyHub_Premium")
 if oldUI then oldUI:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
-
-local success, err = pcall(function() ScreenGui.Parent = CoreGui end)
-if not success then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+ScreenGui.Parent = TargetParent
 
 -- --- CONFIGURATION GLOBALE ---
 local ZentyConfig = {
@@ -37,11 +35,10 @@ local ZentyConfig = {
 
 local SelectedPlayerForTp = ""
 
--- --- CERCLE DE FOV STABLE (CENTRE ÉCRAN) ---
+-- --- CERCLE DE FOV STABLE ---
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "ZentyFOV"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-FOVFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
 FOVFrame.BackgroundTransparency = 1 
 FOVFrame.Visible = false
 FOVFrame.Parent = ScreenGui
@@ -55,19 +52,20 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- TARGET LINE CORRIGÉE (CENTRE ABSOLU DE LA CAMÉRA) ---
+-- --- TARGET LINE CORRIGÉE ---
 local LineFrame = Instance.new("Frame")
 LineFrame.Name = "ZentyTargetLine"
 LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
 LineFrame.BorderSizePixel = 0
 LineFrame.AnchorPoint = Vector2.new(0, 0.5) 
 LineFrame.Size = UDim2.new(0, 0, 0, 2)
+LineFrame.Visible = false
+LineFrame.Parent = ScreenGui
+
 local LineStroke = Instance.new("UIStroke")
 LineStroke.Thickness = 0.5
 LineStroke.Color = ZentyConfig.Aimbot.Color
 LineStroke.Parent = LineFrame
-LineFrame.Visible = false
-LineFrame.Parent = ScreenGui
 
 -- --- MAIN FRAME (MENU) ---
 local MainFrame = Instance.new("Frame")
@@ -80,7 +78,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Parent = ScreenGui
 
--- Système de Drag moderne
+-- Système de Drag
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -253,7 +251,7 @@ for i, catName in ipairs(Categories) do
     end
 end
 
--- --- COMPOSANTS DE L'UI ---
+-- --- LIBRAIRIE COMPOSANTS ---
 local UILibrary = {}
 
 function UILibrary:CreateToggle(parent, text, default, callback)
@@ -391,7 +389,7 @@ function UILibrary:CreateButton(parent, text, callback)
     Btn.MouseButton1Click:Connect(callback)
 end
 
-function UILibrary:CreateDropdown(parent, text, options, callback)
+function UILibrary:CreatePlayerDropdown(parent, text, callback)
     local DropBg = Instance.new("Frame")
     DropBg.Size = UDim2.new(1, -10, 0, 40)
     DropBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
@@ -412,39 +410,61 @@ function UILibrary:CreateDropdown(parent, text, options, callback)
     DropBtn.Parent = DropBg
 
     local ContentFrame = Instance.new("Frame")
-    ContentFrame.Size = UDim2.new(1, 0, 0, #options * 30)
+    ContentFrame.Size = UDim2.new(1, 0, 0, 120)
     ContentFrame.Position = UDim2.new(0, 0, 0, 40)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.Parent = DropBg
+    
+    local ScrollList = Instance.new("ScrollingFrame")
+    ScrollList.Size = UDim2.new(1, 0, 1, 0)
+    ScrollList.BackgroundTransparency = 1
+    ScrollList.CanvasSize = UDim2.new(0,0,0,0)
+    ScrollList.ScrollBarThickness = 2
+    ScrollList.Parent = ContentFrame
+
     local Layout = Instance.new("UIListLayout")
-    Layout.Parent = ContentFrame
+    Layout.Parent = ScrollList
 
     local Toggled = false
+    
+    local function RefreshPlayers()
+        for _, c in pairs(ScrollList:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+        local count = 0
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                count = count + 1
+                local OptBtn = Instance.new("TextButton")
+                OptBtn.Size = UDim2.new(1, 0, 0, 30)
+                OptBtn.BackgroundColor3 = Color3.fromRGB(28, 22, 38)
+                OptBtn.Text = "    " .. p.Name
+                OptBtn.TextColor3 = Color3.fromRGB(160, 160, 160)
+                OptBtn.Font = Enum.Font.Gotham
+                OptBtn.TextSize = 12
+                OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+                OptBtn.Parent = ScrollList
+                OptBtn.MouseButton1Click:Connect(function()
+                    DropBtn.Text = "  " .. text .. " : " .. p.Name
+                    Toggled = false
+                    TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
+                    callback(p.Name)
+                end)
+            end
+        end
+        ScrollList.CanvasSize = UDim2.new(0, 0, 0, count * 30)
+    end
+
     DropBtn.MouseButton1Click:Connect(function()
         Toggled = not Toggled
-        TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = Toggled and UDim2.new(1, -10, 0, 40 + (#options * 30)) or UDim2.new(1, -10, 0, 40)}):Play()
-    end)
-
-    for _, opt in pairs(options) do
-        local OptBtn = Instance.new("TextButton")
-        OptBtn.Size = UDim2.new(1, 0, 0, 30)
-        OptBtn.BackgroundColor3 = Color3.fromRGB(28, 22, 38)
-        OptBtn.Text = "    " .. opt
-        OptBtn.TextColor3 = Color3.fromRGB(160, 160, 160)
-        OptBtn.Font = Enum.Font.Gotham
-        OptBtn.TextSize = 12
-        OptBtn.TextXAlignment = Enum.TextXAlignment.Left
-        OptBtn.Parent = ContentFrame
-        OptBtn.MouseButton1Click:Connect(function()
-            DropBtn.Text = "  " .. text .. " : " .. opt
-            Toggled = false
+        if Toggled then
+            RefreshPlayers()
+            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 160)}):Play()
+        else
             TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
-            callback(opt)
-        end)
-    end
+        end
+    end)
 end
 
--- --- CATEGORY: AIMBOT & VISUAL ---
+-- --- CATEGORIES CONFIG ---
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Ligne de Cible (Target Line)", ZentyConfig.Aimbot.TargetLine, function(v) ZentyConfig.Aimbot.TargetLine = v end)
@@ -455,11 +475,8 @@ UILibrary:CreateToggle(Pages["Visual"], "Box ESP (Contours Violet)", ZentyConfig
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
--- --- CATEGORY: PLAYER (TP ALL / SELECT PLAYER) ---
-local playerList = {}
-for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(playerList, p.Name) end end
-
-UILibrary:CreateDropdown(Pages["Player"], "Choisir un joueur", playerList, function(selected)
+-- --- CATEGORY PLAYER ---
+UILibrary:CreatePlayerDropdown(Pages["Player"], "Choisir un joueur", function(selected)
     SelectedPlayerForTp = selected
 end)
 
@@ -483,7 +500,7 @@ UILibrary:CreateButton(Pages["Player"], "Téléporter tous les joueurs sur moi",
     end
 end)
 
--- --- CATEGORY: MOVEMENT ---
+-- --- CATEGORY MOVEMENT ---
 local SoonTxt = Instance.new("TextLabel")
 SoonTxt.Size = UDim2.new(1, 0, 0, 50)
 SoonTxt.BackgroundTransparency = 1
@@ -493,13 +510,32 @@ SoonTxt.Font = Enum.Font.GothamBold
 SoonTxt.TextSize = 24
 SoonTxt.Parent = Pages["Movement"]
 
--- --- CATEGORY: FUN (SPIN / INF JUMP / SMART NOCLIP) ---
+-- --- CATEGORY FUN ---
 UILibrary:CreateToggle(Pages["Fun"], "Activer le SpinBot", false, function(v) ZentyConfig.Fun.SpinBot = v end)
 UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, function(v) ZentyConfig.Fun.SpinSpeed = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump (Saut Infini)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Noclip Intelligent (Sauf Plafonds)", false, function(v) ZentyConfig.Fun.NoClip = v end)
 
--- Anti-Plafond Noclip / Spin / InfJump loops
+-- --- CATEGORY SETTINGS ---
+UILibrary:CreateButton(Pages["Settings"], "Changer Thème : Néon Rose", function()
+    MainStroke.Color = Color3.fromRGB(255, 0, 127)
+    FOVStroke.Color = Color3.fromRGB(255, 0, 127)
+    ZentyConfig.Aimbot.Color = Color3.fromRGB(255, 0, 127)
+end)
+
+UILibrary:CreateButton(Pages["Settings"], "Changer Thème : Cyan Électrique", function()
+    MainStroke.Color = Color3.fromRGB(0, 255, 255)
+    FOVStroke.Color = Color3.fromRGB(0, 255, 255)
+    ZentyConfig.Aimbot.Color = Color3.fromRGB(0, 255, 255)
+end)
+
+UILibrary:CreateButton(Pages["Settings"], "Reset UI par défaut", function()
+    MainStroke.Color = Color3.fromRGB(130, 0, 255)
+    FOVStroke.Color = Color3.fromRGB(130, 0, 255)
+    ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255)
+end)
+
+-- --- BOUCLES DE FONCTIONS FUN ---
 UserInputService.JumpRequest:Connect(function()
     if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
@@ -514,39 +550,15 @@ RunService.Stepped:Connect(function()
     if ZentyConfig.Fun.NoClip and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetChildren()) do
             if part:IsA("BasePart") then
-                -- Noclip intelligent : Désactive les collisions sauf s'il y a un obstacle juste au-dessus
                 local ray = Ray.new(part.Position, Vector3.new(0, 4, 0))
                 local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character)
-                if not hit then
-                    part.CanCollide = false
-                else
-                    part.CanCollide = true
-                end
+                part.CanCollide = hit and true or false
             end
         end
     end
 end)
 
--- --- CATEGORY: SETTINGS (THEMES / CUSTOM RESETS) ---
-UILibrary:CreateButton(Pages["Settings"], "Changer Thème : Néon Rose", function()
-    MainStroke.Color = Color3.fromRGB(255, 0, 127)
-    FOVStroke.Color = Color3.fromRGB(255, 0, 127)
-    LineFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 127)
-end)
-
-UILibrary:CreateButton(Pages["Settings"], "Changer Thème : Cyan Électrique", function()
-    MainStroke.Color = Color3.fromRGB(0, 255, 255)
-    FOVStroke.Color = Color3.fromRGB(0, 255, 255)
-    LineFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-end)
-
-UILibrary:CreateButton(Pages["Settings"], "Reset UI par défaut (Chrono)", function()
-    MainStroke.Color = Color3.fromRGB(130, 0, 255)
-    FOVStroke.Color = Color3.fromRGB(130, 0, 255)
-    LineFrame.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
-end)
-
--- --- ENGINE ET RECHERCHE AIMBOT ---
+-- --- ENGINE D'AIMBOT ---
 local function GetClosestPlayerToCenter()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
@@ -564,9 +576,10 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- SYSTEME ESP ---
-local EspContainer = ScreenGui:FindFirstChild("ZentyESP_Folder") or Instance.new("Folder")
-local successContainer = pcall(function() EspContainer.Name = "ZentyESP_Folder" EspContainer.Parent = ScreenGui end)
+-- --- ENGINES ESP ---
+local EspContainer = Instance.new("Folder")
+EspContainer.Name = "ZentyESP_Folder"
+EspContainer.Parent = ScreenGui
 
 local function UpdateESP()
     for _, player in pairs(Players:GetPlayers()) do
@@ -592,7 +605,7 @@ local function UpdateESP()
                         
                         local stroke = Instance.new("UIStroke")
                         stroke.Thickness = 1.5
-                        stroke.Color = ZentyConfig.Visuals.Color
+                        stroke.Color = ZentyConfig.Aimbot.Color
                         stroke.Name = "BoxOutline"
                         stroke.Parent = existingEsp
 
@@ -609,6 +622,7 @@ local function UpdateESP()
                     existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
                     existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
                     existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
+                    existingEsp.BoxOutline.Color = ZentyConfig.Aimbot.Color
                     existingEsp.EspText.Position = UDim2.new(0, 0, 0, -(sizeY/2) - 15)
                     
                     if ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
@@ -635,11 +649,15 @@ local function UpdateESP()
     end
 end
 
--- --- RENDU BOUCLE ---
+-- --- RENDER LOOP (RENDU GRAPHIQUE CONTINU) ---
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     
-    -- Ajustement et centrage du FOV
+    -- Sync des couleurs dynamiques (Settings)
+    FOVStroke.Color = ZentyConfig.Aimbot.Color
+    LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
+
+    -- Positionnement fixe du FOV au centre
     if ZentyConfig.Aimbot.ShowFOV then
         FOVFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
         FOVFrame.Size = UDim2.new(0, ZentyConfig.Aimbot.FOV * 2, 0, ZentyConfig.Aimbot.FOV * 2)
@@ -648,14 +666,13 @@ RunService.RenderStepped:Connect(function()
         FOVFrame.Visible = false
     end
 
-    -- Ciblage
+    -- Ciblage & Target Line
     local target = GetClosestPlayerToCenter()
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
         local head = target.Character.Head
         local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
         
         if onScreen then
-            -- Target Line parfaite (Milieu -> Tête)
             if ZentyConfig.Aimbot.TargetLine then
                 local endPos = Vector2.new(headPos.X, headPos.Y)
                 local distance = (endPos - centerScreen).Magnitude
@@ -669,7 +686,7 @@ RunService.RenderStepped:Connect(function()
                 LineFrame.Visible = false
             end
             
-            -- Lock
+            -- Lock Aimbot (Click gauche, Click droit ou tactile)
             if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
                 local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
                 Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
