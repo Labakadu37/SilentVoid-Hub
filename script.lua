@@ -2,7 +2,7 @@
     ╔════════════════════════════════════════════════════════════╗
     ║                      ZENTY VOID PROJECT                    ║
     ║                         VERSION V2                         ║
-    ║        Custom Translucent & Hyper-Blatant Framework        ║
+    ║             Custom Ghost Translucent Framework             ║
     ╚════════════════════════════════════════════════════════════╝
 --]]
 
@@ -32,10 +32,8 @@ local Hub = {
         Aimbot = false, AimbotPart = "Head", FovEnabled = false, FovRadius = 140, TeamCheck = false, WallCheck = false,
         EspPlayers = false, EspBoxes = false, EspTracers = false, EspNames = false,
         SpeedEnabled = false, SpeedValue = 16, JumpEnabled = false, JumpValue = 50, FlyEnabled = false, FlySpeed = 3, NoClip = false,
-        -- Fun & Blatant Features
         SpinBot = false, SpinSpeed = 30, FlingAura = false, GravitySlider = 196.2, InfiniteJump = false,
         CarFly = false, ClickTeleport = false, ViewSpy = false, NakedAvatars = false,
-        -- Game Specifics
         BhUnlockCars = false, BhTeleportLoop = false,
         BbAutoParry = false, BbParryDistance = 15,
         Mm2ShowRoles = false, Mm2AutoCollect = false,
@@ -43,16 +41,16 @@ local Hub = {
         BwKillAura = false
     },
     Cache = {},
-        Themes = {
-        Main = Color3.fromRGB(10, 10, 12),       -- Base noire
-        Sidebar = Color3.fromRGB(5, 5, 7),        -- Sidebar plus sombre
-        Accent = Color3.fromRGB(240, 240, 250),    -- Blanc fantôme épuré pour la sélection
-        Row = Color3.fromRGB(15, 15, 18),         -- Lignes de menu très discrètes
-        Text = Color3.fromRGB(255, 255, 255),     -- Texte principal blanc clair
-        TextDark = Color3.fromRGB(100, 100, 110), -- Texte secondaire grisé (effet estompé)
-        Border = Color3.fromRGB(35, 35, 40)        -- Bordures très fines et sombres
+    Themes = {
+        Main = Color3.fromRGB(10, 10, 12),       -- Noir Fantôme central
+        Sidebar = Color3.fromRGB(5, 5, 7),        -- Sidebar sombre estompée
+        Accent = Color3.fromRGB(240, 240, 250),    -- Blanc spectral épuré
+        Row = Color3.fromRGB(15, 15, 18),         -- Rangs de menu mats
+        Text = Color3.fromRGB(255, 255, 255),     -- Texte principal épuré
+        TextDark = Color3.fromRGB(110, 110, 120), -- Texte secondaire grisé
+        Border = Color3.fromRGB(35, 35, 40)        -- Bordures fantômes fines
     }
-
+}
 
 local gamesList = {
     [4924922222] = "Brookhaven", [13772394625] = "Blade Ball", [142823291] = "Murder Mystery 2",
@@ -61,7 +59,7 @@ local gamesList = {
 if gamesList[Hub.PlaceId] then Hub.GameMode = gamesList[Hub.PlaceId] end
 
 -- ══════════════════════════════════════════════
---  INTERFACE GRAPHIQUE TRANSLUCIDE (STYLE ZENTY)
+--  INTERFACE GRAPHIQUE GHOST TRANSLUCIDE
 -- ══════════════════════════════════════════════
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyVoidHub"
@@ -75,16 +73,16 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 620, 0, 430)
 MainFrame.Position = UDim2.new(0.5, -310, 0.5, -215)
 MainFrame.BackgroundColor3 = Hub.Themes.Main
-MainFrame.BackgroundTransparency = 0.25 -- Fond transparent demandé
+MainFrame.BackgroundTransparency = 0.45 -- Transparence fantôme accentuée
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Parent = ScreenGui
-round(6, MainFrame); line(Hub.Themes.Border, 1.4, MainFrame)
+round(4, MainFrame); line(Hub.Themes.Border, 1, MainFrame)
 
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 170, 1, 0)
 Sidebar.BackgroundColor3 = Hub.Themes.Sidebar
-Sidebar.BackgroundTransparency = 0.3
+Sidebar.BackgroundTransparency = 0.5
 Sidebar.Parent = MainFrame
-round(6, Sidebar)
+round(4, Sidebar)
 
 local ContainerHolder = Instance.new("Frame")
 ContainerHolder.Size = UDim2.new(1, -170, 1, -40)
@@ -94,8 +92,8 @@ ContainerHolder.BackgroundTransparency = 1; ContainerHolder.Parent = MainFrame
 local HubTitle = Instance.new("TextLabel")
 HubTitle.Size = UDim2.new(1, 0, 0, 35)
 HubTitle.Position = UDim2.new(0, 15, 0, 8)
-HubTitle.BackgroundTransparency = 1; HubTitle.Text = "ZENTY.VOID"
-HubTitle.Font = Enum.Font.Code; HubTitle.TextSize = 18; HubTitle.TextColor3 = Hub.Themes.Accent; HubTitle.TextXAlignment = Enum.TextXAlignment.Left; HubTitle.Parent = Sidebar
+HubTitle.BackgroundTransparency = 1; HubTitle.Text = "GHOST.VOID"
+HubTitle.Font = Enum.Font.Code; HubTitle.TextSize = 16; HubTitle.TextColor3 = Hub.Themes.Accent; HubTitle.TextXAlignment = Enum.TextXAlignment.Left; HubTitle.Parent = Sidebar
 
 local NavList = Instance.new("ScrollingFrame")
 NavList.Size = UDim2.new(1, 0, 1, -50)
@@ -113,17 +111,17 @@ Topbar.BackgroundTransparency = 1; Topbar.Parent = MainFrame
 local GameTag = Instance.new("TextLabel")
 GameTag.Size = UDim2.new(1, -20, 1, 0)
 GameTag.Position = UDim2.new(0, 15, 0, 0)
-GameTag.BackgroundTransparency = 1; GameTag.Text = "SYS_STATUS : ACTIVE // MODE : " .. Hub.GameMode:upper()
+GameTag.BackgroundTransparency = 1; GameTag.Text = "SYS_STATUS : GHOST // MODE : " .. Hub.GameMode:upper()
 GameTag.Font = Enum.Font.Code; GameTag.TextSize = 11; GameTag.TextColor3 = Hub.Themes.TextDark; GameTag.TextXAlignment = Enum.TextXAlignment.Left; GameTag.Parent = Topbar
 
 local toggleB = Instance.new("TextButton")
-toggleB.Size = UDim2.new(0, 100, 0, 28)
+toggleB.Size = UDim2.new(0, 110, 0, 26)
 toggleB.Position = UDim2.new(0, 15, 0, 15)
 toggleB.BackgroundColor3 = Hub.Themes.Main
-toggleB.BackgroundTransparency = 0.2
-toggleB.Text = "[ ZENTY UI ]"
-toggleB.Font = Enum.Font.Code; toggleB.TextColor3 = Hub.Themes.Accent; toggleB.TextSize = 12; toggleB.Parent = ScreenGui
-round(4, toggleB); line(Hub.Themes.Border, 1, toggleB)
+toggleB.BackgroundTransparency = 0.4
+toggleB.Text = "[ GHOST UI ]"
+toggleB.Font = Enum.Font.Code; toggleB.TextColor3 = Hub.Themes.Accent; toggleB.TextSize = 11; toggleB.Parent = ScreenGui
+round(3, toggleB); line(Hub.Themes.Border, 1, toggleB)
 
 toggleB.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
@@ -148,7 +146,7 @@ local function CreatePage(id, name)
     NavBtn.BackgroundColor3 = Color3.fromRGB(0,0,0); NavBtn.BackgroundTransparency = 1
     NavBtn.Text = "  // " .. name
     NavBtn.Font = Enum.Font.Code; NavBtn.TextSize = 11; NavBtn.TextColor3 = Hub.Themes.TextDark; NavBtn.TextXAlignment = Enum.TextXAlignment.Left; NavBtn.AutoButtonColor = false; NavBtn.Parent = NavList
-    round(4, NavBtn)
+    round(3, NavBtn)
     
     local Ind = Instance.new("Frame")
     Ind.Size = UDim2.new(0, 2, 0, 12)
@@ -161,7 +159,7 @@ local function CreatePage(id, name)
             pFrame.Visible = (pid == id)
             local bData = Buttons[pid]
             if pid == id then
-                bData.Btn.TextColor3 = Hub.Themes.Text; bData.Btn.BackgroundTransparency = 0.8; bData.Btn.BackgroundColor3 = Hub.Themes.Accent
+                bData.Btn.TextColor3 = Hub.Themes.Text; bData.Btn.BackgroundTransparency = 0.85; bData.Btn.BackgroundColor3 = Hub.Themes.Accent
                 TweenService:Create(bData.Ind, TweenInfo.new(0.1), {BackgroundTransparency = 0}):Play()
             else
                 bData.Btn.TextColor3 = Hub.Themes.TextDark; bData.Btn.BackgroundTransparency = 1
@@ -174,31 +172,31 @@ local function CreatePage(id, name)
 end
 
 local function AddToggle(page, title, sub, configKey, callback)
-    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 38) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.4 Row.Parent = page
-    round(4, Row); line(Hub.Themes.Border, 0.8, Row)
+    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 38) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.5 Row.Parent = page
+    round(3, Row); line(Hub.Themes.Border, 0.8, Row)
     
     local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(1, -100, 0, 16) Txt.Position = UDim2.new(0, 10, 0, 3) Txt.BackgroundTransparency = 1; Txt.Text = title:upper(); Txt.Font = Enum.Font.Code; Txt.TextSize = 11; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
     local SubTxt = Instance.new("TextLabel") SubTxt.Size = UDim2.new(1, -100, 0, 12) SubTxt.Position = UDim2.new(0, 10, 0, 19) SubTxt.BackgroundTransparency = 1; SubTxt.Text = sub; SubTxt.Font = Enum.Font.Code; SubTxt.TextSize = 9; SubTxt.TextColor3 = Hub.Themes.TextDark; SubTxt.TextXAlignment = Enum.TextXAlignment.Left; SubTxt.Parent = Row
     
-    local Switch = Instance.new("TextButton") Switch.Size = UDim2.new(0, 30, 0, 14) Switch.Position = UDim2.new(1, -40, 0.5, -7) Switch.BackgroundColor3 = Hub.Config[configKey] and Hub.Themes.Accent or Color3.fromRGB(20, 20, 30); Switch.Text = ""; Switch.Parent = Row
-    round(2, Switch); line(Hub.Themes.Border, 1, Switch)
+    local Switch = Instance.new("TextButton") Switch.Size = UDim2.new(0, 30, 0, 14) Switch.Position = UDim2.new(1, -40, 0.5, -7) Switch.BackgroundColor3 = Hub.Config[configKey] and Hub.Themes.Accent or Color3.fromRGB(15, 15, 20); Switch.Text = ""; Switch.Parent = Row
+    round(1, Switch); line(Hub.Themes.Border, 1, Switch)
     
     Switch.MouseButton1Click:Connect(function()
         Hub.Config[configKey] = not Hub.Config[configKey]
         local enabled = Hub.Config[configKey]
-        TweenService:Create(Switch, TweenInfo.new(0.1), {BackgroundColor3 = enabled and Hub.Themes.Accent or Color3.fromRGB(20, 20, 30)}):Play()
+        TweenService:Create(Switch, TweenInfo.new(0.1), {BackgroundColor3 = enabled and Hub.Themes.Accent or Color3.fromRGB(15, 15, 20)}):Play()
         callback(enabled)
     end)
 end
 
 local function AddSlider(page, title, min, max, default, configKey, callback)
-    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 42) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.4 Row.Parent = page
-    round(4, Row); line(Hub.Themes.Border, 0.8, Row)
+    local Row = Instance.new("Frame") Row.Size = UDim2.new(1, -20, 0, 42) Row.BackgroundColor3 = Hub.Themes.Row Row.BackgroundTransparency = 0.5 Row.Parent = page
+    round(3, Row); line(Hub.Themes.Border, 0.8, Row)
     
     local Txt = Instance.new("TextLabel") Txt.Size = UDim2.new(0, 200, 0, 16) Txt.Position = UDim2.new(0, 10, 0, 4) Txt.BackgroundTransparency = 1; Txt.Text = title:upper(); Txt.Font = Enum.Font.Code; Txt.TextSize = 11; Txt.TextColor3 = Hub.Themes.Text; Txt.TextXAlignment = Enum.TextXAlignment.Left; Txt.Parent = Row
     local ValTxt = Instance.new("TextLabel") ValTxt.Size = UDim2.new(0, 60, 0, 16) ValTxt.Position = UDim2.new(1, -70, 0, 4) ValTxt.BackgroundTransparency = 1; ValTxt.Text = tostring(default); ValTxt.Font = Enum.Font.Code; ValTxt.TextSize = 10; ValTxt.TextColor3 = Hub.Themes.Accent; ValTxt.TextXAlignment = Enum.TextXAlignment.Right; ValTxt.Parent = Row
     
-    local SlideBar = Instance.new("TextButton") SlideBar.Size = UDim2.new(1, -20, 0, 4) SlideBar.Position = UDim2.new(0, 10, 0, 26) SlideBar.BackgroundColor3 = Color3.fromRGB(15,15,25); SlideBar.Text = ""; SlideBar.AutoButtonColor = false; SlideBar.Parent = Row
+    local SlideBar = Instance.new("TextButton") SlideBar.Size = UDim2.new(1, -20, 0, 4) SlideBar.Position = UDim2.new(0, 10, 0, 26) SlideBar.BackgroundColor3 = Color3.fromRGB(10,10,15); SlideBar.Text = ""; SlideBar.AutoButtonColor = false; SlideBar.Parent = Row
     round(1, SlideBar)
     
     local SlideIn = Instance.new("Frame") SlideIn.Size = UDim2.new((default - min) / (max - min), 0, 1, 0); SlideIn.BackgroundColor3 = Hub.Themes.Accent; SlideIn.Parent = SlideBar
@@ -220,7 +218,7 @@ local function AddSlider(page, title, min, max, default, configKey, callback)
 end
 
 -- ══════════════════════════════════════════════
---  STRUCTURE DES PAGES DE MENUS (MASSIVE CONFIG)
+--  GENERATION DES PAGES PRINCIPALES
 -- ══════════════════════════════════════════════
 local pCombat = CreatePage("combat", "CRITICAL COMBAT")
 local pVisuals = CreatePage("visuals", "OVERLAY RENDERER")
@@ -249,9 +247,7 @@ AddToggle(pLocal, "Quantum Flight Mode", "Annuler la force gravitationnelle et l
 AddSlider(pLocal, "Flight Axis Speed", 1, 15, 3, "FlySpeed", function() end)
 AddToggle(pLocal, "Phase Matrix (NoClip)", "Désactiver les masques de collision des membres", "NoClip", function() end)
 
--- ══════════════════════════════════════════════
---  SECTION MASSIVE : BLATANT MODS & FUN
--- ══════════════════════════════════════════════
+-- Page Blatant Mods & Fun
 AddToggle(pFun, "Velocity Spinbot", "Rotation angulaire extrême pour fausser la hitbox", "SpinBot", function() end)
 AddSlider(pFun, "Spin Angular Rate", 10, 150, 30, "SpinSpeed", function() end)
 AddToggle(pFun, "Physics Fling Aura", "Ejecte les entités à proximité par collision asynchrone", "FlingAura", function() end)
@@ -321,7 +317,7 @@ local function getClosestPlayer()
     return closest
 end
 
--- RenderStepped Runner (Visuals, Aim & Camera Spy)
+-- RenderStepped Loop
 RunService.RenderStepped:Connect(function()
     if Hub.Config.Aimbot and isAlive(player) then
         local target = getClosestPlayer()
@@ -343,7 +339,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- GESTION ESP UNIVERSELLE OPTIMISÉE
+    -- SYSTEME D'ESP UNIVERSEL DISCRET
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         local cache = Hub.Cache[p]
@@ -397,7 +393,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Heartbeat Runner (Physics Loops)
+-- Heartbeat Physics Loop
 RunService.Heartbeat:Connect(function()
     if not isAlive(player) then return end
     local char = player.Character
@@ -407,19 +403,16 @@ RunService.Heartbeat:Connect(function()
     if Hub.Config.SpeedEnabled then hum.WalkSpeed = Hub.Config.SpeedValue end
     if Hub.Config.JumpEnabled then hum.JumpPower = Hub.Config.JumpValue end
     
-    -- Moteur Spinbot
     if Hub.Config.SpinBot then
         root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Hub.Config.SpinSpeed), 0)
     end
     
-    -- Moteur Fling Aura (Blatant)
     if Hub.Config.FlingAura then
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= player and isAlive(p) then
                 local tRoot = p.Character.HumanoidRootPart
                 local distance = (tRoot.Position - root.Position).Magnitude
                 if distance < 12 then
-                    -- Vélocité rotative extrême simulant un Fling physique local
                     tRoot.Velocity = Vector3.new(9999, 9999, 9999)
                     tRoot.RotVelocity = Vector3.new(9999, 9999, 9999)
                 end
@@ -427,7 +420,6 @@ RunService.Heartbeat:Connect(function()
         end
     end
     
-    -- Moteur Fly standard lié à la caméra
     if Hub.Config.FlyEnabled then
         hum.PlatformStand = true
         local vel = Vector3.new(0, 0, 0)
@@ -452,8 +444,7 @@ end)
 if firstPage then
     Pages[firstPage].Visible = true
     Buttons[firstPage].Btn.TextColor3 = Hub.Themes.Text
-    Buttons[firstPage].Btn.BackgroundTransparency = 0.8
+    Buttons[firstPage].Btn.BackgroundTransparency = 0.85
     Buttons[firstPage].Btn.BackgroundColor3 = Hub.Themes.Accent
     Buttons[firstPage].Ind.BackgroundTransparency = 0
 end
-
