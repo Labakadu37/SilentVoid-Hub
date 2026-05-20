@@ -1,7 +1,7 @@
 --[[
     ╔════════════════════════════════════════════════════════════╗
     ║                      ZENTY VOID PROJECT                    ║
-    ║                         VERSION V2                         ║
+    ║                         VERSION V3                         ║
     ║             Custom Ghost Translucent Framework             ║
     ╚════════════════════════════════════════════════════════════╝
 --]]
@@ -34,21 +34,25 @@ local Hub = {
         SpeedEnabled = false, SpeedValue = 16, JumpEnabled = false, JumpValue = 50, FlyEnabled = false, FlySpeed = 3, NoClip = false,
         SpinBot = false, SpinSpeed = 30, FlingAura = false, GravitySlider = 196.2, InfiniteJump = false,
         CarFly = false, ClickTeleport = false, ViewSpy = false, NakedAvatars = false,
-        BhUnlockCars = false, BhTeleportLoop = false,
-        BbAutoParry = false, BbParryDistance = 15,
-        Mm2ShowRoles = false, Mm2AutoCollect = false,
-        ArSilentAim = false, ArNoRecoil = false,
-        BwKillAura = false
+        -- New Core Additions
+        HitboxExpanded = false, HitboxSize = 2, BlinkDashEnabled = false,
+        EspChams = false, BulletTracers = false,
+        -- Game Specifics Updated
+        BhUnlockCars = false, BhTeleportLoop = false, BhSafeRobber = false,
+        BbAutoParry = false, BbParryDistance = 15, BbPredictCurve = false,
+        Mm2ShowRoles = false, Mm2AutoCollect = false, Mm2MurderAlert = false, Mm2SheriffLock = false,
+        ArSilentAim = false, ArNoRecoil = false, ArTracerLasers = false,
+        BwKillAura = false, BwBedEsp = false
     },
     Cache = {},
     Themes = {
-        Main = Color3.fromRGB(10, 10, 12),       -- Noir Fantôme central
-        Sidebar = Color3.fromRGB(5, 5, 7),        -- Sidebar sombre estompée
-        Accent = Color3.fromRGB(240, 240, 250),    -- Blanc spectral épuré
-        Row = Color3.fromRGB(15, 15, 18),         -- Rangs de menu mats
-        Text = Color3.fromRGB(255, 255, 255),     -- Texte principal épuré
-        TextDark = Color3.fromRGB(110, 110, 120), -- Texte secondaire grisé
-        Border = Color3.fromRGB(35, 35, 40)        -- Bordures fantômes fines
+        Main = Color3.fromRGB(10, 10, 12),       
+        Sidebar = Color3.fromRGB(5, 5, 7),        
+        Accent = Color3.fromRGB(240, 240, 250),    
+        Row = Color3.fromRGB(15, 15, 18),         
+        Text = Color3.fromRGB(255, 255, 255),     
+        TextDark = Color3.fromRGB(110, 110, 120), 
+        Border = Color3.fromRGB(35, 35, 40)        
     }
 }
 
@@ -73,7 +77,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 620, 0, 430)
 MainFrame.Position = UDim2.new(0.5, -310, 0.5, -215)
 MainFrame.BackgroundColor3 = Hub.Themes.Main
-MainFrame.BackgroundTransparency = 0.45 -- Transparence fantôme accentuée
+MainFrame.BackgroundTransparency = 0.45 
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Parent = ScreenGui
 round(4, MainFrame); line(Hub.Themes.Border, 1, MainFrame)
 
@@ -129,6 +133,18 @@ local FOVCircle = Instance.new("Frame")
 FOVCircle.Size = UDim2.new(0, Hub.Config.FovRadius * 2, 0, Hub.Config.FovRadius * 2)
 FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5); FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0); FOVCircle.BackgroundTransparency = 1; FOVCircle.Visible = false; FOVCircle.Parent = ScreenGui
 round(Hub.Config.FovRadius * 2, FOVCircle); local FOVStroke = line(Hub.Themes.Accent, 1, FOVCircle)
+
+-- Alert Overlay pour MM2 ou événements critiques
+local AlertLabel = Instance.new("TextLabel")
+AlertLabel.Size = UDim2.new(0, 400, 0, 30)
+AlertLabel.Position = UDim2.new(0.5, -200, 0, 50)
+AlertLabel.BackgroundTransparency = 1
+AlertLabel.Font = Enum.Font.Code
+AlertLabel.TextSize = 14
+AlertLabel.TextColor3 = Color3.fromRGB(255, 70, 70)
+AlertLabel.Text = ""
+AlertLabel.Visible = false
+AlertLabel.Parent = ScreenGui
 
 -- ══════════════════════════════════════════════
 --  BUILDER COMPOSANTS SANS EMOJI (DEV STYLE)
@@ -237,6 +253,8 @@ AddToggle(pVisuals, "Master Render Status", "Activer la boucle de rendu géomét
 AddToggle(pVisuals, "Bounding Box 2D", "Tracé rectangulaire sur les cibles", "EspBoxes", function() end)
 AddToggle(pVisuals, "Target Direct Tracers", "Vecteurs au sol depuis le centre écran", "EspTracers", function() end)
 AddToggle(pVisuals, "Identification Tags", "Rendu des chaînes de caractères (Nom + Range)", "EspNames", function() end)
+AddToggle(pVisuals, "Wallhack Silhouette Chams", "Rendu complet en surbrillance à travers les surfaces", "EspChams", function() end)
+AddToggle(pVisuals, "Render Bullet Tracers", "Affiche la trajectoire vectorielle des impacts", "BulletTracers", function() end)
 
 -- Page Physics Manipulator
 AddToggle(pLocal, "Override WalkSpeed", "Forcer la vélocité linéaire au sol", "SpeedEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.WalkSpeed = originalWalkSpeed end end)
@@ -246,6 +264,9 @@ AddSlider(pLocal, "Propulsion Amplitude", 50, 300, 50, "JumpValue", function() e
 AddToggle(pLocal, "Quantum Flight Mode", "Annuler la force gravitationnelle et lier au vecteur caméra", "FlyEnabled", function(v) if not v then Workspace.Gravity = originalGravity if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.PlatformStand = false end end end)
 AddSlider(pLocal, "Flight Axis Speed", 1, 15, 3, "FlySpeed", function() end)
 AddToggle(pLocal, "Phase Matrix (NoClip)", "Désactiver les masques de collision des membres", "NoClip", function() end)
+AddToggle(pLocal, "Hitbox Volumetric Expander", "Agrandit la zone d'impact de la cible racine", "HitboxExpanded", function() end)
+AddSlider(pLocal, "Hitbox Scale Factor", 2, 20, 2, "HitboxSize", function() end)
+AddToggle(pLocal, "Blink Forward Dash", "Active la propulsion linéaire instantanée via touche X", "BlinkDashEnabled", function() end)
 
 -- Page Blatant Mods & Fun
 AddToggle(pFun, "Velocity Spinbot", "Rotation angulaire extrême pour fausser la hitbox", "SpinBot", function() end)
@@ -260,8 +281,7 @@ AddToggle(pFun, "View Spy Target", "Clône la caméra sur le joueur le plus proc
 UIS.InputBegan:Connect(function(input, processed)
     if not processed and Hub.Config.ClickTeleport and input.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local pos = Mouse.Hit.p
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.p + Vector3.new(0, 3, 0))
         end
     end
 end)
@@ -273,22 +293,42 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
+-- Gestionnaire Blink Dash (Touche X)
+UIS.InputBegan:Connect(function(input, processed)
+    if not processed and Hub.Config.BlinkDashEnabled and input.KeyCode == Enum.KeyCode.X then
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            root.CFrame = root.CFrame * CFrame.new(0, 0, -15)
+        end
+    end
+end)
+
 -- ══════════════════════════════════════════════
 --  MODULES SPECIFIQUES AUX JEUX (TARGET MODULE)
 -- ══════════════════════════════════════════════
 if Hub.GameMode == "Brookhaven" then
     AddToggle(pGameMod, "Gamepass Vehicle Injection", "Force l'accès local au catalogue premium", "BhUnlockCars", function() end)
     AddToggle(pGameMod, "Estate Teleport Matrix", "Boucle d'itération sur les parcelles de serveurs", "BhTeleportLoop", function() end)
+    AddToggle(pGameMod, "Safe Robber Assist", "Indexation visuelle et raccourci vers les coffres de parcelles", "BhSafeRobber", function() end)
+
 elseif Hub.GameMode == "Blade Ball" then
     AddToggle(pGameMod, "Instant Parry Trigger", "Déclenchement du blocage via calcul prédictif de trajectoire", "BbAutoParry", function() end)
+    AddToggle(pGameMod, "Predictive Ball Curve", "Calcule et affiche le vecteur direct d'approche de la balle", "BbPredictCurve", function() end)
+
 elseif Hub.GameMode == "Murder Mystery 2" then
     AddToggle(pGameMod, "Role Analyzer ESP", "Structure visuelle dédiée à l'inventaire des cibles", "Mm2ShowRoles", function() end)
     AddToggle(pGameMod, "Coin Geometric Grabber", "Visualise et indexe les coordonnées des collectables", "Mm2AutoCollect", function() end)
+    AddToggle(pGameMod, "Murderer Distance Alert", "Alerte textuelle dynamique si menace identifiée à courte portée", "Mm2MurderAlert", function() end)
+    AddToggle(pGameMod, "Sheriff Weapon Lock", "Aimbot exclusif restreint au joueur désigné Meurtrier", "Mm2SheriffLock", function() end)
+
 elseif Hub.GameMode == "Arsenal" then
     AddToggle(pGameMod, "Vector Silent Aim", "Redirection automatique des paquets d'impact", "ArSilentAim", function() end)
     AddToggle(pGameMod, "Anti Recoil Engine", "Supprime les modificateurs de dispersion de l'arme", "ArNoRecoil", function() end)
+    AddToggle(pGameMod, "Laser Sight Overlay", "Génère un tracer continu au point d'impact calculé", "ArTracerLasers", function() end)
+
 elseif Hub.GameMode == "BedWars" then
     AddToggle(pGameMod, "Raycast 360 KillAura", "Génère des événements d'attaque sur l'équipe adverse", "BwKillAura", function() end)
+    AddToggle(pGameMod, "Objective Bed ESP", "Traceur d'analyse à travers les structures pour l'objectif central", "BwBedEsp", function() end)
 end
 
 -- ══════════════════════════════════════════════
@@ -317,15 +357,47 @@ local function getClosestPlayer()
     return closest
 end
 
--- RenderStepped Loop
+-- Système d'effets visuels Bullet Tracers
+local function createBeamTracer(startPos, endPos)
+    if not Hub.Config.BulletTracers then return end
+    local p = Instance.new("Part")
+    p.Size = Vector3.new(0.1, 0.1, (startPos - endPos).Magnitude)
+    p.CFrame = CFrame.new(startPos:Lerp(endPos, 0.5), startPos)
+    p.Anchored = true
+    p.CanCollide = false
+    p.Material = Enum.Material.Neon
+    p.Color = Hub.Themes.Accent
+    p.Transparency = 0.3
+    p.Parent = Workspace
+    TweenService:Create(p, TweenInfo.new(0.6), {Transparency = 1, Size = Vector3.new(0,0,p.Size.Z)}):Play()
+    game:GetService("Debris"):AddItem(p, 0.6)
+end
+
+-- RenderStepped Loop (Visuals, Aim, Bullet Tracers, Distance Alert)
 RunService.RenderStepped:Connect(function()
-    if Hub.Config.Aimbot and isAlive(player) then
-        local target = getClosestPlayer()
+    -- Gestion Aimbot Universel & Sheriff Lock spécifique MM2
+    if isAlive(player) then
+        local target = nil
+        if Hub.Config.Mm2SheriffLock and Hub.GameMode == "Murder Mystery 2" then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if isAlive(p) and (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) then
+                    target = p
+                    break
+                end
+            end
+        elseif Hub.Config.Aimbot then
+            target = getClosestPlayer()
+        end
+
         if target and isAlive(target) then
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Hub.Config.AimbotPart].Position)
+            if Hub.Config.BulletTracers and math.random(1, 10) == 1 then
+                createBeamTracer(player.Character.Head.Position, target.Character.Head.Position)
+            end
         end
     end
     
+    -- Gestion View Spy
     if Hub.Config.ViewSpy and not Hub.Config.Aimbot then
         local target = getClosestPlayer()
         if target and isAlive(target) then
@@ -338,26 +410,74 @@ RunService.RenderStepped:Connect(function()
             Camera.CameraSubject = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
         end
     end
+
+    -- Alerte Proximité Meurtrier (MM2)
+    if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2MurderAlert and isAlive(player) then
+        local threatDetected = false
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and isAlive(p) and (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) then
+                local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                if dist < 40 then
+                    AlertLabel.Text = "ATTENTION : MEURTRIER PROCHE // CARDINAL RANGE : " .. math.floor(dist) .. "M"
+                    AlertLabel.Visible = true
+                    threatDetected = true
+                end
+            end
+        end
+        if not threatDetected then AlertLabel.Visible = false end
+    else
+        AlertLabel.Visible = false
+    end
     
-    -- SYSTEME D'ESP UNIVERSEL DISCRET
+    -- RENDER ESP UNIVERSEL DISCRET ET CHAMS
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         local cache = Hub.Cache[p]
         if not cache then
-            cache = { Box = Instance.new("Frame"), Tracer = Instance.new("Frame"), Name = Instance.new("TextLabel") }
+            cache = { 
+                Box = Instance.new("Frame"), 
+                Tracer = Instance.new("Frame"), 
+                Name = Instance.new("TextLabel"),
+                Chams = Instance.new("Highlight")
+            }
             cache.Box.BackgroundTransparency = 1; cache.Box.Parent = ScreenGui; line(Hub.Themes.Accent, 1, cache.Box)
             cache.Tracer.BorderSizePixel = 0; cache.Tracer.BackgroundColor3 = Hub.Themes.Accent; cache.Tracer.Parent = ScreenGui
             cache.Name.BackgroundTransparency = 1; cache.Name.Font = Enum.Font.Code; cache.Name.TextSize = 9; cache.Name.TextColor3 = Hub.Themes.Text; cache.Name.Parent = ScreenGui
+            
+            cache.Chams.FillColor = Hub.Themes.Main
+            cache.Chams.FillTransparency = 0.5
+            cache.Chams.OutlineColor = Hub.Themes.Accent
+            cache.Chams.OutlineTransparency = 0
+            
             Hub.Cache[p] = cache
         end
         
         if not Hub.Config.EspPlayers or not isAlive(p) or not isAlive(player) then
-            cache.Box.Visible = false; cache.Tracer.Visible = false; cache.Name.Visible = false
+            cache.Box.Visible = false; cache.Tracer.Visible = false; cache.Name.Visible = false; cache.Chams.Parent = nil
             continue
         end
         
         local root = p.Character.HumanoidRootPart
         local screenPos, onScreen = Camera:WorldToScreenPoint(root.Position)
+        
+        -- Gestion Chams Silhouette
+        if Hub.Config.EspChams then
+            cache.Chams.Parent = p.Character
+            -- Modification dynamique de couleur MM2
+            if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2ShowRoles then
+                if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then
+                    cache.Chams.OutlineColor = Color3.fromRGB(255, 50, 50)
+                elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then
+                    cache.Chams.OutlineColor = Color3.fromRGB(50, 50, 255)
+                else
+                    cache.Chams.OutlineColor = Color3.fromRGB(50, 255, 50)
+                end
+            else
+                cache.Chams.OutlineColor = Hub.Themes.Accent
+            end
+        else
+            cache.Chams.Parent = nil
+        end
         
         if onScreen then
             local dist = (root.Position - Camera.CFrame.Position).Magnitude
@@ -391,6 +511,20 @@ RunService.RenderStepped:Connect(function()
             cache.Box.Visible = false; cache.Tracer.Visible = false; cache.Name.Visible = false
         end
     end
+
+    -- ESP Objectif Spécifique BedWars (Lits)
+    if Hub.GameMode == "BedWars" and Hub.Config.BwBedEsp then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name == "bed" and obj:IsA("BasePart") then
+                if not obj:FindFirstChild("SelectionBox") then
+                    local s = Instance.new("SelectionBox")
+                    s.Color3 = Hub.Themes.Accent
+                    s.Adornee = obj
+                    s.Parent = obj
+                end
+            end
+        end
+    end
 end)
 
 -- Heartbeat Physics Loop
@@ -403,6 +537,25 @@ RunService.Heartbeat:Connect(function()
     if Hub.Config.SpeedEnabled then hum.WalkSpeed = Hub.Config.SpeedValue end
     if Hub.Config.JumpEnabled then hum.JumpPower = Hub.Config.JumpValue end
     
+    -- Moteur Hitbox Expander (Modificateur de Volume)
+    if Hub.Config.HitboxExpanded then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and isAlive(p) then
+                p.Character.HumanoidRootPart.Size = Vector3.new(Hub.Config.HitboxSize, Hub.Config.HitboxSize, Hub.Config.HitboxSize)
+                p.Character.HumanoidRootPart.Transparency = 0.7
+                p.Character.HumanoidRootPart.CanCollide = false
+            end
+        end
+    else
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and isAlive(p) then
+                p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                p.Character.HumanoidRootPart.Transparency = 1
+                p.Character.HumanoidRootPart.CanCollide = true
+            end
+        end
+    end
+
     if Hub.Config.SpinBot then
         root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Hub.Config.SpinSpeed), 0)
     end
@@ -411,8 +564,7 @@ RunService.Heartbeat:Connect(function()
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= player and isAlive(p) then
                 local tRoot = p.Character.HumanoidRootPart
-                local distance = (tRoot.Position - root.Position).Magnitude
-                if distance < 12 then
+                if (tRoot.Position - root.Position).Magnitude < 12 then
                     tRoot.Velocity = Vector3.new(9999, 9999, 9999)
                     tRoot.RotVelocity = Vector3.new(9999, 9999, 9999)
                 end
@@ -433,6 +585,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Stepped Loop (Collisions)
 RunService.Stepped:Connect(function()
     if Hub.Config.NoClip and isAlive(player) then
         for _, part in ipairs(player.Character:GetChildren()) do
