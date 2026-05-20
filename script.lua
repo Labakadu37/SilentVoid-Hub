@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 4.0 : FOV Centré Fixe + Target Line Ajustée + ESP Ultra-Compatible
+    [+] Version 5.0 : Fix Définitif du Centre Écran (API Roblox Native)
 --]]
 
 local Players = game:GetService("Players")
@@ -46,13 +46,12 @@ local ZentyConfig = {
     }
 }
 
--- --- CERCLE DE FOV (FIXE AU CENTRE) ---
+-- --- CERCLE DE FOV STABLE (CENTRE ÉCRAN) ---
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "ZentyFOV"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-FOVFrame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Centre absolu de l'écran
 FOVFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
-FOVFrame.BackgroundTransparency = 0.98
+FOVFrame.BackgroundTransparency = 1 -- Intérieur invisible
 FOVFrame.Visible = false
 FOVFrame.Parent = ScreenGui
 
@@ -65,7 +64,7 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- TARGET LINE (DEPUIS LE CENTRE) ---
+-- --- TARGET LINE DÉDIÉE ---
 local LineFrame = Instance.new("Frame")
 LineFrame.Name = "ZentyTargetLine"
 LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
@@ -85,7 +84,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Parent = ScreenGui
 
--- Dragging System
+-- Système de Drag moderne
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -366,7 +365,7 @@ UILibrary:CreateToggle(Pages["Visual"], "Box ESP (Contours Violet)", ZentyConfig
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
--- --- LOGIQUE DE TRI TARGET (BASEE SUR LE CENTRE DE L'ECRAN) ---
+-- --- LOGIQUE DE SÉLECTION DE LA CIBLE ---
 local function GetClosestPlayerToCenter()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
@@ -387,7 +386,7 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- COMPATIBILITÉ DOSSIER ESP ---
+-- --- GESTION ESP NATIVE ROBLOX ---
 local EspContainer = ScreenGui:FindFirstChild("ZentyESP_Folder") or Instance.new("Folder")
 EspContainer.Name = "ZentyESP_Folder"
 EspContainer.Parent = ScreenGui
@@ -404,8 +403,8 @@ local function UpdateESP()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
                 
                 if onScreen and (ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) then
-                    local sizeX = math.clamp(2000 / screenPos.Z, 10, 300)
-                    local sizeY = math.clamp(2800 / screenPos.Z, 15, 400)
+                    local sizeX = math.clamp(2000 / screenPos.Z, 15, 250)
+                    local sizeY = math.clamp(2800 / screenPos.Z, 20, 350)
                     
                     if not existingEsp then
                         existingEsp = Instance.new("Frame")
@@ -459,19 +458,21 @@ local function UpdateESP()
     end
 end
 
--- --- BOUCLE PRINCIPALE GENERALE ---
+-- --- BOUCLE PRINCIPALE RENDU ---
 RunService.RenderStepped:Connect(function()
+    -- Définition stable du milieu exact de l'écran (API Roblox)
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     
-    -- 1. MAJ du Cercle FOV (Reste parfaitement centré)
+    -- Fixation absolue du FOV au centre
     if ZentyConfig.Aimbot.ShowFOV then
+        FOVFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
         FOVFrame.Size = UDim2.new(0, ZentyConfig.Aimbot.FOV * 2, 0, ZentyConfig.Aimbot.FOV * 2)
         FOVFrame.Visible = true
     else
         FOVFrame.Visible = false
     end
 
-    -- 2. Recherche et Lock Target
+    -- Gestion du ciblage automatique (Lock)
     local target = GetClosestPlayerToCenter()
     
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
@@ -479,7 +480,7 @@ RunService.RenderStepped:Connect(function()
         local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
         
         if onScreen then
-            -- Target Line part du centre de l'écran vers l'ennemi
+            -- Tracé de la ligne à partir du centre de l'écran vers l'ennemi
             if ZentyConfig.Aimbot.TargetLine then
                 local endPos = Vector2.new(headPos.X, headPos.Y)
                 local distance = (endPos - centerScreen).Magnitude
@@ -493,7 +494,7 @@ RunService.RenderStepped:Connect(function()
                 LineFrame.Visible = false
             end
             
-            -- Lock Caméra Direct et Fluide
+            -- Lock Caméra fluide (PC & Mobile) au maintien des touches ou de l'écran
             if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
                 local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
                 Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
@@ -505,6 +506,7 @@ RunService.RenderStepped:Connect(function()
         LineFrame.Visible = false
     end
 
-    -- 3. Mise à jour de l'ESP
+    -- Rafraîchissement de l'ESP
     UpdateESP()
 end)
+
