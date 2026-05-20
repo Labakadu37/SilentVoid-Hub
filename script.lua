@@ -28,6 +28,7 @@ end
 local Hub = {
     GameMode = "Universel",
     PlaceId = game.PlaceId,
+    GameId = game.GameId,
     Config = {
         Aimbot = false, AimbotPart = "Head", FovEnabled = false, FovRadius = 140, TeamCheck = false, WallCheck = false,
         EspPlayers = false, EspBoxes = false, EspTracers = false, EspNames = false,
@@ -42,11 +43,6 @@ local Hub = {
         Mm2SheriffLock = false,
         Mm2KillMurderer = false,
         Mm2GrabGun = false,
-        -- Extras Autres Jeux
-        BhUnlockCars = false, BhTeleportLoop = false, BhSafeRobber = false,
-        BbAutoParry = false, BbParryDistance = 15, BbPredictCurve = false,
-        ArSilentAim = false, ArNoRecoil = false, ArTracerLasers = false,
-        BwKillAura = false, BwBedEsp = false
     },
     Cache = {},
     Themes = {
@@ -60,11 +56,10 @@ local Hub = {
     }
 }
 
-local gamesList = {
-    [4924922222] = "Brookhaven", [13772394625] = "Blade Ball", [142823291] = "Murder Mystery 2",
-    [286090424] = "Arsenal", [6872265039] = "BedWars", [1168263273] = "BedWars"
-}
-if gamesList[Hub.PlaceId] then Hub.GameMode = gamesList[Hub.PlaceId] end
+-- CORRECTION : Vérification par GameId pour éviter les bugs de sous-serveurs MM2
+if Hub.GameId == 66654135 or Hub.PlaceId == 142823291 then 
+    Hub.GameMode = "Murder Mystery 2" 
+end
 
 -- ══════════════════════════════════════════════
 --  INTERFACE GRAPHIQUE GHOST TRANSLUCIDE
@@ -138,16 +133,15 @@ FOVCircle.Size = UDim2.new(0, Hub.Config.FovRadius * 2, 0, Hub.Config.FovRadius 
 FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5); FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0); FOVCircle.BackgroundTransparency = 1; FOVCircle.Visible = false; FOVCircle.Parent = ScreenGui
 round(Hub.Config.FovRadius * 2, FOVCircle); local FOVStroke = line(Hub.Themes.Accent, 1, FOVCircle)
 
--- Système d'alertes textuelles pour MM2
 local AlertLabel = Instance.new("TextLabel")
 AlertLabel.Size = UDim2.new(0, 500, 0, 30)
-AlertLabel.Position = UDim2.new(0.5, -200, 0, 45)
+AlertLabel.Position = UDim2.new(0.5, -250, 0, 45)
 AlertLabel.BackgroundTransparency = 1
 AlertLabel.Font = Enum.Font.Code; AlertLabel.TextSize = 13; AlertLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
 AlertLabel.Text = ""; AlertLabel.Visible = false; AlertLabel.Parent = ScreenGui
 
 -- ══════════════════════════════════════════════
---  BUILDER COMPOSANTS SANS EMOJI (DEV STYLE)
+--  BUILDER COMPOSANTS
 -- ══════════════════════════════════════════════
 local Pages, Buttons, firstPage = {}, {}, nil
 
@@ -234,7 +228,7 @@ local function AddSlider(page, title, min, max, default, configKey, callback)
 end
 
 -- ══════════════════════════════════════════════
---  CONSTRUCTION DES ONGLETS CORE
+--  CREATION DES PAGES
 -- ══════════════════════════════════════════════
 local pCombat = CreatePage("combat", "CRITICAL COMBAT")
 local pVisuals = CreatePage("visuals", "OVERLAY RENDERER")
@@ -242,76 +236,74 @@ local pLocal = CreatePage("local", "PHYSICS MANIPULATOR")
 local pFun = CreatePage("fun", "BLATANT MODS & FUN")
 local pGameMod = CreatePage("gamemod", "TARGET MODULE")
 
--- Page Combat
+-- Combat
 AddToggle(pCombat, "Engine Lock-On", "Assistance de visée angulaire stricte", "Aimbot", function() end)
 AddToggle(pCombat, "Raycast Occlusion Check", "Ignore les entités masquées par la géométrie", "WallCheck", function() end)
 AddToggle(pCombat, "Draw Target Boundary", "Rendu du cercle d'acquisition", "FovEnabled", function(v) FOVCircle.Visible = v end)
 AddSlider(pCombat, "Boundary Range Radius", 30, 400, 140, "FovRadius", function(v) FOVCircle.Size = UDim2.new(0, v*2, 0, v*2) round(v*2, FOVCircle) end)
 
--- Page Overlay Visuals
+-- Visuals
 AddToggle(pVisuals, "Master Render Status", "Activer la boucle de rendu géométrique", "EspPlayers", function() end)
 AddToggle(pVisuals, "Bounding Box 2D", "Tracé rectangulaire sur les cibles", "EspBoxes", function() end)
 AddToggle(pVisuals, "Target Direct Tracers", "Vecteurs au sol depuis le centre écran", "EspTracers", function() end)
 AddToggle(pVisuals, "Identification Tags", "Rendu des chaînes de caractères (Nom + Range)", "EspNames", function() end)
 AddToggle(pVisuals, "Wallhack Silhouette Chams", "Rendu complet en surbrillance à travers les surfaces", "EspChams", function() end)
-AddToggle(pVisuals, "Render Bullet Tracers", "Affiche la trajectoire vectorielle des impacts", "BulletTracers", function() end)
 
--- Page Physics Manipulator
+-- Physics
 AddToggle(pLocal, "Override WalkSpeed", "Forcer la vélocité linéaire au sol", "SpeedEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.WalkSpeed = originalWalkSpeed end end)
 AddSlider(pLocal, "Velocity Amplitude", 16, 250, 16, "SpeedValue", function() end)
 AddToggle(pLocal, "Override JumpPower", "Forcer le coefficient de propulsion verticale", "JumpEnabled", function(v) if not v and player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.JumpPower = originalJumpPower end end)
 AddSlider(pLocal, "Propulsion Amplitude", 50, 300, 50, "JumpValue", function() end)
-AddToggle(pLocal, "Quantum Flight Mode", "Annuler la force gravitationnelle et lier au vecteur caméra", "FlyEnabled", function(v) if not v then Workspace.Gravity = originalGravity if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.PlatformStand = false end end end)
+AddToggle(pLocal, "Quantum Flight Mode", "Annuler la force gravitationnelle", "FlyEnabled", function(v) if not v then Workspace.Gravity = originalGravity if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid.PlatformStand = false end end end)
 AddSlider(pLocal, "Flight Axis Speed", 1, 15, 3, "FlySpeed", function() end)
-AddToggle(pLocal, "Phase Matrix (NoClip)", "Désactiver les masques de collision des membres", "NoClip", function() end)
+AddToggle(pLocal, "Phase Matrix (NoClip)", "Désactiver les masques de collision", "NoClip", function() end)
 AddToggle(pLocal, "Hitbox Volumetric Expander", "Agrandit la zone d'impact de la cible racine", "HitboxExpanded", function() end)
 AddSlider(pLocal, "Hitbox Scale Factor", 2, 20, 2, "HitboxSize", function() end)
-AddToggle(pLocal, "Blink Forward Dash", "Active la propulsion linéaire instantanée via touche X", "BlinkDashEnabled", function() end)
+AddToggle(pLocal, "Blink Forward Dash", "Active la propulsion linéaire via touche X", "BlinkDashEnabled", function() end)
 
--- Page Blatant Mods & Fun
-AddToggle(pFun, "Velocity Spinbot", "Rotation angulaire extrême pour fausser la hitbox", "SpinBot", function() end)
+-- Fun
+AddToggle(pFun, "Velocity Spinbot", "Rotation angulaire extrême", "SpinBot", function() end)
 AddSlider(pFun, "Spin Angular Rate", 10, 150, 30, "SpinSpeed", function() end)
-AddToggle(pFun, "Physics Fling Aura", "Ejecte les entités à proximité par collision asynchrone", "FlingAura", function() end)
+AddToggle(pFun, "Physics Fling Aura", "Ejecte les entités à proximité", "FlingAura", function() end)
 AddToggle(pFun, "Infinite Air Jump", "Permet l'activation du saut sans appui au sol", "InfiniteJump", function() end)
 AddSlider(pFun, "Global World Gravity", 0, 196, 196, "GravitySlider", function(v) Workspace.Gravity = v end)
-AddToggle(pFun, "Click Map Teleport", "Pressez CTRL + Clic gauche pour vous téléporter sur le curseur", "ClickTeleport", function() end)
-AddToggle(pFun, "View Spy Target", "Clône la caméra sur le joueur le plus proche", "ViewSpy", function() end)
+AddToggle(pFun, "Click Map Teleport", "Pressez CTRL + Clic gauche pour vous téléporter", "ClickTeleport", function() end)
+AddToggle(pFun, "View Spy Target", "Clône la caméra sur le joueur ciblé", "ViewSpy", function() end)
 
 -- ══════════════════════════════════════════════
---  MODULES SPECIFIQUES (TARGET MODULE) : MM2 COMPLET 100%
+--  CHARGEMENT AUTOMATIQUE DES CONTROLES MM2
 -- ══════════════════════════════════════════════
 if Hub.GameMode == "Murder Mystery 2" then
-    AddToggle(pGameMod, "Role Wallhack Chams", "Coloration stricte à travers les murs (Rouge: Meurtrier, Bleu: Shérif)", "Mm2ShowRoles", function() end)
+    AddToggle(pGameMod, "Role Wallhack Chams", "Coloration stricte à travers les murs (Rouge: Murder, Bleu: Sheriff)", "Mm2ShowRoles", function() end)
     AddToggle(pGameMod, "Murderer Proximity Alert", "Alerte texte dynamique à l'écran si le Meurtrier approche", "Mm2MurderAlert", function() end)
-    AddToggle(pGameMod, "Sheriff Weapon Lock", "Restreint l'aimbot uniquement sur le Meurtrier identifié", "Mm2SheriffLock", function() end)
-    AddToggle(pGameMod, "Coin Geometric Grabber", "Téléporte automatiquement et instantanément toutes les pièces du round sur vous", "Mm2AutoCollect", function() end)
-    AddToggle(pGameMod, "Auto Grab Dropped Gun", "Se téléporte instantanément sur l'arme tombée au sol si le Shérif meurt", "Mm2GrabGun", function() end)
-    AddToggle(pGameMod, "Instant Kill Murderer", "Tue instantanément le Meurtrier si vous possédez l'arme", "Mm2KillMurderer", function() end)
-
-elseif Hub.GameMode == "Brookhaven" then
-    AddToggle(pGameMod, "Gamepass Vehicle Injection", "Force l'accès local au catalogue premium", "BhUnlockCars", function() end)
-    AddToggle(pGameMod, "Estate Teleport Matrix", "Boucle d'itération sur les parcelles de serveurs", "BhTeleportLoop", function() end)
-    AddToggle(pGameMod, "Safe Robber Assist", "Indexation visuelle et raccourci vers les coffres de parcelles", "BhSafeRobber", function() end)
-
-elseif Hub.GameMode == "Blade Ball" then
-    AddToggle(pGameMod, "Instant Parry Trigger", "Déclenchement du blocage via calcul prédictif de trajectoire", "BbAutoParry", function() end)
-    AddToggle(pGameMod, "Predictive Ball Curve", "Calcule et affiche le vecteur direct d'approche de la balle", "BbPredictCurve", function() end)
-
-elseif Hub.GameMode == "Arsenal" then
-    AddToggle(pGameMod, "Vector Silent Aim", "Redirection automatique des paquets d'impact", "ArSilentAim", function() end)
-    AddToggle(pGameMod, "Anti Recoil Engine", "Supprime les modificateurs de dispersion de l'arme", "ArNoRecoil", function() end)
-    AddToggle(pGameMod, "Laser Sight Overlay", "Génère un tracer continu au point d'impact calculé", "ArTracerLasers", function() end)
-
-elseif Hub.GameMode == "BedWars" then
-    AddToggle(pGameMod, "Raycast 360 KillAura", "Génère des événements d'attaque sur l'équipe adverse", "BwKillAura", function() end)
-    AddToggle(pGameMod, "Objective Bed ESP", "Traceur d'analyse à travers les structures pour l'objectif central", "BwBedEsp", function() end)
+    AddToggle(pGameMod, "Sheriff Weapon Lock", "Restreint l'aimbot uniquement sur le Meurtrier", "Mm2SheriffLock", function() end)
+    AddToggle(pGameMod, "Coin Geometric Grabber", "Téléporte automatiquement toutes les pièces du round sur vous", "Mm2AutoCollect", function() end)
+    AddToggle(pGameMod, "Auto Grab Dropped Gun", "Se téléporte instantanément sur l'arme tombée au sol", "Mm2GrabGun", function() end)
+    AddToggle(pGameMod, "Instant Kill Murderer", "Shoote automatiquement le Meurtrier si vous avez l'arme", "Mm2KillMurderer", function() end)
+else
+    -- Message de sécurité si le jeu n'est pas détecté
+    local NoModTxt = Instance.new("TextLabel")
+    NoModTxt.Size = UDim2.new(1, 0, 0, 50)
+    NoModTxt.BackgroundTransparency = 1
+    NoModTxt.Text = "AUCUN MODULE COMPATIBLE DETECTE POUR CE JEU"
+    NoModTxt.Font = Enum.Font.Code; NoModTxt.TextSize = 11; NoModTxt.TextColor3 = Hub.Themes.TextDark
+    NoModTxt.Parent = pGameMod
 end
 
 -- ══════════════════════════════════════════════
---  FONCTIONS INTERNES ET AUTOMATIONS CORE
+--  FONCTIONS TECHNIQUES (DETECTION MM2)
 -- ══════════════════════════════════════════════
 local function isAlive(p)
     return p and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0
+end
+
+local function getMurderer()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if isAlive(p) and (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) then
+            return p
+        end
+    end
+    return nil
 end
 
 local function getClosestPlayer()
@@ -333,32 +325,15 @@ local function getClosestPlayer()
     return closest
 end
 
--- Utilitaires de détection pour MM2
-local function getMurderer()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if isAlive(p) and (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) then
-            return p
-        end
-    end
-    return nil
-end
-
-local function getSheriff()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if isAlive(p) and (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) then
-            return p
-        end
-    end
-    return nil
-end
-
 -- ══════════════════════════════════════════════
---  BOUCLE PRINCIPALE RENDU (RENDERSTEPPED)
+--  BOUCLES D'AUTOMATION (RENDERSTEPPED & HEARTBEAT)
 -- ══════════════════════════════════════════════
 RunService.RenderStepped:Connect(function()
     if not isAlive(player) then return end
     
-    -- Gestion Visée Critique (Aimbot & Lock Meurtrier)
+    -- Centrage du cercle FOV sur la position réelle de la souris
+    FOVCircle.Position = UDim2.new(0, UIS:GetMouseLocation().X, 0, UIS:GetMouseLocation().Y)
+    
     local target = nil
     if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2SheriffLock then
         target = getMurderer()
@@ -368,34 +343,26 @@ RunService.RenderStepped:Connect(function()
 
     if target and isAlive(target) then
         Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[Hub.Config.AimbotPart].Position)
-        
-        -- Auto Kill Meurtrier si équipé du flingue
         if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2KillMurderer and player.Character:FindFirstChild("Gun") then
-            local VirtualUser = game:GetService("VirtualUser")
-            VirtualUser:Button1Down(Vector2.new(0,0), Camera.CFrame)
+            game:GetService("VirtualUser")--[[🚀]]:Button1Down(Vector2.new(0,0), Camera.CFrame)
         end
     end
 
-    -- Alerte Radar Meurtrier MM2
+    -- Radar de proximité Meurtrier
     if Hub.GameMode == "Murder Mystery 2" and Hub.Config.Mm2MurderAlert then
         local m = getMurderer()
         if m and m ~= player and isAlive(m) then
             local dist = (m.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if dist < 45 then
-                AlertLabel.Text = "SYSTEM_WARN : MURDERER DETECTED // DISTANCE: " .. math.floor(dist) .. " STUDS"
+            if dist < 50 then
+                AlertLabel.Text = "⚠️ ALERTE : MEURTRIER PROCHE [" .. math.floor(dist) .. " STUDS] ⚠️"
                 AlertLabel.Visible = true
-            else
-                AlertLabel.Visible = false
-            end
-        else
-            AlertLabel.Visible = false
-        end
-    end
+            else AlertLabel.Visible = false end
+        else AlertLabel.Visible = false end
+    else AlertLabel.Visible = false end
 
-    -- Gestion du View Spy
+    -- Rendu de la caméra espion (ViewSpy)
     if Hub.Config.ViewSpy then
-        local spyTarget = getClosestPlayer()
-        if Hub.GameMode == "Murder Mystery 2" then spyTarget = getMurderer() end
+        local spyTarget = (Hub.GameMode == "Murder Mystery 2") and getMurderer() or getClosestPlayer()
         if spyTarget and isAlive(spyTarget) then
             Camera.CameraSubject = spyTarget.Character.Humanoid
         end
@@ -405,7 +372,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- RENDU VISUEL : PLAYERS / WALLHACK ROLES MM2
+    -- BOUCLE REEL DU WALLHACK ESP / CHAMS ROLES
     for _, p in ipairs(Players:GetPlayers()) do
         if p == player then continue end
         local cache = Hub.Cache[p]
@@ -416,7 +383,7 @@ RunService.RenderStepped:Connect(function()
             cache.Box.BackgroundTransparency = 1; cache.Box.Parent = ScreenGui; line(Hub.Themes.Accent, 1, cache.Box)
             cache.Tracer.BorderSizePixel = 0; cache.Tracer.BackgroundColor3 = Hub.Themes.Accent; cache.Tracer.Parent = ScreenGui
             cache.Name.BackgroundTransparency = 1; cache.Name.Font = Enum.Font.Code; cache.Name.TextSize = 9; cache.Name.TextColor3 = Hub.Themes.Text; cache.Name.Parent = ScreenGui
-            cache.Chams.FillTransparency = 0.6; cache.Chams.OutlineTransparency = 0
+            cache.Chams.FillTransparency = 0.5; cache.Chams.OutlineTransparency = 0
             Hub.Cache[p] = cache
         end
 
@@ -425,17 +392,17 @@ RunService.RenderStepped:Connect(function()
             continue
         end
 
-        -- Injection et Configuration du Wallhack Chams Rôles
+        -- Gestion dynamique du Wallhack de rôle (Chams)
         if Hub.Config.Mm2ShowRoles and Hub.GameMode == "Murder Mystery 2" then
             cache.Chams.Parent = p.Character
             if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then
-                cache.Chams.FillColor = Color3.fromRGB(255, 30, 30)
+                cache.Chams.FillColor = Color3.fromRGB(255, 35, 35) -- Rouge pétant pour le Murder
                 cache.Chams.OutlineColor = Color3.fromRGB(255, 0, 0)
             elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then
-                cache.Chams.FillColor = Color3.fromRGB(30, 30, 255)
+                cache.Chams.FillColor = Color3.fromRGB(35, 35, 255) -- Bleu électrique pour le Sheriff
                 cache.Chams.OutlineColor = Color3.fromRGB(0, 0, 255)
             else
-                cache.Chams.FillColor = Color3.fromRGB(30, 255, 30)
+                cache.Chams.FillColor = Color3.fromRGB(35, 255, 35) -- Vert clair pour les innocents
                 cache.Chams.OutlineColor = Color3.fromRGB(0, 255, 0)
             end
         elseif Hub.Config.EspChams then
@@ -469,102 +436,16 @@ RunService.RenderStepped:Connect(function()
             else cache.Tracer.Visible = false end
 
             if Hub.Config.EspNames then
-                local prefix = ""
+                local tag = "[INNOCENT]"
                 if Hub.GameMode == "Murder Mystery 2" then
-                    if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then prefix = "[MURDER] "
-                    elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then prefix = "[SHERIFF] "
-                    else prefix = "[INNOCENT] " end
+                    if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then tag = "[MURDER]"
+                    elseif p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun") then tag = "[SHERIFF]" end
                 end
-                cache.Name.Text = prefix .. p.Name:upper() .. " // [" .. math.floor(dist) .. "M]"
+                cache.Name.Text = tag .. " " .. p.Name:upper() .. " // [" .. math.floor(dist) .. "M]"
                 cache.Name.Position = UDim2.new(0, screenPos.X - 100, 0, screenPos.Y - (h / 2) - 14)
                 cache.Name.Size = UDim2.new(0, 200, 0, 10)
                 cache.Name.Visible = true
             else cache.Name.Visible = false end
         else
-            cache.Box.Visible = false; cache.Tracer.Visible = false; cache.Name.Visible = false
-        end
-    end
-end)
-
--- ══════════════════════════════════════════════
---  BOUCLE PHYSIQUE & TELEPORTS (HEARTBEAT)
--- ══════════════════════════════════════════════
-RunService.Heartbeat:Connect(function()
-    if not isAlive(player) then return end
-    local root = player.Character.HumanoidRootPart
-    local hum = player.Character.Humanoid
-
-    if Hub.Config.SpeedEnabled then hum.WalkSpeed = Hub.Config.SpeedValue end
-    if Hub.Config.JumpEnabled then hum.JumpPower = Hub.Config.JumpValue end
-
-    -- Hitbox Expansion Engine
-    if Hub.Config.HitboxExpanded then
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= player and isAlive(p) then
-                p.Character.HumanoidRootPart.Size = Vector3.new(Hub.Config.HitboxSize, Hub.Config.HitboxSize, Hub.Config.HitboxSize)
-                p.Character.HumanoidRootPart.Transparency = 0.7
-                p.Character.HumanoidRootPart.CanCollide = false
-            end
-        end
-    end
-
-    -- AUTOMATIONS MM2 : COIN MAGNET & GRAB DROPPED GUN
-    if Hub.GameMode == "Murder Mystery 2" then
-        -- 1. Aim/Magnet pour ramasser toutes les pièces de la map d'un coup
-        if Hub.Config.Mm2AutoCollect then
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj.Name == "Coin" and obj:IsA("BasePart") then
-                    obj.CFrame = root.CFrame
-                end
-            end
-        end
-
-        -- 2. Téléportation automatique instantanée sur le flingue s'il tombe au sol
-        if Hub.Config.Mm2GrabGun then
-            local gunDrop = Workspace:FindFirstChild("GunDrop")
-            if gunDrop and gunDrop:IsA("BasePart") then
-                root.CFrame = gunDrop.CFrame + Vector3.new(0, 2, 0)
-            end
-        end
-    end
-
-    -- SpinBot & Aura Fling
-    if Hub.Config.SpinBot then root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Hub.Config.SpinSpeed), 0) end
-    if Hub.Config.FlingAura then
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= player and isAlive(p) and (p.Character.HumanoidRootPart.Position - root.Position).Magnitude < 12 then
-                p.Character.HumanoidRootPart.Velocity = Vector3.new(9999, 9999, 9999)
-            end
-        end
-    end
-end)
-
--- Raccourcis Clavier & Inputs
-UIS.InputBegan:Connect(function(i, proc)
-    if proc then return end
-    if Hub.Config.ClickTeleport and i.UserInputType == Enum.UserInputType.MouseButton1 and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-        if isAlive(player) then player.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.p + Vector3.new(0,3,0)) end
-    end
-    if Hub.Config.BlinkDashEnabled and i.KeyCode == Enum.KeyCode.X and isAlive(player) then
-        player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -15)
-    end
-end)
-
-UIS.JumpRequest:Connect(function()
-    if Hub.Config.InfiniteJump and isAlive(player) then player.Character.Humanoid:ChangeState("Jumping") end
-end)
-
-RunService.Stepped:Connect(function()
-    if Hub.Config.NoClip and isAlive(player) then
-        for _, part in ipairs(player.Character:GetChildren()) do if part:IsA("BasePart") then part.CanCollide = false end end
-    end
-end)
-
-if firstPage then
-    Pages[firstPage].Visible = true
-    Buttons[firstPage].Btn.TextColor3 = Hub.Themes.Text
-    Buttons[firstPage].Btn.BackgroundTransparency = 0.85
-    Buttons[firstPage].Btn.BackgroundColor3 = Hub.Themes.Accent
-    Buttons[firstPage].Ind.BackgroundTransparency = 0
-end
+            cache.Box.Visible
 
