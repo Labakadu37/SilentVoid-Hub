@@ -6,8 +6,8 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 2.0 : Correction Aimbot & ESP (Sans API Drawing)
-    [+] Support universel : PC / Mobile / Tous exécuteurs
+    [+] Version 3.0 : Fix Bug d'affichage & Crash Parent Loop
+    [+] Système Anti-Crash Exécuteur Intégré
 --]]
 
 local Players = game:GetService("Players")
@@ -18,11 +18,16 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 
--- --- SÉCURITÉ D'AFFICHAGE ---
+-- Nettoyage des anciennes instances pour éviter les doublons
+local oldUI = CoreGui:FindFirstChild("ZentyHub_Premium") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ZentyHub_Premium")
+if oldUI then oldUI:Destroy() end
+
+-- --- CRÉATION DE LA SCREEN GUI ---
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
 
+-- Injection ultra-sécurisée
 local success, err = pcall(function()
     ScreenGui.Parent = CoreGui
 end)
@@ -48,17 +53,17 @@ local ZentyConfig = {
     }
 }
 
--- --- CRÉATION DU CERCLE DE FOV NATIF (ROBLOX UI) ---
+-- --- CERCLE DE FOV (UI) ---
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "ZentyFOV"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 FOVFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
-FOVFrame.BackgroundTransparency = 0.9 -- Transparent à l'intérieur
+FOVFrame.BackgroundTransparency = 0.95
 FOVFrame.Visible = false
 FOVFrame.Parent = ScreenGui
 
 local FOVCorner = Instance.new("UICorner")
-FOVCorner.CornerRadius = UDim.new(1, 0) -- Cercle parfait
+FOVCorner.CornerRadius = UDim.new(1, 0)
 FOVCorner.Parent = FOVFrame
 
 local FOVStroke = Instance.new("UIStroke")
@@ -66,7 +71,7 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- CRÉATION DE LA TARGET LINE NATIVE ---
+-- --- TARGET LINE (UI) ---
 local LineFrame = Instance.new("Frame")
 LineFrame.Name = "ZentyTargetLine"
 LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
@@ -75,7 +80,7 @@ LineFrame.AnchorPoint = Vector2.new(0, 0.5)
 LineFrame.Visible = false
 LineFrame.Parent = ScreenGui
 
--- --- INTERFACE : MAIN FRAME ---
+-- --- MAIN FRAME (MENU PHANTOM VIOLET) ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -84,10 +89,9 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(15, 12, 22)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Draggable = true 
-MainFrame.Parent = MainFrame
+MainFrame.Parent = ScreenGui -- FIX: Parent direct à la ScreenGui
 
--- Permettre le déplacement du menu de manière fluide (PC & Mobile)
+-- Script de Drag (Déplacement) moderne sans .Draggable (Anti-Crash PC/Mobile)
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -110,8 +114,6 @@ UserInputService.InputChanged:Connect(function(input)
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-
-MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
@@ -233,7 +235,7 @@ for i, catName in ipairs(Categories) do
     end
 end
 
--- --- ÉLÉMENTS DE L'UI ---
+-- --- COMPOSANTS DE L'UI ---
 local UILibrary = {}
 
 function UILibrary:CreateToggle(parent, text, default, callback)
@@ -359,18 +361,18 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
     UserInputService.InputChanged:Connect(function(input) if Sliding and input.UserInputType == Enum.UserInputType.MouseMovement then UpdateSlider() end end)
 end
 
--- Remplissage UI
+-- Remplissage des pages
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Ligne de Cible (Target Line)", ZentyConfig.Aimbot.TargetLine, function(v) ZentyConfig.Aimbot.TargetLine = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 400, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Plus bas = plus fort)", 1, 20, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
 
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP (Contours Violet)", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
--- --- LOGIQUE DU CIBLEUR (GET CLOSEST PLAYER) ---
+-- --- RECHERCHE DU JOUEUR LE PLUS PROCHE ---
 local function GetClosestPlayer()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
@@ -391,7 +393,7 @@ local function GetClosestPlayer()
     return closestTarget
 end
 
--- --- GESTION ESP NATIVE (SANS DRAWING API) ---
+-- --- ESP NATIVE ANTI-CRASH ---
 local EspContainer = Instance.new("Folder")
 local successContainer = pcall(function() EspContainer.Parent = CoreGui end)
 if not successContainer then EspContainer.Parent = ScreenGui end
@@ -419,7 +421,6 @@ local function UpdateESP()
                         existingEsp.AnchorPoint = Vector2.new(0.5, 0.5)
                         existingEsp.Parent = EspContainer
                         
-                        -- Contours violets pures requis
                         local stroke = Instance.new("UIStroke")
                         stroke.Thickness = 1.5
                         stroke.Color = ZentyConfig.Visuals.Color
@@ -441,7 +442,6 @@ local function UpdateESP()
                     existingEsp.Size = UDim2.new(0, sizeX, 0, sizeY)
                     existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
                     
-                    -- Gestion Textes (Pseudo + Distance)
                     if ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local labelText = ""
                         if ZentyConfig.Visuals.EspNames then labelText = player.Name end
@@ -466,11 +466,11 @@ local function UpdateESP()
     end
 end
 
--- --- BOUCLE DE RENDU ET AIMBOT ---
+-- --- BOUCLE UNIVERSELLE ---
 RunService.RenderStepped:Connect(function()
     local mouseLoc = UserInputService:GetMouseLocation()
     
-    -- Rafraîchir le cercle de FOV d'UI
+    -- Cercle de FOV
     if ZentyConfig.Aimbot.ShowFOV then
         FOVFrame.Position = UDim2.new(0, mouseLoc.X, 0, mouseLoc.Y)
         FOVFrame.Size = UDim2.new(0, ZentyConfig.Aimbot.FOV * 2, 0, ZentyConfig.Aimbot.FOV * 2)
@@ -479,7 +479,7 @@ RunService.RenderStepped:Connect(function()
         FOVFrame.Visible = false
     end
 
-    -- Chercher une cible
+    -- Gestion Cible & Lock Viseur
     local target = GetClosestPlayer()
     
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
@@ -487,7 +487,7 @@ RunService.RenderStepped:Connect(function()
         local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
         
         if onScreen then
-            -- Mettre à jour la ligne de ciblage native
+            -- Target Line
             if ZentyConfig.Aimbot.TargetLine then
                 local startPos = Vector2.new(mouseLoc.X, mouseLoc.Y)
                 local endPos = Vector2.new(headPos.X, headPos.Y)
@@ -502,11 +502,10 @@ RunService.RenderStepped:Connect(function()
                 LineFrame.Visible = false
             end
             
-            -- EXECUTION DU LOCK CAMERA (Fonctionne sur TOUS les supports/exécuteurs)
-            -- S'active si le clic gauche (PC) ou un appui écran (Mobile) est maintenu
-            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)[1] then
+            -- Lock Caméra (Valide PC & Mobile)
+            -- S'active automatiquement lorsque tu maintiens le clic droit/gauche ou appuie sur ton écran tactile
+            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
                 local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-                -- Lissage caméra basé sur le paramètre Smoothness
                 Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
             end
         else
@@ -516,7 +515,6 @@ RunService.RenderStepped:Connect(function()
         LineFrame.Visible = false
     end
 
-    -- Rafraîchir l'ESP nativement
     UpdateESP()
 end)
 
