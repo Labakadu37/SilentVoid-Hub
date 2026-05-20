@@ -43,16 +43,16 @@ local Hub = {
         BwKillAura = false
     },
     Cache = {},
-    Themes = {
-        Main = Color3.fromRGB(12, 5, 20), -- Base violette très sombre
-        Sidebar = Color3.fromRGB(8, 3, 15),
-        Accent = Color3.fromRGB(157, 0, 255), -- Violet Électrique Zenty
-        Row = Color3.fromRGB(22, 10, 38),
-        Text = Color3.fromRGB(255, 255, 255),
-        TextDark = Color3.fromRGB(150, 140, 170),
-        Border = Color3.fromRGB(60, 20, 110)
+        Themes = {
+        Main = Color3.fromRGB(10, 10, 12),       -- Base noire
+        Sidebar = Color3.fromRGB(5, 5, 7),        -- Sidebar plus sombre
+        Accent = Color3.fromRGB(240, 240, 250),    -- Blanc fantôme épuré pour la sélection
+        Row = Color3.fromRGB(15, 15, 18),         -- Lignes de menu très discrètes
+        Text = Color3.fromRGB(255, 255, 255),     -- Texte principal blanc clair
+        TextDark = Color3.fromRGB(100, 100, 110), -- Texte secondaire grisé (effet estompé)
+        Border = Color3.fromRGB(35, 35, 40)        -- Bordures très fines et sombres
     }
-}
+
 
 local gamesList = {
     [4924922222] = "Brookhaven", [13772394625] = "Blade Ball", [142823291] = "Murder Mystery 2",
