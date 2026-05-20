@@ -1,315 +1,450 @@
--- [[ ZENTYHUBV1 - NEON PURPLE EDITION ]]
--- Framework d'interface basé sur le style visuel fourni (Teintes Violettes & Anthracite)
+--[[
+    SilentVoid Hub - Édition Phantom (Top Navigation)
+    Interface moderne semi-transparente avec catégories horizontales.
+    Utilisation exclusive des API légitimes de Roblox.
+--]]
 
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
-local localPlayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- -------------------------------------------------------------
--- CONFIGURATION DE LA PALETTE DE COULEURS (Style Fidèle aux Images)
--- -------------------------------------------------------------
-local THEME = {
-    Background = Color3.fromRGB(22, 19, 32),       -- Fond très sombre avec une nuance violette
-    BackgroundTrans = 0.2,                         -- Transparence "Ghost" fluide
-    AccentPurple = Color3.fromRGB(138, 79, 227),   -- Violet Néon Principal (Bordures, Boutons)
-    PurpleDark = Color3.fromRGB(48, 36, 74),       -- Violet Sombre pour les arrière-plans d'éléments
-    TextMain = Color3.fromRGB(245, 242, 255),     -- Blanc pur / Lumineux
-    TextDark = Color3.fromRGB(152, 140, 179),     -- Texte secondaire grisé/violet
-    CardBg = Color3.fromRGB(31, 26, 46),           -- Fond des conteneurs internes
-    CardTrans = 0.4
+--------------------------------------------------------------------------------
+-- 🎨 DESIGN & THÈME PHANTOM
+--------------------------------------------------------------------------------
+local Theme = {
+    Background = Color3.fromRGB(15, 12, 22),
+    BackgroundTransparency = 0.35, -- Effet transparent "Phantom"
+    Topbar = Color3.fromRGB(10, 8, 15),
+    Accent = Color3.fromRGB(150, 50, 255), -- Violet Néon
+    Text = Color3.fromRGB(245, 240, 255),
+    TextMuted = Color3.fromRGB(140, 130, 160),
+    ButtonBg = Color3.fromRGB(30, 25, 40),
+    ButtonHover = Color3.fromRGB(55, 35, 80),
+    Font = Enum.Font.GothamBold
 }
 
--- -------------------------------------------------------------
--- FONCTIONS COMPOSANTS UTILS
--- -------------------------------------------------------------
-local function createRoundCorner(parent, radius)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, radius or 10)
-    corner.Parent = parent
-    return corner
-end
+local HubState = {
+    Visible = true,
+    CurrentTab = "Assistance Visual",
+    SelectedPlayer = nil,
+    VisualsEnabled = false,
+    InfiniteJump = false,
+    HighlightColor = Color3.fromRGB(150, 50, 255)
+}
 
-local function createStroke(parent, color, thickness, transparency)
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = color
-    stroke.Thickness = thickness or 1.2
-    stroke.Transparency = transparency or 0
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Parent = parent
-    return stroke
-end
-
-local function applyTween(instance, duration, properties)
-    local info = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    TweenService:Create(instance, info, properties):Play()
-end
-
-local function makeDraggable(frame, handle)
-    local dragging, dragInput, dragStart, startPos
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
--- -------------------------------------------------------------
--- STRUCTURE DE L'INTERFACE PRINCIPALE
--- -------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- 🛠️ STRUCTURE DE L'INTERFACE (PANEL CENTRAL)
+--------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZentyPurple_Gui"
+ScreenGui.Name = "SilentVoidPhantom"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
 
--- FENÊTRE PRINCIPALE
+-- Main Frame (Le Panel Violet Transparent)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 820, 0, 500)
-MainFrame.Position = UDim2.new(0.5, -410, 0.5, -250)
-MainFrame.BackgroundColor3 = THEME.Background
-MainFrame.BackgroundTransparency = THEME.BackgroundTrans
-MainFrame.Visible = false
+MainFrame.Size = UDim2.new(0, 580, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -190)
+MainFrame.BackgroundColor3 = Theme.Background
+MainFrame.BackgroundTransparency = Theme.BackgroundTransparency
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
-createRoundCorner(MainFrame, 14)
-createStroke(MainFrame, THEME.AccentPurple, 1.5, 0.1)
+-- Coins arrondis du panel
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
 
--- BANNIÈRE IMAGE / DESIGN CENTRAL (Style Anime de l'image 2)
-local CenterBanner = Instance.new("ImageLabel")
-CenterBanner.Name = "CenterBanner"
-CenterBanner.Size = UDim2.new(0, 320, 1, -40)
-CenterBanner.Position = UDim2.new(1, -330, 0, 20)
-CenterBanner.BackgroundTransparency = 1
-CenterBanner.Image = "rbxassetid://135892797276701" -- ! REMPLACE PAR TON ASSET ID D'IMAGE ICI !
-CenterBanner.ScaleType = Enum.ScaleType.Crop
-CenterBanner.Parent = MainFrame
-createRoundCorner(CenterBanner, 10)
+-- Bordure Néon Violette très fine
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Theme.Accent
+UIStroke.Thickness = 1.2
+UIStroke.Transparency = 0.2
+UIStroke.Parent = MainFrame
 
--- Dégradé sombre sur l'image pour l'intégration
-local ImageUIGradient = Instance.new("UIGradient")
-ImageUIGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(1, THEME.Background)
-})
-ImageUIGradient.Rotation = 90
-ImageUIGradient.Parent = CenterBanner
+--------------------------------------------------------------------------------
+-- 🧭 BARRE SUPÉRIEURE & CATÉGORIES (TOP NAVIGATION)
+--------------------------------------------------------------------------------
+local Topbar = Instance.new("Frame")
+Topbar.Name = "Topbar"
+Topbar.Size = UDim2.new(1, 0, 0, 85)
+Topbar.BackgroundColor3 = Theme.Topbar
+Topbar.BackgroundTransparency = 0.2
+Topbar.BorderSizePixel = 0
+Topbar.Parent = MainFrame
 
--- BARRE LATÉRALE DE NAVIGATION (Gauche)
-local Sidebar = Instance.new("Frame")
-Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 60, 1, -20)
-Sidebar.Position = UDim2.new(0, 10, 0, 10)
-Sidebar.BackgroundColor3 = THEME.PurpleDark
-Sidebar.BackgroundTransparency = 0.6
-Sidebar.Parent = MainFrame
-createRoundCorner(Sidebar, 10)
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 12)
+TopbarCorner.Parent = Topbar
 
-local SidebarList = Instance.new("UIListLayout")
-SidebarList.Padding = UDim.new(0, 12)
-SidebarList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
-SidebarList.Parent = Sidebar
+-- Titre "SilentVoid" à gauche
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0.3, 0, 0, 40)
+Title.Position = UDim2.new(0, 15, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Font = Theme.Font
+Title.Text = "SILENTVOID // PHANTOM"
+Title.TextColor3 = Theme.Accent
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Topbar
 
-local SidebarPadding = Instance.new("UIPadding")
-SidebarPadding.PaddingTop = UDim.new(0, 15)
-SidebarPadding.Parent = Sidebar
+-- Conteneur horizontal pour les catégories (Onglets)
+local TabsContainer = Instance.new("Frame")
+TabsContainer.Name = "TabsContainer"
+TabsContainer.Size = UDim2.new(1, -20, 0, 35)
+TabsContainer.Position = UDim2.new(0, 10, 0, 45)
+TabsContainer.BackgroundTransparency = 1
+TabsContainer.Parent = Topbar
 
--- CONTENEUR DES PAGES
-local ContentArea = Instance.new("Frame")
-ContentArea.Name = "ContentArea"
-ContentArea.Size = UDim2.new(1, -420, 1, -30)
-ContentArea.Position = UDim2.new(0, 80, 0, 15)
-ContentArea.BackgroundTransparency = 1
-ContentArea.Parent = MainFrame
+local TabsLayout = Instance.new("UIListLayout")
+TabsLayout.Parent = TabsContainer
+TabsLayout.FillDirection = Enum.FillDirection.Horizontal
+TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabsLayout.Padding = UDim.new(0, 8)
 
-makeDraggable(MainFrame, MainFrame)
+-- Zone de contenu sous la barre supérieure
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Position = UDim2.new(0, 15, 0, 100)
+ContentContainer.Size = UDim2.new(1, -30, 1, -115)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
 
--- -------------------------------------------------------------
--- SYSTÈME DE CONNEXION (IMAGE 1)
--- -------------------------------------------------------------
-local LoginFrame = Instance.new("Frame")
-LoginFrame.Name = "LoginFrame"
-LoginFrame.Size = UDim2.new(0, 420, 0, 260)
-LoginFrame.Position = UDim2.new(0.5, -210, 0.5, -130)
-LoginFrame.BackgroundColor3 = THEME.Background
-LoginFrame.BackgroundTransparency = 0.1
-LoginFrame.Parent = ScreenGui
-createRoundCorner(LoginFrame, 12)
-createStroke(LoginFrame, THEME.AccentPurple, 1.5, 0.2)
+--------------------------------------------------------------------------------
+-- 🔄 SYSTÈME DE GLISSEMENT (DRAG)
+--------------------------------------------------------------------------------
+local dragging, dragInput, dragStart, startPos
 
-local LoginTitle = Instance.new("TextLabel")
-LoginTitle.Size = UDim2.new(1, 0, 0, 60)
-LoginTitle.BackgroundTransparency = 1
-LoginTitle.Text = "Zenty Hub - Authentification"
-LoginTitle.Font = Enum.Font.GothamBold
-LoginTitle.TextSize = 20
-LoginTitle.TextColor3 = THEME.TextMain
-LoginTitle.Parent = LoginFrame
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
 
-local PassLabel = Instance.new("TextLabel")
-PassLabel.Size = UDim2.new(1, -60, 0, 20)
-PassLabel.Position = UDim2.new(0, 30, 0, 75)
-PassLabel.BackgroundTransparency = 1
-PassLabel.Text = "Mot de Passe"
-PassLabel.Font = Enum.Font.GothamMedium
-PassLabel.TextSize = 14
-PassLabel.TextColor3 = THEME.TextDark
-PassLabel.TextXAlignment = Enum.TextXAlignment.Left
-PassLabel.Parent = LoginFrame
-
-local PasswordInput = Instance.new("TextBox")
-PasswordInput.Size = UDim2.new(1, -60, 0, 45)
-PasswordInput.Position = UDim2.new(0, 30, 0, 100)
-PasswordInput.BackgroundColor3 = THEME.CardBg
-PasswordInput.Text = ""
-PasswordInput.PlaceholderText = "Entrez le mot de passe..."
-PasswordInput.Font = Enum.Font.Gotham
-PasswordInput.TextSize = 14
-PasswordInput.TextColor3 = THEME.TextMain
-PasswordInput.PlaceholderColor3 = THEME.TextDark
-PasswordInput.Parent = LoginFrame
-createRoundCorner(PasswordInput, 8)
-createStroke(PasswordInput, THEME.PurpleDark, 1.2, 0.3)
-
-local LoginBtn = Instance.new("TextButton")
-LoginBtn.Size = UDim2.new(1, -60, 0, 45)
-LoginBtn.Position = UDim2.new(0, 30, 0, 170)
-LoginBtn.BackgroundColor3 = THEME.AccentPurple
-LoginBtn.Text = "Accéder au Panel"
-LoginBtn.Font = Enum.Font.GothamBold
-LoginBtn.TextSize = 16
-LoginBtn.TextColor3 = THEME.TextMain
-LoginBtn.Parent = LoginFrame
-createRoundCorner(LoginBtn, 8)
-
--- Interaction Login
-LoginBtn.MouseButton1Click:Connect(function()
-    if PasswordInput.Text == "ZentyV1" then
-        applyTween(LoginFrame, 0.4, {Size = UDim2.new(0,0,0,0), BackgroundTransparency = 1})
-        task.wait(0.4)
-        LoginFrame.Visible = false
-        MainFrame.Visible = true
-    else
-        local err = createStroke(PasswordInput, Color3.fromRGB(240, 50, 50), 1.5, 0)
-        task.wait(0.5)
-        err:Destroy()
+Topbar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
 
--- -------------------------------------------------------------
--- COMPOSANTS DE STYLE POUR LES ONGLETS (Boutons, Sliders)
--- -------------------------------------------------------------
-local pages = {}
+Topbar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
 
-local function createPage(name)
-    local page = Instance.new("ScrollingFrame")
-    page.Name = name .. "Page"
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = THEME.AccentPurple
-    page.Visible = false
-    page.Parent = ContentArea
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 📂 CRÉATION LOGIQUE DES CATÉGORIES (TOP TABS)
+--------------------------------------------------------------------------------
+local Pages = {}
+local TabButtons = {}
+
+local function CreateCategory(name, order)
+    -- Bouton de l'onglet en haut
+    local Button = Instance.new("TextButton")
+    Button.Name = name .. "Tab"
+    Button.Size = UDim2.new(0, 130, 1, 0)
+    Button.BackgroundColor3 = Theme.ButtonBg
+    Button.BackgroundTransparency = 0.5
+    Button.Font = Theme.Font
+    Button.Text = name
+    Button.TextColor3 = Theme.TextMuted
+    Button.TextSize = 13
+    Button.LayoutOrder = order
+    Button.Parent = TabsContainer
     
-    local list = Instance.new("UIListLayout")
-    list.Padding = UDim.new(0, 10)
-    list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Parent = page
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = Button
+
+    -- Page de contenu (Vertical Scrolling)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name .. "Page"
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Theme.Accent
+    Page.Parent = ContentContainer
+
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Parent = Page
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PageLayout.Padding = UDim.new(0, 10)
     
-    pages[name] = page
-    return page
+    PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10)
+    end)
+
+    Pages[name] = Page
+    TabButtons[name] = Button
+
+    -- Interaction des onglets
+    Button.MouseButton1Click:Connect(function()
+        for _, v in pairs(Pages) do v.Visible = false end
+        for _, v in pairs(TabButtons) do 
+            v.TextColor3 = Theme.TextMuted 
+            v.BackgroundTransparency = 0.5
+            v.BackgroundColor3 = Theme.ButtonBg
+        end
+        
+        Page.Visible = true
+        Button.TextColor3 = Theme.Text
+        Button.BackgroundTransparency = 0
+        Button.BackgroundColor3 = Theme.ButtonHover
+        HubState.CurrentTab = name
+    end)
 end
 
-local function addIconButton(iconAssetId, pageName, order)
-    local btn = Instance.new("ImageButton")
-    btn.Size = UDim2.new(0, 40, 0, 40)
-    btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
-    btn.BackgroundTransparency = 1
-    btn.Image = iconAssetId
-    btn.ImageColor3 = THEME.TextDark
-    btn.LayoutOrder = order
-    btn.Parent = Sidebar
-    createRoundCorner(btn, 8)
+-- Création des 3 catégories majeures en haut
+CreateCategory("Esp Visual", 1)
+CreateCategory("Fun Outils", 2)
+CreateCategory("Paramètres", 3)
+
+-- Activer la première catégorie par défaut
+TabButtons["Esp Visual"].TextColor3 = Theme.Text
+TabButtons["Esp Visual"].BackgroundTransparency = 0
+TabButtons["Esp Visual"].BackgroundColor3 = Theme.ButtonHover
+Pages["Esp Visual"].Visible = true
+
+--------------------------------------------------------------------------------
+-- 🎨 CONSTRUCTEURS DE COMPOSANTS MODERNES
+--------------------------------------------------------------------------------
+local function CreateToggle(parent, text, default, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(0.98, 0, 0, 40)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(20, 16, 30)
+    ToggleFrame.BackgroundTransparency = 0.4
+    ToggleFrame.Parent = parent
+
+    Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
+    ToggleFrame.Parent = parent
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Font = Theme.Font
+    Label.Text = text
+    Label.TextColor3 = Theme.Text
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ToggleFrame
+
+    local Switch = Instance.new("TextButton")
+    Switch.Size = UDim2.new(0, 45, 0, 22)
+    Switch.Position = UDim2.new(1, -55, 0.5, -11)
+    Switch.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(50, 45, 65)
+    Switch.Text = ""
+    Switch.Parent = ToggleFrame
     
-    btn.MouseEnter:Connect(function()
-        applyTween(btn, 0.2, {BackgroundTransparency = 0.8, ImageColor3 = THEME.AccentPurple})
-    end)
-    btn.MouseLeave:Connect(function()
-        applyTween(btn, 0.2, {BackgroundTransparency = 1, ImageColor3 = THEME.TextDark})
-    end)
-    
-    btn.MouseButton1Click:Connect(function()
-        for _, p in pairs(pages) do p.Visible = false end
-        if pages[pageName] then pages[pageName].Visible = true end
+    Instance.new("UICorner").CornerRadius = UDim.new(1, 0)
+    Switch.Parent = ToggleFrame
+
+    local State = default
+    Switch.MouseButton1Click:Connect(function()
+        State = not State
+        TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = State and Theme.Accent or Color3.fromRGB(50, 45, 65)}):Play()
+        callback(State)
     end)
 end
 
--- Exemple d'un Slider façon Image 2
-local function createStyleSlider(parent, titleText, min, max)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 50)
-    row.BackgroundColor3 = THEME.CardBg
-    row.BackgroundTransparency = THEME.CardTrans
-    row.Parent = parent
-    createRoundCorner(row, 8)
-    createStroke(row, THEME.PurpleDark, 1, 0.5)
-    
-    local txt = Instance.new("TextLabel")
-    txt.Size = UDim2.new(0, 150, 1, 0)
-    txt.Position = UDim2.new(0, 12)
-    txt.Text = titleText
-    txt.Font = Enum.Font.Gotham
-    txt.TextSize = 13
-    txt.TextColor3 = THEME.TextMain
-    txt.TextXAlignment = Enum.TextXAlignment.Left
-    txt.Parent = row
-    
-    local sliderBar = Instance.new("Frame")
-    sliderBar.Size = UDim2.new(1, -240, 0, 5)
-    sliderBar.Position = UDim2.new(0, 160, 0.5, -2)
-    sliderBar.BackgroundColor3 = Color3.fromRGB(45, 40, 60)
-    sliderBar.Parent = row
-    createRoundCorner(sliderBar, 3)
-    
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new(0.6, 0, 1, 0)
-    fill.BackgroundColor3 = THEME.AccentPurple
-    fill.Parent = sliderBar
-    createRoundCorner(fill, 3)
+local function CreateSlider(parent, text, min, max, default, callback)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Size = UDim2.new(0.98, 0, 0, 50)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 16, 30)
+    SliderFrame.BackgroundTransparency = 0.4
+    SliderFrame.Parent = parent
+
+    Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
+    SliderFrame.Parent = parent
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -20, 0, 25)
+    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.BackgroundTransparency = 1
+    Label.Font = Theme.Font
+    Label.Text = text .. " : " .. default
+    Label.TextColor3 = Theme.Text
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = SliderFrame
+
+    local SlideBar = Instance.new("Frame")
+    SlideBar.Size = UDim2.new(1, -20, 0, 5)
+    SlideBar.Position = UDim2.new(0, 10, 0, 34)
+    SlideBar.BackgroundColor3 = Color3.fromRGB(45, 40, 60)
+    SlideBar.BorderSizePixel = 0
+    SlideBar.Parent = SliderFrame
+
+    local SlideFill = Instance.new("Frame")
+    SlideFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    SlideFill.BackgroundColor3 = Theme.Accent
+    SlideFill.BorderSizePixel = 0
+    SlideFill.Parent = SlideBar
+
+    local IsSliding = false
+
+    local function UpdateSlider(input)
+        local pos = math.clamp((input.Position.X - SlideBar.AbsolutePosition.X) / SlideBar.AbsoluteSize.X, 0, 1)
+        SlideFill.Size = UDim2.new(pos, 0, 1, 0)
+        local value = math.floor(min + (pos * (max - min)))
+        Label.Text = text .. " : " .. value
+        callback(value)
+    end
+
+    SlideBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then IsSliding = true UpdateSlider(input) end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if IsSliding and input.UserInputType == Enum.UserInputType.MouseMovement then UpdateSlider(input) end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then IsSliding = false end
+    end)
 end
 
--- -------------------------------------------------------------
--- INITIALISATION DES CONTENUS
--- -------------------------------------------------------------
-local MainTab = createPage("Main")
-local CombatTab = createPage("Combat")
+--------------------------------------------------------------------------------
+-- 👁️ CATEGORY 1 : ESP VISUAL (Aide légitime au repérage)
+--------------------------------------------------------------------------------
 
--- Boutons avec Icônes (Sidebar ultra compacte)
-addIconButton("rbxassetid://10747373151", "Main", 1)
-addIconButton("rbxassetid://10747383471", "Combat", 2)
+-- Système d'affichage d'aide avec l'instance Highlight officielle
+local HighlightActive = false
+local TrackingHighlights = {}
 
--- Injection des sliders d'exemples violet
-createStyleSlider(MainTab, "Speed Modifier", 16, 250)
-createStyleSlider(MainTab, "Jump Power", 50, 300)
-createStyleSlider(CombatTab, "Aimbot FOV", 30, 300)
+local function ApplyHighlightToPlayer(player)
+    if player == LocalPlayer then return end
+    if player.Character then
+        if not player.Character:FindFirstChild("SV_Highlight") then
+            local hl = Instance.new("Highlight")
+            hl.Name = "SV_Highlight"
+            hl.FillColor = Theme.Accent
+            hl.FillTransparency = 0.6
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.OutlineTransparency = 0.2
+            hl.Adornee = player.Character
+            hl.Parent = player.Character
+            TrackingHighlights[player] = hl
+        end
+    end
+end
 
--- Ouvrir la première page par défaut
-MainTab.Visible = true
+local function RemoveHighlights()
+    for player, hl in pairs(TrackingHighlights) do
+        if hl then hl:Destroy() end
+    end
+    table.clear(TrackingHighlights)
+end
+
+CreateToggle(Pages["Esp Visual"], "Mettre en surbrillance les joueurs (Highlight)", false, function(state)
+    HighlightActive = state
+    if state then
+        for _, p in pairs(Players:GetPlayers()) do ApplyHighlightToPlayer(p) end
+    else
+        RemoveHighlights()
+    end
+end)
+
+-- Actualisation dynamique des personnages pour le repérage visuel
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(1)
+        if HighlightActive then ApplyHighlightToPlayer(p) end
+    end)
+end)
+
+--------------------------------------------------------------------------------
+-- 🚀 CATEGORY 2 : FUN OUTILS (Contrôles du personnage)
+--------------------------------------------------------------------------------
+
+CreateSlider(Pages["Fun Outils"], "Vitesse de déplacement", 16, 150, 16, function(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = value
+    end
+end)
+
+CreateSlider(Pages["Fun Outils"], "Hauteur / Puissance de Saut", 50, 250, 50, function(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum.UseJumpPower then
+            hum.JumpPower = value
+        else
+            hum.JumpHeight = value / 3
+        end
+    end
+end)
+
+CreateToggle(Pages["Fun Outils"], "Saut Infini (Anti-Difficulté)", false, function(state)
+    HubState.InfiniteJump = state
+end)
+
+-- Logique du saut infini déclenché proprement par l'utilisateur
+UserInputService.JumpRequest:Connect(function()
+    if HubState.InfiniteJump and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- ⚙️ CATEGORY 3 : PARAMÈTRES
+--------------------------------------------------------------------------------
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0.98, 0, 0, 35)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 40)
+CloseBtn.Font = Theme.Font
+CloseBtn.Text = "Désactiver et Fermer le Hub"
+CloseBtn.TextColor3 = Theme.Text
+CloseBtn.TextSize = 13
+CloseBtn.Parent = Pages["Paramètres"]
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 6)
+CloseBtn.Parent = Pages["Paramètres"]
+
+CloseBtn.MouseButton1Click:Connect(function()
+    RemoveHighlights()
+    ScreenGui:Destroy()
+end)
+
+--------------------------------------------------------------------------------
+-- ⌨️ COMMANDE D'OUVERTURE / FERMETURE (Touche : Right-Shift)
+--------------------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+        HubState.Visible = not HubState.Visible
+        
+        local targetSize = HubState.Visible and UDim2.new(0, 580, 0, 380) or UDim2.new(0, 580, 0, 0)
+        local targetTransparency = HubState.Visible and Theme.BackgroundTransparency or 1
+        
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = targetSize
+        }):Play()
+    end
+end)
+
+print("SilentVoid Phantom Edition chargé avec succès.")
