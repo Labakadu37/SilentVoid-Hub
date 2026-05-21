@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 1.2 : V1 Update - Fixed Alignment, Top Tracers & Clean Categories
+    [+] Version 1.3 : Fixed Tracers Pivot & Full MM2 Category Isolation
 --]]
 
 local Players = game:GetService("Players")
@@ -25,7 +25,7 @@ if oldUI then oldUI:Destroy() end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true -- FIX ABSOLU POUR LE DECALAGE DES TRACERS ET DES BOXES
+ScreenGui.IgnoreGuiInset = true -- Ignore la barre du haut Roblox pour des calculs parfaits
 ScreenGui.Parent = TargetParent
 
 -- --- CONFIGURATION GLOBALE ---
@@ -39,9 +39,8 @@ local ZentyConfig = {
 }
 
 local SelectedPlayerForTp = ""
-local Flying = false
 
--- --- CERCLE DE FOV STABLE ---
+-- --- CERCLE DE FOV ---
 local FOVFrame = Instance.new("Frame")
 FOVFrame.Name = "ZentyFOV"
 FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -112,7 +111,7 @@ TopBar.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V1 Official</font>"
+Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V1.3 Premium</font>"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -186,6 +185,7 @@ local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Murder", "
 local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
+    -- EMPECHE ABSOLUMENT LA CATEGORIE D'APPARAITRE SUR UN AUTRE JEU QUE MM2
     if catName == "Murder" and game.PlaceId ~= 142823291 then
         continue
     end
@@ -477,20 +477,16 @@ local function GetPlayerMM2Role(player)
     else return "Innocent", Color3.fromRGB(0, 255, 0) end
 end
 
--- --- SYSTEME INVISIBILITE SECURISE (MULTI-GAME) ---
+-- --- SYSTEME INVISIBILITE SECURISE ---
 local function ToggleInvisibility(state)
     ZentyConfig.Player.Invisible = state
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("LowerTorso") then
         local root = char.HumanoidRootPart
         if state then
-            if root:FindFirstChild("RootJoint") then
-                root.RootJoint.C0 = CFrame.new(0, 500, 0)
-            end
+            if root:FindFirstChild("RootJoint") then root.RootJoint.C0 = CFrame.new(0, 500, 0) end
         else
-            if root:FindFirstChild("RootJoint") then
-                root.RootJoint.C0 = CFrame.new(0, 0, 0)
-            end
+            if root:FindFirstChild("RootJoint") then root.RootJoint.C0 = CFrame.new(0, 0, 0) end
         end
     end
 end
@@ -503,10 +499,9 @@ UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Ai
 UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
 
--- CATEGORY VISUAL (ESP FIXED + TRACERS HAUT)
-UILibrary:CreateToggle(Pages["Visual"], "MM2 Rôles ESP (Rouge/Bleu/Vert)", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
+-- CATEGORY VISUAL (NETTOYÉE DE TOUT TRUC MM2)
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP Contours Fixes", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
-UILibrary:CreateToggle(Pages["Visual"], "Tracers (Lignes depuis le haut)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
+UILibrary:CreateToggle(Pages["Visual"], "Tracers (Depuis le haut de l'écran)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
@@ -536,9 +531,12 @@ UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun
 UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump (Saut Infini)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Noclip Intelligent", false, function(v) ZentyConfig.Fun.NoClip = v end)
 
--- CATEGORY MURDER
+-- CATEGORY MURDER (TOUT EST CENTRALISÉ ET TOTALEMENT ISOLÉ ICI)
 if Pages["Murder"] then
-    -- AJOUTÉ ICI : L'option Aimbot exclusive pour le Murderer
+    -- AJOUTÉ ICI : Le Rôle ESP exclusif pour MM2
+    UILibrary:CreateToggle(Pages["Murder"], "MM2 Rôles ESP (Rouge/Bleu/Vert)", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
+    
+    -- AJOUTÉ ICI : L'Aimbot Murderer ciblé
     UILibrary:CreateToggle(Pages["Murder"], "Aimbot : Viser uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
     
     UILibrary:CreateToggle(Pages["Murder"], "Auto Kill All (Si t'es Murderer)", false, function(v) 
@@ -594,7 +592,7 @@ end
 -- CATEGORY SETTINGS
 UILibrary:CreateButton(Pages["Settings"], "Thème : Violet d'origine", function() MainStroke.Color = Color3.fromRGB(130, 0, 255) FOVStroke.Color = Color3.fromRGB(130, 0, 255) ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255) end)
 
--- --- ENGINE DE BOUCLE INTERNE ---
+-- --- BOUCLES MOTEURS INTERNES ---
 UserInputService.JumpRequest:Connect(function()
     if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
@@ -651,14 +649,14 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- RENDU DYNAMIQUE DES BOXES ET DES TRACERS GLOBALS (CORRIGÉ ET ALIGNÉ) ---
+-- --- FILTRE & RENDU ESP INTELLIGENT (TRACERS PARFAITS) ---
 local EspContainer = Instance.new("Folder")
 EspContainer.Name = "ZentyESP_Folder"
 EspContainer.Parent = ScreenGui
 
 local function UpdateESP()
     local screenSize = ScreenGui.AbsoluteSize
-    local startPos = Vector2.new(screenSize.X / 2, 0) -- HAUT MILIEU DE L'ÉCRAN FIXE
+    local startPos = Vector2.new(screenSize.X / 2, 0) -- LE HAUT MILIEU ABSOLU DE L'ÉCRAN
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -676,19 +674,21 @@ local function UpdateESP()
                 if onScreen then
                     local drawColor = ZentyConfig.Visuals.Color
                     local roleName = ""
+                    
+                    -- N'exécute le calcul de rôle que sur l'ID de MM2
                     if game.PlaceId == 142823291 and ZentyConfig.Visuals.RoleESP then
                         local rName, rColor = GetPlayerMM2Role(player)
                         drawColor = rColor
                         roleName = rName
                     end
 
-                    -- 1. TRACERS GLOBALS - FIXE DEPUIS LE HAUT MILIEU PIXEL PERFECT
+                    -- 1. TRACERS - CORRECTION MATHEMATIQUE DU PIVOT (PIVOT CENTRAL ROBLOX UI)
                     if ZentyConfig.Visuals.Tracers then
                         if not existingTracer then
                             existingTracer = Instance.new("Frame")
                             existingTracer.Name = tracerName
                             existingTracer.BorderSizePixel = 0
-                            existingTracer.AnchorPoint = Vector2.new(0, 0.5)
+                            existingTracer.AnchorPoint = Vector2.new(0.5, 0.5) -- OBLIGATOIRE POUR ROBLOX ROTATION
                             existingTracer.Parent = EspContainer
                         end
                         
@@ -696,8 +696,9 @@ local function UpdateESP()
                         local distance = (endPos - startPos).Magnitude
                         local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
                         
+                        -- On place le centre de la frame au milieu exact du vecteur
                         existingTracer.Size = UDim2.new(0, distance, 0, 1.5)
-                        existingTracer.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+                        existingTracer.Position = UDim2.new(0, (startPos.X + endPos.X) / 2, 0, (startPos.Y + endPos.Y) / 2)
                         existingTracer.Rotation = math.deg(angle)
                         existingTracer.BackgroundColor3 = drawColor
                         existingTracer.Visible = true
@@ -705,14 +706,12 @@ local function UpdateESP()
                         if existingTracer then existingTracer.Visible = false end
                     end
 
-                    -- 2. BOX ESP & TEXTES CORRIGÉS (PLUS DE DECALAGE EN DESSOUS)
+                    -- 2. BOX ESP & TEXT DETAILS
                     if ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
                         local boxHeight = math.abs(topPos.Y - bottomPos.Y)
                         local boxWidth = boxHeight * 0.6
-                        
-                        -- Centre réel calculé dynamiquement entre la tête et les pieds
                         local boxCenterY = (topPos.Y + bottomPos.Y) / 2
                         
                         if not existingEsp then
@@ -769,7 +768,7 @@ local function UpdateESP()
     end
 end
 
--- --- RENDER LOOP CONTINU ---
+-- --- REFRESH CONTINU ---
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     FOVStroke.Color = ZentyConfig.Aimbot.Color
