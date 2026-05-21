@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 1.1 : V1 Update - Dynamic Murder Tab & Top Tracers
+    [+] Version 1.2 : V1 Update - Fixed Alignment, Top Tracers & Clean Categories
 --]]
 
 local Players = game:GetService("Players")
@@ -25,6 +25,7 @@ if oldUI then oldUI:Destroy() end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true -- FIX ABSOLU POUR LE DECALAGE DES TRACERS ET DES BOXES
 ScreenGui.Parent = TargetParent
 
 -- --- CONFIGURATION GLOBALE ---
@@ -185,7 +186,6 @@ local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Murder", "
 local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
-    -- Condition : L'onglet Murder s'affiche UNIQUEMENT sur Murder Mystery 2 (PlaceId : 142823291)
     if catName == "Murder" and game.PlaceId ~= 142823291 then
         continue
     end
@@ -499,7 +499,6 @@ end
 
 -- CATEGORY AIMBOT
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
-UILibrary:CreateToggle(Pages["Aimbot"], "Viser uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
@@ -537,8 +536,11 @@ UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun
 UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump (Saut Infini)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Noclip Intelligent", false, function(v) ZentyConfig.Fun.NoClip = v end)
 
--- CATEGORY MURDER (Se configure uniquement si la page a été créée sur MM2)
+-- CATEGORY MURDER
 if Pages["Murder"] then
+    -- AJOUTÉ ICI : L'option Aimbot exclusive pour le Murderer
+    UILibrary:CreateToggle(Pages["Murder"], "Aimbot : Viser uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
+    
     UILibrary:CreateToggle(Pages["Murder"], "Auto Kill All (Si t'es Murderer)", false, function(v) 
         ZentyConfig.MM2.KillAllActive = v 
         if v then
@@ -649,12 +651,15 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- RENDU DYNAMIQUE DES BOXES ET DES TRACERS GLOBALS (DEPUIS LE HAUT) ---
+-- --- RENDU DYNAMIQUE DES BOXES ET DES TRACERS GLOBALS (CORRIGÉ ET ALIGNÉ) ---
 local EspContainer = Instance.new("Folder")
 EspContainer.Name = "ZentyESP_Folder"
 EspContainer.Parent = ScreenGui
 
 local function UpdateESP()
+    local screenSize = ScreenGui.AbsoluteSize
+    local startPos = Vector2.new(screenSize.X / 2, 0) -- HAUT MILIEU DE L'ÉCRAN FIXE
+
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local char = player.Character
@@ -669,7 +674,6 @@ local function UpdateESP()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
                 
                 if onScreen then
-                    -- Couleur et Rôle
                     local drawColor = ZentyConfig.Visuals.Color
                     local roleName = ""
                     if game.PlaceId == 142823291 and ZentyConfig.Visuals.RoleESP then
@@ -678,7 +682,7 @@ local function UpdateESP()
                         roleName = rName
                     end
 
-                    -- 1. MANAGEMENT DU TRACER (DEPUIS LE HAUT DE L'ÉCRAN VERS CHAQUE MEC)
+                    -- 1. TRACERS GLOBALS - FIXE DEPUIS LE HAUT MILIEU PIXEL PERFECT
                     if ZentyConfig.Visuals.Tracers then
                         if not existingTracer then
                             existingTracer = Instance.new("Frame")
@@ -688,7 +692,6 @@ local function UpdateESP()
                             existingTracer.Parent = EspContainer
                         end
                         
-                        local startPos = Vector2.new(Camera.ViewportSize.X / 2, 0) -- Centre haut de l'écran
                         local endPos = Vector2.new(screenPos.X, screenPos.Y)
                         local distance = (endPos - startPos).Magnitude
                         local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
@@ -702,12 +705,15 @@ local function UpdateESP()
                         if existingTracer then existingTracer.Visible = false end
                     end
 
-                    -- 2. MANAGEMENT DES FENÊTRES / BOXES / PSEUDOS
+                    -- 2. BOX ESP & TEXTES CORRIGÉS (PLUS DE DECALAGE EN DESSOUS)
                     if ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
                         local boxHeight = math.abs(topPos.Y - bottomPos.Y)
-                        local boxWidth = boxHeight * 0.55
+                        local boxWidth = boxHeight * 0.6
+                        
+                        -- Centre réel calculé dynamiquement entre la tête et les pieds
+                        local boxCenterY = (topPos.Y + bottomPos.Y) / 2
                         
                         if not existingEsp then
                             existingEsp = Instance.new("Frame")
@@ -730,7 +736,7 @@ local function UpdateESP()
                             textLabel.Parent = existingEsp
                         end
                         
-                        existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+                        existingEsp.Position = UDim2.new(0, screenPos.X, 0, boxCenterY)
                         existingEsp.Size = UDim2.new(0, boxWidth, 0, boxHeight)
                         existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
                         existingEsp.BoxOutline.Color = drawColor
