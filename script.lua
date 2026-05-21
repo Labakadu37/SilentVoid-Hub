@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 1.3 : Fixed Tracers Pivot & Full MM2 Category Isolation
+    [+] Version 1.4 : Lock Power Slider & Custom Transparent Panel Background
 --]]
 
 local Players = game:GetService("Players")
@@ -17,7 +17,6 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Parent sécurisé dans PlayerGui
 local TargetParent = LocalPlayer:WaitForChild("PlayerGui")
 local oldUI = TargetParent:FindFirstChild("ZentyHub_Premium")
 if oldUI then oldUI:Destroy() end
@@ -25,12 +24,12 @@ if oldUI then oldUI:Destroy() end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ZentyHub_Premium"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true -- Ignore la barre du haut Roblox pour des calculs parfaits
+ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = TargetParent
 
 -- --- CONFIGURATION GLOBALE ---
 local ZentyConfig = {
-    Aimbot = { Enabled = false, TargetMurdererOnly = false, FOV = 150, Smoothness = 5, ShowFOV = true, Color = Color3.fromRGB(130, 0, 255) },
+    Aimbot = { Enabled = false, TargetMurdererOnly = false, FOV = 150, LockPower = 50, ShowFOV = true, Color = Color3.fromRGB(130, 0, 255) },
     Visuals = { EspBoxes = false, EspNames = false, EspDistances = false, RoleESP = false, Tracers = false, Color = Color3.fromRGB(130, 0, 255) },
     Movement = { SpeedEnabled = false, Speed = 16, JumpEnabled = false, Jump = 50, FlyEnabled = false, FlySpeed = 50 },
     Fun = { SpinBot = false, SpinSpeed = 50, InfiniteJump = false, NoClip = false },
@@ -67,6 +66,19 @@ MainFrame.BackgroundTransparency = 0.15
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Parent = ScreenGui
+
+-- [NOUVEAU] IMAGE DE FOND TRANSPARENTE DANS LE PANEL
+local PanelBackgroundImg = Instance.new("ImageLabel")
+PanelBackgroundImg.Name = "PanelBackgroundImg"
+PanelBackgroundImg.Size = UDim2.new(1, 0, 1, 0)
+PanelBackgroundImg.Position = UDim2.new(0, 0, 0, 0)
+PanelBackgroundImg.BackgroundTransparency = 1
+-- /!\ REMPLACE L'ID CI-DESSOUS PAR TON ID D'ASSET ROBLOX UNE FOIS L'IMAGE EN LIGNE /!\
+PanelBackgroundImg.Image = "rbxassetid://1000057472" 
+PanelBackgroundImg.ImageTransparency = 0.75 -- Rendu transparent très propre pour faire stylé
+PanelBackgroundImg.ScaleType = Enum.ScaleType.Crop
+PanelBackgroundImg.ZIndex = 0 -- Reste sagement au second plan
+PanelBackgroundImg.Parent = MainFrame
 
 -- Système de Drag
 local dragging, dragInput, dragStart, startPos
@@ -106,12 +118,13 @@ local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Size = UDim2.new(1, 0, 0, 45)
 TopBar.BackgroundTransparency = 1
+TopBar.ZIndex = 2
 TopBar.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V1.3 Premium</font>"
+Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V1.4 Premium</font>"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
@@ -152,14 +165,16 @@ local MenuMinimized = false
 MinimizeBtn.MouseButton1Click:Connect(function()
     MenuMinimized = not MenuMinimized
     for _, child in pairs(MainFrame:GetChildren()) do
-        if child ~= TopBar and child:IsA("GuiObject") then
+        if child ~= TopBar and child ~= PanelBackgroundImg and child:IsA("GuiObject") then
             child.Visible = not MenuMinimized
         end
     end
     if MenuMinimized then
         TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 550, 0, 45)}):Play()
+        PanelBackgroundImg.Visible = false
     else
         TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 550, 0, 350)}):Play()
+        PanelBackgroundImg.Visible = true
     end
 end)
 
@@ -168,6 +183,7 @@ local Navigation = Instance.new("Frame")
 Navigation.Size = UDim2.new(0, 130, 1, -60)
 Navigation.Position = UDim2.new(0, 10, 0, 50)
 Navigation.BackgroundTransparency = 1
+Navigation.ZIndex = 2
 Navigation.Parent = MainFrame
 
 local NavLayout = Instance.new("UIListLayout")
@@ -178,6 +194,7 @@ local PagesContainer = Instance.new("Frame")
 PagesContainer.Size = UDim2.new(1, -160, 1, -60)
 PagesContainer.Position = UDim2.new(0, 150, 0, 50)
 PagesContainer.BackgroundTransparency = 1
+PagesContainer.ZIndex = 2
 PagesContainer.Parent = MainFrame
 
 local Pages = {}
@@ -185,7 +202,6 @@ local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Murder", "
 local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
-    -- EMPECHE ABSOLUMENT LA CATEGORIE D'APPARAITRE SUR UN AUTRE JEU QUE MM2
     if catName == "Murder" and game.PlaceId ~= 142823291 then
         continue
     end
@@ -193,12 +209,13 @@ for i, catName in ipairs(Categories) do
     local NavBtn = Instance.new("TextButton")
     NavBtn.Size = UDim2.new(1, 0, 0, 35)
     NavBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
-    NavBtn.BackgroundTransparency = 0.5
+    NavBtn.BackgroundTransparency = 0.3
     NavBtn.Text = "  " .. catName
     NavBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     NavBtn.Font = Enum.Font.GothamSemibold
     NavBtn.TextSize = 13
     NavBtn.TextXAlignment = Enum.TextXAlignment.Left
+    NavBtn.ZIndex = 3
     NavBtn.Parent = Navigation
     
     local BtnCorner = Instance.new("UICorner")
@@ -217,6 +234,7 @@ for i, catName in ipairs(Categories) do
     Page.CanvasSize = UDim2.new(0, 0, 1.5, 0)
     Page.ScrollBarThickness = 2
     Page.ScrollBarImageColor3 = Color3.fromRGB(130, 0, 255)
+    Page.ZIndex = 3
     Page.Parent = PagesContainer
     
     local PageLayout = Instance.new("UIListLayout")
@@ -255,6 +273,8 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     local ToggleBg = Instance.new("Frame")
     ToggleBg.Size = UDim2.new(1, -10, 0, 40)
     ToggleBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
+    ToggleBg.BackgroundTransparency = 0.2
+    ToggleBg.ZIndex = 4
     ToggleBg.Parent = parent
     local TCorner = Instance.new("UICorner")
     TCorner.CornerRadius = UDim.new(0, 6)
@@ -269,6 +289,7 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     TText.Font = Enum.Font.Gotham
     TText.TextSize = 13
     TText.TextXAlignment = Enum.TextXAlignment.Left
+    TText.ZIndex = 5
     TText.Parent = ToggleBg
     
     local Switch = Instance.new("TextButton")
@@ -276,6 +297,7 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     Switch.Position = UDim2.new(1, -60, 0.5, -11)
     Switch.BackgroundColor3 = Enabled and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(40, 35, 50)
     Switch.Text = ""
+    Switch.ZIndex = 5
     Switch.Parent = ToggleBg
     local SCorner = Instance.new("UICorner")
     SCorner.CornerRadius = UDim.new(1, 0)
@@ -285,6 +307,7 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     SliderCircle.Size = UDim2.new(0, 16, 0, 16)
     SliderCircle.Position = Enabled and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
     SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderCircle.ZIndex = 6
     SliderCircle.Parent = Switch
     local CCorner = Instance.new("UICorner")
     CCorner.CornerRadius = UDim.new(1, 0)
@@ -300,10 +323,12 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     end)
 end
 
-function UILibrary:CreateSlider(parent, text, min, max, default, callback)
+function UILibrary:CreateSlider(parent, text, min, max, default, suffix, callback)
     local SliderBg = Instance.new("Frame")
     SliderBg.Size = UDim2.new(1, -10, 0, 50)
     SliderBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
+    SliderBg.BackgroundTransparency = 0.2
+    SliderBg.ZIndex = 4
     SliderBg.Parent = parent
     local SCorner = Instance.new("UICorner")
     SCorner.CornerRadius = UDim.new(0, 6)
@@ -318,17 +343,19 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
     SText.Font = Enum.Font.Gotham
     SText.TextSize = 13
     SText.TextXAlignment = Enum.TextXAlignment.Left
+    SText.ZIndex = 5
     SText.Parent = SliderBg
     
     local ValText = Instance.new("TextLabel")
-    ValText.Size = UDim2.new(0, 50, 0, 25)
-    ValText.Position = UDim2.new(1, -65, 0, 2)
+    ValText.Size = UDim2.new(0, 65, 0, 25)
+    ValText.Position = UDim2.new(1, -80, 0, 2)
     ValText.BackgroundTransparency = 1
-    ValText.Text = tostring(default)
+    ValText.Text = tostring(default) .. suffix
     ValText.TextColor3 = Color3.fromRGB(180, 100, 255)
     ValText.Font = Enum.Font.GothamBold
     ValText.TextSize = 13
     ValText.TextXAlignment = Enum.TextXAlignment.Right
+    ValText.ZIndex = 5
     ValText.Parent = SliderBg
 
     local Track = Instance.new("TextButton")
@@ -336,6 +363,7 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
     Track.Position = UDim2.new(0, 15, 0, 32)
     Track.BackgroundColor3 = Color3.fromRGB(45, 40, 55)
     Track.Text = ""
+    Track.ZIndex = 5
     Track.Parent = SliderBg
     local TCorner = Instance.new("UICorner")
     TCorner.CornerRadius = UDim.new(1, 0)
@@ -345,6 +373,7 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
     Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
     Fill.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
     Fill.BorderSizePixel = 0
+    Fill.ZIndex = 6
     Fill.Parent = Track
     local FCorner = Instance.new("UICorner")
     FCorner.CornerRadius = UDim.new(1, 0)
@@ -358,7 +387,7 @@ function UILibrary:CreateSlider(parent, text, min, max, default, callback)
         local percentage = math.clamp((mousePos - trackPos) / trackWidth, 0, 1)
         local value = math.floor(min + (max - min) * percentage)
         Fill.Size = UDim2.new(percentage, 0, 1, 0)
-        ValText.Text = tostring(value)
+        ValText.Text = tostring(value) .. suffix
         callback(value)
     end
     Track.MouseButton1Down:Connect(function() Sliding = true UpdateSlider() end)
@@ -370,10 +399,12 @@ function UILibrary:CreateButton(parent, text, callback)
     local Btn = Instance.new("TextButton")
     Btn.Size = UDim2.new(1, -10, 0, 35)
     Btn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
+    Btn.BackgroundTransparency = 0.1
     Btn.Text = text
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Font = Enum.Font.GothamBold
     Btn.TextSize = 13
+    Btn.ZIndex = 4
     Btn.Parent = parent
     local BCorner = Instance.new("UICorner")
     BCorner.CornerRadius = UDim.new(0, 6)
@@ -389,7 +420,9 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
     local DropBg = Instance.new("Frame")
     DropBg.Size = UDim2.new(1, -10, 0, 40)
     DropBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
+    DropBg.BackgroundTransparency = 0.2
     DropBg.ClipsDescendants = true
+    DropBg.ZIndex = 4
     DropBg.Parent = parent
     local DCorner = Instance.new("UICorner")
     DCorner.CornerRadius = UDim.new(0, 6)
@@ -403,12 +436,14 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
     DropBtn.Font = Enum.Font.GothamSemibold
     DropBtn.TextSize = 13
     DropBtn.TextXAlignment = Enum.TextXAlignment.Left
+    DropBtn.ZIndex = 5
     DropBtn.Parent = DropBg
 
     local ContentFrame = Instance.new("Frame")
     ContentFrame.Size = UDim2.new(1, 0, 0, 120)
     ContentFrame.Position = UDim2.new(0, 0, 0, 40)
     ContentFrame.BackgroundTransparency = 1
+    ContentFrame.ZIndex = 5
     ContentFrame.Parent = DropBg
     
     local ScrollList = Instance.new("ScrollingFrame")
@@ -416,6 +451,7 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
     ScrollList.BackgroundTransparency = 1
     ScrollList.CanvasSize = UDim2.new(0,0,0,0)
     ScrollList.ScrollBarThickness = 2
+    ScrollList.ZIndex = 6
     ScrollList.Parent = ContentFrame
 
     local Layout = Instance.new("UIListLayout")
@@ -437,6 +473,7 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
                 OptBtn.Font = Enum.Font.Gotham
                 OptBtn.TextSize = 12
                 OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+                OptBtn.ZIndex = 7
                 OptBtn.Parent = ScrollList
                 OptBtn.MouseButton1Click:Connect(function()
                     DropBtn.Text = "  " .. text .. " : " .. p.Name
@@ -477,7 +514,6 @@ local function GetPlayerMM2Role(player)
     else return "Innocent", Color3.fromRGB(0, 255, 0) end
 end
 
--- --- SYSTEME INVISIBILITE SECURISE ---
 local function ToggleInvisibility(state)
     ZentyConfig.Player.Invisible = state
     local char = LocalPlayer.Character
@@ -491,22 +527,23 @@ local function ToggleInvisibility(state)
     end
 end
 
--- --- FONCTIONS DE CONFIGURATION DES PAGES ---
+-- --- PARAMÈTRES DES PAGES ---
 
 -- CATEGORY AIMBOT
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, "px", function(v) ZentyConfig.Aimbot.FOV = v end)
+-- [MODIFIÉ] PUISSANCE DE LOCK EN POURCENTAGE (0 = Rien, 100 = Indélobable complet)
+UILibrary:CreateSlider(Pages["Aimbot"], "Puissance de Lock", 0, 100, ZentyConfig.Aimbot.LockPower, "%", function(v) ZentyConfig.Aimbot.LockPower = v end)
 
--- CATEGORY VISUAL (NETTOYÉE DE TOUT TRUC MM2)
+-- CATEGORY VISUAL
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP Contours Fixes", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Tracers (Depuis le haut de l'écran)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
 -- CATEGORY PLAYER
-UILibrary:CreateToggle(Pages["Player"], "Mode Invisible (Multi-Jeux/Bypass)", false, function(v) ToggleInvisibility(v) end)
+UILibrary:CreateToggle(Pages["Player"], "Mode Invisible (Bypass)", false, function(v) ToggleInvisibility(v) end)
 UILibrary:CreatePlayerDropdown(Pages["Player"], "Choisir un joueur", function(selected) SelectedPlayerForTp = selected end)
 UILibrary:CreateButton(Pages["Player"], "Se téléporter au joueur", function()
     if SelectedPlayerForTp ~= "" then
@@ -519,27 +556,24 @@ end)
 
 -- CATEGORY MOVEMENT
 UILibrary:CreateToggle(Pages["Movement"], "Activer Modification Vitesse", false, function(v) ZentyConfig.Movement.SpeedEnabled = v end)
-UILibrary:CreateSlider(Pages["Movement"], "Vitesse de Marche (WalkSpeed)", 16, 150, ZentyConfig.Movement.Speed, function(v) ZentyConfig.Movement.Speed = v end)
+UILibrary:CreateSlider(Pages["Movement"], "Vitesse de Marche", 16, 150, ZentyConfig.Movement.Speed, "", function(v) ZentyConfig.Movement.Speed = v end)
 UILibrary:CreateToggle(Pages["Movement"], "Activer Modification Saut", false, function(v) ZentyConfig.Movement.JumpEnabled = v end)
-UILibrary:CreateSlider(Pages["Movement"], "Hauteur de Saut (JumpPower)", 50, 250, ZentyConfig.Movement.Jump, function(v) ZentyConfig.Movement.Jump = v end)
+UILibrary:CreateSlider(Pages["Movement"], "Hauteur de Saut", 50, 250, ZentyConfig.Movement.Jump, "", function(v) ZentyConfig.Movement.Jump = v end)
 UILibrary:CreateToggle(Pages["Movement"], "Activer le Mode Fly (Voler)", false, function(v) ZentyConfig.Movement.FlyEnabled = v end)
-UILibrary:CreateSlider(Pages["Movement"], "Vitesse de Vol", 10, 150, ZentyConfig.Movement.FlySpeed, function(v) ZentyConfig.Movement.FlySpeed = v end)
+UILibrary:CreateSlider(Pages["Movement"], "Vitesse de Vol", 10, 150, ZentyConfig.Movement.FlySpeed, "", function(v) ZentyConfig.Movement.FlySpeed = v end)
 
 -- CATEGORY FUN
 UILibrary:CreateToggle(Pages["Fun"], "Activer le SpinBot", false, function(v) ZentyConfig.Fun.SpinBot = v end)
-UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, function(v) ZentyConfig.Fun.SpinSpeed = v end)
-UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump (Saut Infini)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
+UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, "", function(v) ZentyConfig.Fun.SpinSpeed = v end)
+UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Noclip Intelligent", false, function(v) ZentyConfig.Fun.NoClip = v end)
 
--- CATEGORY MURDER (TOUT EST CENTRALISÉ ET TOTALEMENT ISOLÉ ICI)
+-- CATEGORY MURDER
 if Pages["Murder"] then
-    -- AJOUTÉ ICI : Le Rôle ESP exclusif pour MM2
     UILibrary:CreateToggle(Pages["Murder"], "MM2 Rôles ESP (Rouge/Bleu/Vert)", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
-    
-    -- AJOUTÉ ICI : L'Aimbot Murderer ciblé
     UILibrary:CreateToggle(Pages["Murder"], "Aimbot : Viser uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
     
-    UILibrary:CreateToggle(Pages["Murder"], "Auto Kill All (Si t'es Murderer)", false, function(v) 
+    UILibrary:CreateToggle(Pages["Murder"], "Auto Kill All (Si Murderer)", false, function(v) 
         ZentyConfig.MM2.KillAllActive = v 
         if v then
             task.spawn(function()
@@ -564,35 +598,12 @@ if Pages["Murder"] then
             end)
         end
     end)
-
-    UILibrary:CreateButton(Pages["Murder"], "Téléporter au Murderer & Tuer (Si Shérif)", function()
-        local murdererPlayer = nil
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then
-                local role, _ = GetPlayerMM2Role(p)
-                if role == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then murdererPlayer = p break end
-            end
-        end
-        if murdererPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local gun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun")
-            if gun and gun.Parent == LocalPlayer.Backpack then LocalPlayer.Character.Humanoid:EquipTool(gun) end
-            LocalPlayer.Character.HumanoidRootPart.CFrame = murdererPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            task.wait(0.1)
-            local head = murdererPlayer.Character:FindFirstChild("Head")
-            if head then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                task.wait(0.05)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-            end
-        end
-    end)
 end
 
 -- CATEGORY SETTINGS
 UILibrary:CreateButton(Pages["Settings"], "Thème : Violet d'origine", function() MainStroke.Color = Color3.fromRGB(130, 0, 255) FOVStroke.Color = Color3.fromRGB(130, 0, 255) ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255) end)
 
--- --- BOUCLES MOTEURS INTERNES ---
+-- --- BOUCLES DE RENDU ET CALCULS MOTEURS ---
 UserInputService.JumpRequest:Connect(function()
     if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
@@ -649,14 +660,13 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- FILTRE & RENDU ESP INTELLIGENT (TRACERS PARFAITS) ---
 local EspContainer = Instance.new("Folder")
 EspContainer.Name = "ZentyESP_Folder"
 EspContainer.Parent = ScreenGui
 
 local function UpdateESP()
     local screenSize = ScreenGui.AbsoluteSize
-    local startPos = Vector2.new(screenSize.X / 2, 0) -- LE HAUT MILIEU ABSOLU DE L'ÉCRAN
+    local startPos = Vector2.new(screenSize.X / 2, 0)
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -675,20 +685,18 @@ local function UpdateESP()
                     local drawColor = ZentyConfig.Visuals.Color
                     local roleName = ""
                     
-                    -- N'exécute le calcul de rôle que sur l'ID de MM2
                     if game.PlaceId == 142823291 and ZentyConfig.Visuals.RoleESP then
                         local rName, rColor = GetPlayerMM2Role(player)
                         drawColor = rColor
                         roleName = rName
                     end
 
-                    -- 1. TRACERS - CORRECTION MATHEMATIQUE DU PIVOT (PIVOT CENTRAL ROBLOX UI)
                     if ZentyConfig.Visuals.Tracers then
                         if not existingTracer then
                             existingTracer = Instance.new("Frame")
                             existingTracer.Name = tracerName
                             existingTracer.BorderSizePixel = 0
-                            existingTracer.AnchorPoint = Vector2.new(0.5, 0.5) -- OBLIGATOIRE POUR ROBLOX ROTATION
+                            existingTracer.AnchorPoint = Vector2.new(0.5, 0.5)
                             existingTracer.Parent = EspContainer
                         end
                         
@@ -696,7 +704,6 @@ local function UpdateESP()
                         local distance = (endPos - startPos).Magnitude
                         local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
                         
-                        -- On place le centre de la frame au milieu exact du vecteur
                         existingTracer.Size = UDim2.new(0, distance, 0, 1.5)
                         existingTracer.Position = UDim2.new(0, (startPos.X + endPos.X) / 2, 0, (startPos.Y + endPos.Y) / 2)
                         existingTracer.Rotation = math.deg(angle)
@@ -706,7 +713,6 @@ local function UpdateESP()
                         if existingTracer then existingTracer.Visible = false end
                     end
 
-                    -- 2. BOX ESP & TEXT DETAILS
                     if ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
@@ -768,7 +774,6 @@ local function UpdateESP()
     end
 end
 
--- --- REFRESH CONTINU ---
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     FOVStroke.Color = ZentyConfig.Aimbot.Color
@@ -782,11 +787,14 @@ RunService.RenderStepped:Connect(function()
     end
 
     local target = GetClosestPlayerToCenter()
-    if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
+    -- [MODIFIÉ] INTEGRATION CALCUL LOCK POWER (0% = Rien, 100% = No Smooth complet)
+    if ZentyConfig.Aimbot.Enabled and ZentyConfig.Aimbot.LockPower > 0 and target and target.Character and target.Character:FindFirstChild("Head") then
         local head = target.Character.Head
         if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
             local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
+            -- Conversion du pourcentage en valeur alpha (0.0 à 1.0)
+            local lockAlpha = ZentyConfig.Aimbot.LockPower / 100
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, lockAlpha)
         end
     end
 
