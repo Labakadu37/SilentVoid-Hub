@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 1.0 : Release Officielle V1 - MM2 & Multi-Games Edition
+    [+] Version 1.1 : V1 Update - Dynamic Murder Tab & Top Tracers
 --]]
 
 local Players = game:GetService("Players")
@@ -29,8 +29,8 @@ ScreenGui.Parent = TargetParent
 
 -- --- CONFIGURATION GLOBALE ---
 local ZentyConfig = {
-    Aimbot = { Enabled = false, TargetMurdererOnly = false, FOV = 150, Smoothness = 5, ShowFOV = true, TargetLine = true, Color = Color3.fromRGB(130, 0, 255) },
-    Visuals = { EspBoxes = false, EspNames = false, EspDistances = false, RoleESP = false, Color = Color3.fromRGB(130, 0, 255) },
+    Aimbot = { Enabled = false, TargetMurdererOnly = false, FOV = 150, Smoothness = 5, ShowFOV = true, Color = Color3.fromRGB(130, 0, 255) },
+    Visuals = { EspBoxes = false, EspNames = false, EspDistances = false, RoleESP = false, Tracers = false, Color = Color3.fromRGB(130, 0, 255) },
     Movement = { SpeedEnabled = false, Speed = 16, JumpEnabled = false, Jump = 50, FlyEnabled = false, FlySpeed = 50 },
     Fun = { SpinBot = false, SpinSpeed = 50, InfiniteJump = false, NoClip = false },
     Player = { Invisible = false },
@@ -56,21 +56,6 @@ local FOVStroke = Instance.new("UIStroke")
 FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
-
--- --- TARGET LINE ---
-local LineFrame = Instance.new("Frame")
-LineFrame.Name = "ZentyTargetLine"
-LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
-LineFrame.BorderSizePixel = 0
-LineFrame.AnchorPoint = Vector2.new(0, 0.5) 
-LineFrame.Size = UDim2.new(0, 0, 0, 2)
-LineFrame.Visible = false
-LineFrame.Parent = ScreenGui
-
-local LineStroke = Instance.new("UIStroke")
-LineStroke.Thickness = 0.5
-LineStroke.Color = ZentyConfig.Aimbot.Color
-LineStroke.Parent = LineFrame
 
 -- --- MAIN FRAME (MENU) ---
 local MainFrame = Instance.new("Frame")
@@ -196,9 +181,15 @@ PagesContainer.BackgroundTransparency = 1
 PagesContainer.Parent = MainFrame
 
 local Pages = {}
-local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "MM2 Hacks", "Settings"}
+local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Murder", "Settings"}
+local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
+    -- Condition : L'onglet Murder s'affiche UNIQUEMENT sur Murder Mystery 2 (PlaceId : 142823291)
+    if catName == "Murder" and game.PlaceId ~= 142823291 then
+        continue
+    end
+
     local NavBtn = Instance.new("TextButton")
     NavBtn.Size = UDim2.new(1, 0, 0, 35)
     NavBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
@@ -247,11 +238,12 @@ for i, catName in ipairs(Categories) do
         BtnStroke.Color = Color3.fromRGB(180, 100, 255)
     end)
     
-    if i == 1 then
+    if IsFirstPage then
         Page.Visible = true
         NavBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 255)
         NavBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         BtnStroke.Color = Color3.fromRGB(180, 100, 255)
+        IsFirstPage = false
     end
 end
 
@@ -492,13 +484,12 @@ local function ToggleInvisibility(state)
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("LowerTorso") then
         local root = char.HumanoidRootPart
         if state then
-            -- Glitch d'invisibilité serveur via décalage d'ancrage local
             if root:FindFirstChild("RootJoint") then
-                root.RootJoint.C0 = CFrame.new(0, 500, 0) -- Téléporte le corps visible à 500 blocs en l'air côté serveur
+                root.RootJoint.C0 = CFrame.new(0, 500, 0)
             end
         else
             if root:FindFirstChild("RootJoint") then
-                root.RootJoint.C0 = CFrame.new(0, 0, 0) -- Reset la position réelle
+                root.RootJoint.C0 = CFrame.new(0, 0, 0)
             end
         end
     end
@@ -510,13 +501,13 @@ end
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Viser uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
-UILibrary:CreateToggle(Pages["Aimbot"], "Ligne de Cible (Target Line)", ZentyConfig.Aimbot.TargetLine, function(v) ZentyConfig.Aimbot.TargetLine = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, function(v) ZentyConfig.Aimbot.FOV = v end)
 UILibrary:CreateSlider(Pages["Aimbot"], "Smoothness (Lissage)", 1, 25, ZentyConfig.Aimbot.Smoothness, function(v) ZentyConfig.Aimbot.Smoothness = v end)
 
--- CATEGORY VISUAL (ESP FIXED)
+-- CATEGORY VISUAL (ESP FIXED + TRACERS HAUT)
 UILibrary:CreateToggle(Pages["Visual"], "MM2 Rôles ESP (Rouge/Bleu/Vert)", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Box ESP Contours Fixes", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
+UILibrary:CreateToggle(Pages["Visual"], "Tracers (Lignes depuis le haut)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
 UILibrary:CreateToggle(Pages["Visual"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
 
@@ -532,7 +523,7 @@ UILibrary:CreateButton(Pages["Player"], "Se téléporter au joueur", function()
     end
 end)
 
--- CATEGORY MOVEMENT (NOUVEAU ET REMPLI)
+-- CATEGORY MOVEMENT
 UILibrary:CreateToggle(Pages["Movement"], "Activer Modification Vitesse", false, function(v) ZentyConfig.Movement.SpeedEnabled = v end)
 UILibrary:CreateSlider(Pages["Movement"], "Vitesse de Marche (WalkSpeed)", 16, 150, ZentyConfig.Movement.Speed, function(v) ZentyConfig.Movement.Speed = v end)
 UILibrary:CreateToggle(Pages["Movement"], "Activer Modification Saut", false, function(v) ZentyConfig.Movement.JumpEnabled = v end)
@@ -546,75 +537,74 @@ UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun
 UILibrary:CreateToggle(Pages["Fun"], "Infinite Jump (Saut Infini)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Noclip Intelligent", false, function(v) ZentyConfig.Fun.NoClip = v end)
 
--- CATEGORY MM2 HACKS
-UILibrary:CreateToggle(Pages["MM2 Hacks"], "Auto Kill All (Si t'es Murderer)", false, function(v) 
-    ZentyConfig.MM2.KillAllActive = v 
-    if v then
-        task.spawn(function()
-            while ZentyConfig.MM2.KillAllActive do
-                task.wait(0.2)
-                local myRole = GetPlayerMM2Role(LocalPlayer)
-                if myRole == "Murderer" and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local knife = LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")
-                    if knife and knife.Parent == LocalPlayer.Backpack then LocalPlayer.Character.Humanoid:EquipTool(knife) end
-                    
-                    for _, p in pairs(Players:GetPlayers()) do
-                        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                            task.wait(0.05)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                            task.wait(0.1)
+-- CATEGORY MURDER (Se configure uniquement si la page a été créée sur MM2)
+if Pages["Murder"] then
+    UILibrary:CreateToggle(Pages["Murder"], "Auto Kill All (Si t'es Murderer)", false, function(v) 
+        ZentyConfig.MM2.KillAllActive = v 
+        if v then
+            task.spawn(function()
+                while ZentyConfig.MM2.KillAllActive do
+                    task.wait(0.2)
+                    local myRole = GetPlayerMM2Role(LocalPlayer)
+                    if myRole == "Murderer" and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local knife = LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")
+                        if knife and knife.Parent == LocalPlayer.Backpack then LocalPlayer.Character.Humanoid:EquipTool(knife) end
+                        
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                                task.wait(0.05)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                                task.wait(0.1)
+                            end
                         end
                     end
                 end
-            end
-        end)
-    end
-end)
+            end)
+        end
+    end)
 
-UILibrary:CreateButton(Pages["MM2 Hacks"], "Téléporter au Murderer & Tuer (Si Shérif)", function()
-    local murdererPlayer = nil
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local role, _ = GetPlayerMM2Role(p)
-            if role == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then murdererPlayer = p break end
+    UILibrary:CreateButton(Pages["Murder"], "Téléporter au Murderer & Tuer (Si Shérif)", function()
+        local murdererPlayer = nil
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                local role, _ = GetPlayerMM2Role(p)
+                if role == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then murdererPlayer = p break end
+            end
         end
-    end
-    if murdererPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local gun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun")
-        if gun and gun.Parent == LocalPlayer.Backpack then LocalPlayer.Character.Humanoid:EquipTool(gun) end
-        LocalPlayer.Character.HumanoidRootPart.CFrame = murdererPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        task.wait(0.1)
-        local head = murdererPlayer.Character:FindFirstChild("Head")
-        if head then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        if murdererPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local gun = LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun")
+            if gun and gun.Parent == LocalPlayer.Backpack then LocalPlayer.Character.Humanoid:EquipTool(gun) end
+            LocalPlayer.Character.HumanoidRootPart.CFrame = murdererPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            task.wait(0.1)
+            local head = murdererPlayer.Character:FindFirstChild("Head")
+            if head then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                task.wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
         end
-    end
-end)
+    end)
+end
 
 -- CATEGORY SETTINGS
 UILibrary:CreateButton(Pages["Settings"], "Thème : Violet d'origine", function() MainStroke.Color = Color3.fromRGB(130, 0, 255) FOVStroke.Color = Color3.fromRGB(130, 0, 255) ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255) end)
 
--- --- ENGINE DE BOUCLE INTERNE (STABLE ET OPTIMISE) ---
+-- --- ENGINE DE BOUCLE INTERNE ---
 UserInputService.JumpRequest:Connect(function()
     if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
     end
 end)
 
--- Engine de Mouvement & Boucle d'enforcement
 RunService.Stepped:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
-        -- Speed & Jump Enforcement
         if ZentyConfig.Movement.SpeedEnabled then char.Humanoid.WalkSpeed = ZentyConfig.Movement.Speed end
         if ZentyConfig.Movement.JumpEnabled then char.Humanoid.JumpPower = ZentyConfig.Movement.Jump end
         
-        -- Fly Engine
         if ZentyConfig.Movement.FlyEnabled then
             char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
             local moveDir = char.Humanoid.MoveDirection
@@ -626,12 +616,10 @@ RunService.Stepped:Connect(function()
             end
         end
 
-        -- Spinbot
         if ZentyConfig.Fun.SpinBot then
             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(ZentyConfig.Fun.SpinSpeed), 0)
         end
         
-        -- Noclip
         if ZentyConfig.Fun.NoClip then
             for _, part in pairs(char:GetChildren()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
@@ -640,7 +628,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- --- ENGINE D'AIMBOT ---
 local function GetClosestPlayerToCenter()
     local closestTarget = nil
     local maxDistance = ZentyConfig.Aimbot.FOV
@@ -648,7 +635,7 @@ local function GetClosestPlayerToCenter()
 
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            if ZentyConfig.Aimbot.TargetMurdererOnly then
+            if ZentyConfig.Aimbot.TargetMurdererOnly and game.PlaceId == 142823291 then
                 local role, _ = GetPlayerMM2Role(player)
                 if role ~= "Murderer" then continue end
             end
@@ -662,7 +649,7 @@ local function GetClosestPlayerToCenter()
     return closestTarget
 end
 
--- --- RENDU DES FENÊTRES ESP TOUT EN RESTANT FIXE ET PROPRE ---
+-- --- RENDU DYNAMIQUE DES BOXES ET DES TRACERS GLOBALS (DEPUIS LE HAUT) ---
 local EspContainer = Instance.new("Folder")
 EspContainer.Name = "ZentyESP_Folder"
 EspContainer.Parent = ScreenGui
@@ -672,59 +659,86 @@ local function UpdateESP()
         if player ~= LocalPlayer then
             local char = player.Character
             local espName = player.Name .. "_ZentyESP"
+            local tracerName = player.Name .. "_ZentyTracer"
+            
             local existingEsp = EspContainer:FindFirstChild(espName)
+            local existingTracer = EspContainer:FindFirstChild(tracerName)
             
             if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
                 local root = char.HumanoidRootPart
                 local screenPos, onScreen = Camera:WorldToViewportPoint(root.Position)
                 
-                if onScreen and (ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances) then
-                    -- CALCUL DE TAILLE TRÈS FIXE PAR RAPPORT À LA DISTANCE 3D (Z)
-                    local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
-                    local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
-                    local boxHeight = math.abs(topPos.Y - bottomPos.Y)
-                    local boxWidth = boxHeight * 0.55
-                    
-                    if not existingEsp then
-                        existingEsp = Instance.new("Frame")
-                        existingEsp.Name = espName
-                        existingEsp.BackgroundTransparency = 1
-                        existingEsp.AnchorPoint = Vector2.new(0.5, 0.5)
-                        existingEsp.Parent = EspContainer
-                        
-                        local stroke = Instance.new("UIStroke")
-                        stroke.Thickness = 1.8
-                        stroke.Name = "BoxOutline"
-                        stroke.Parent = existingEsp
-
-                        local textLabel = Instance.new("TextLabel")
-                        textLabel.Name = "EspText"
-                        textLabel.Size = UDim2.new(1, 0, 0, 20)
-                        textLabel.BackgroundTransparency = 1
-                        textLabel.Font = Enum.Font.GothamBold
-                        textLabel.TextSize = 11
-                        textLabel.Parent = existingEsp
-                    end
-                    
-                    local drawColor = ZentyConfig.Aimbot.Color
+                if onScreen then
+                    -- Couleur et Rôle
+                    local drawColor = ZentyConfig.Visuals.Color
                     local roleName = ""
-                    if ZentyConfig.Visuals.RoleESP then
+                    if game.PlaceId == 142823291 and ZentyConfig.Visuals.RoleESP then
                         local rName, rColor = GetPlayerMM2Role(player)
                         drawColor = rColor
                         roleName = rName
                     end
 
-                    -- Application des dimensions fixes et ancrées sur le joueur
-                    existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
-                    existingEsp.Size = UDim2.new(0, boxWidth, 0, boxHeight)
-                    existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
-                    existingEsp.BoxOutline.Color = drawColor
-                    existingEsp.EspText.TextColor3 = drawColor
-                    existingEsp.EspText.Position = UDim2.new(0, 0, 0, -(boxHeight/2) - 15)
-                    
-                    if ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances or ZentyConfig.Visuals.RoleESP then
+                    -- 1. MANAGEMENT DU TRACER (DEPUIS LE HAUT DE L'ÉCRAN VERS CHAQUE MEC)
+                    if ZentyConfig.Visuals.Tracers then
+                        if not existingTracer then
+                            existingTracer = Instance.new("Frame")
+                            existingTracer.Name = tracerName
+                            existingTracer.BorderSizePixel = 0
+                            existingTracer.AnchorPoint = Vector2.new(0, 0.5)
+                            existingTracer.Parent = EspContainer
+                        end
+                        
+                        local startPos = Vector2.new(Camera.ViewportSize.X / 2, 0) -- Centre haut de l'écran
+                        local endPos = Vector2.new(screenPos.X, screenPos.Y)
+                        local distance = (endPos - startPos).Magnitude
+                        local angle = math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)
+                        
+                        existingTracer.Size = UDim2.new(0, distance, 0, 1.5)
+                        existingTracer.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+                        existingTracer.Rotation = math.deg(angle)
+                        existingTracer.BackgroundColor3 = drawColor
+                        existingTracer.Visible = true
+                    else
+                        if existingTracer then existingTracer.Visible = false end
+                    end
+
+                    -- 2. MANAGEMENT DES FENÊTRES / BOXES / PSEUDOS
+                    if ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
+                        local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
+                        local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
+                        local boxHeight = math.abs(topPos.Y - bottomPos.Y)
+                        local boxWidth = boxHeight * 0.55
+                        
+                        if not existingEsp then
+                            existingEsp = Instance.new("Frame")
+                            existingEsp.Name = espName
+                            existingEsp.BackgroundTransparency = 1
+                            existingEsp.AnchorPoint = Vector2.new(0.5, 0.5)
+                            existingEsp.Parent = EspContainer
+                            
+                            local stroke = Instance.new("UIStroke")
+                            stroke.Thickness = 1.8
+                            stroke.Name = "BoxOutline"
+                            stroke.Parent = existingEsp
+
+                            local textLabel = Instance.new("TextLabel")
+                            textLabel.Name = "EspText"
+                            textLabel.Size = UDim2.new(1, 0, 0, 20)
+                            textLabel.BackgroundTransparency = 1
+                            textLabel.Font = Enum.Font.GothamBold
+                            textLabel.TextSize = 11
+                            textLabel.Parent = existingEsp
+                        end
+                        
+                        existingEsp.Position = UDim2.new(0, screenPos.X, 0, screenPos.Y)
+                        existingEsp.Size = UDim2.new(0, boxWidth, 0, boxHeight)
+                        existingEsp.BoxOutline.Enabled = ZentyConfig.Visuals.EspBoxes
+                        existingEsp.BoxOutline.Color = drawColor
+                        existingEsp.EspText.TextColor3 = drawColor
+                        existingEsp.EspText.Position = UDim2.new(0, 0, 0, -(boxHeight/2) - 15)
+                        
                         local labelText = ""
-                        if ZentyConfig.Visuals.RoleESP then labelText = "["..roleName.."] " end
+                        if game.PlaceId == 142823291 and ZentyConfig.Visuals.RoleESP then labelText = "["..roleName.."] " end
                         if ZentyConfig.Visuals.EspNames then labelText = labelText .. player.Name end
                         if ZentyConfig.Visuals.EspDistances then
                             local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -732,16 +746,18 @@ local function UpdateESP()
                             labelText = labelText .. " [" .. distance .. "m]"
                         end
                         existingEsp.EspText.Text = labelText
-                        existingEsp.EspText.Visible = true
+                        existingEsp.EspText.Visible = (labelText ~= "")
+                        existingEsp.Visible = true
                     else
-                        existingEsp.EspText.Visible = false
+                        if existingEsp then existingEsp.Visible = false end
                     end
-                    existingEsp.Visible = true
                 else
                     if existingEsp then existingEsp.Visible = false end
+                    if existingTracer then existingTracer.Visible = false end
                 end
             else
                 if existingEsp then existingEsp.Visible = false end
+                if existingTracer then existingTracer.Visible = false end
             end
         end
     end
@@ -750,9 +766,7 @@ end
 -- --- RENDER LOOP CONTINU ---
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    
     FOVStroke.Color = ZentyConfig.Aimbot.Color
-    LineFrame.BackgroundColor3 = ZentyConfig.Aimbot.Color
 
     if ZentyConfig.Aimbot.ShowFOV then
         FOVFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
@@ -765,32 +779,12 @@ RunService.RenderStepped:Connect(function()
     local target = GetClosestPlayerToCenter()
     if ZentyConfig.Aimbot.Enabled and target and target.Character and target.Character:FindFirstChild("Head") then
         local head = target.Character.Head
-        local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
-        
-        if onScreen then
-            if ZentyConfig.Aimbot.TargetLine then
-                local endPos = Vector2.new(headPos.X, headPos.Y)
-                local distance = (endPos - centerScreen).Magnitude
-                local angle = math.atan2(endPos.Y - centerScreen.Y, endPos.X - centerScreen.X)
-                
-                LineFrame.Size = UDim2.new(0, distance, 0, 2)
-                LineFrame.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
-                LineFrame.Rotation = math.deg(angle)
-                LineFrame.Visible = true
-            else
-                LineFrame.Visible = false
-            end
-            
-            if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
-                local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-                Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
-            end
-        else
-            LineFrame.Visible = false
+        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, 1 / ZentyConfig.Aimbot.Smoothness)
         end
-    else
-        LineFrame.Visible = false
     end
 
     UpdateESP()
 end)
+
