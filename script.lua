@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 7.2 : Fix PlayerGui + Target Line Centre Fixe + Dropdown Dynamique
+    [+] Version 7.4 : Réécriture Complète Intégrée - Édition Kick a Lucky Block
 --]]
 
 local Players = game:GetService("Players")
@@ -15,6 +15,7 @@ local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Parent sécurisé dans PlayerGui pour éviter les blocages de clics
 local TargetParent = LocalPlayer:WaitForChild("PlayerGui")
@@ -30,7 +31,8 @@ ScreenGui.Parent = TargetParent
 local ZentyConfig = {
     Aimbot = { Enabled = false, FOV = 150, Smoothness = 5, ShowFOV = true, TargetLine = true, Color = Color3.fromRGB(130, 0, 255) },
     Visuals = { EspBoxes = false, EspNames = false, EspDistances = false, Color = Color3.fromRGB(130, 0, 255) },
-    Fun = { SpinBot = false, SpinSpeed = 50, InfiniteJump = false, NoClip = false }
+    Fun = { SpinBot = false, SpinSpeed = 50, InfiniteJump = false, NoClip = false },
+    Brainrot = { AutoPerfect = false, AutoX2 = false, AutoCash = false, AutoMuscle = false, AutoUpgrades = false }
 }
 
 local SelectedPlayerForTp = ""
@@ -193,6 +195,12 @@ PagesContainer.Parent = MainFrame
 
 local Pages = {}
 local Categories = {"Aimbot", "Visual", "Player", "Movement", "Fun", "Settings"}
+
+-- Injection conditionnelle de la catégorie Lucky Block avant le chargement des menus
+local KICK_A_BRAINROT_ID = 89469502395769
+if game.PlaceId == KICK_A_BRAINROT_ID then
+    table.insert(Categories, #Categories, "Lucky Block")
+end
 
 for i, catName in ipairs(Categories) do
     local NavBtn = Instance.new("TextButton")
@@ -535,6 +543,69 @@ UILibrary:CreateButton(Pages["Settings"], "Reset UI par défaut", function()
     ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255)
 end)
 
+-- --- INITIALISATION CONTROLES SPECIFIQUES KICK A LUCKY BLOCK ---
+if game.PlaceId == KICK_A_BRAINROT_ID then
+    local LuckyPage = Pages["Lucky Block"]
+    UILibrary:CreateToggle(LuckyPage, "Auto-Perfect (Timing)", false, function(v) ZentyConfig.Brainrot.AutoPerfect = v end)
+    UILibrary:CreateToggle(LuckyPage, "Auto-Farm Muscle (Haltère)", false, function(v) ZentyConfig.Brainrot.AutoMuscle = v end)
+    UILibrary:CreateToggle(LuckyPage, "Auto-Clicker x2 (Boutons Violets)", false, function(v) ZentyConfig.Brainrot.AutoX2 = v end)
+    UILibrary:CreateToggle(LuckyPage, "Auto-Améliorations (Upgrades)", false, function(v) ZentyConfig.Brainrot.AutoUpgrades = v end)
+    UILibrary:CreateToggle(LuckyPage, "Auto-Collect Cash & Money", false, function(v) ZentyConfig.Brainrot.AutoCash = v end)
+
+    -- Thread de gestion en tâche de fond (Farming + Clicks)
+    task.spawn(function()
+        while task.wait(0.1) do
+            local char = LocalPlayer.Character
+            
+            -- Auto Muscle
+            if ZentyConfig.Brainrot.AutoMuscle and char then
+                local tool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool") or char:FindFirstChildOfClass("Tool")
+                if tool and (tool.Name:lower():find("muscle") or tool.Name:lower():find("weight") or tool.Name:lower():find("altere") or tool.Name:lower():find("dumb")) then
+                    if tool.Parent == LocalPlayer.Backpack then
+                        char:FindFirstChildOfClass("Humanoid"):EquipTool(tool)
+                    end
+                    tool:Activate()
+                end
+            end
+            
+            -- Auto Clicker x2 (Détection intelligente par nom et couleur violette)
+            if ZentyConfig.Brainrot.AutoX2 then
+                for _, obj in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                    if obj:IsA("GuiButton") and obj.Visible and (obj.Name:lower():find("x2") or obj.Name:lower():find("boost") or (obj:IsA("ImageButton") and obj.ImageColor3 == Color3.fromRGB(130, 0, 255))) then
+                        VirtualInputManager:SendMouseButtonEvent(obj.AbsolutePosition.X + (obj.AbsoluteSize.X / 2), obj.AbsolutePosition.Y + (obj.AbsoluteSize.Y / 2), 0, true, game, 1)
+                        task.wait(0.01)
+                        VirtualInputManager:SendMouseButtonEvent(obj.AbsolutePosition.X + (obj.AbsoluteSize.X / 2), obj.AbsolutePosition.Y + (obj.AbsoluteSize.Y / 2), 0, false, game, 1)
+                    end
+                end
+            end
+
+            -- Auto Upgrades / Améliorations
+            if ZentyConfig.Brainrot.AutoUpgrades then
+                for _, obj in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                    if obj:IsA("GuiButton") and obj.Visible and (obj.Name:lower():find("upgrade") or obj.Name:lower():find("amelioration") or obj.Name:lower():find("buy")) then
+                        VirtualInputManager:SendMouseButtonEvent(obj.AbsolutePosition.X + (obj.AbsoluteSize.X / 2), obj.AbsolutePosition.Y + (obj.AbsoluteSize.Y / 2), 0, true, game, 1)
+                        task.wait(0.01)
+                        VirtualInputManager:SendMouseButtonEvent(obj.AbsolutePosition.X + (obj.AbsoluteSize.X / 2), obj.AbsolutePosition.Y + (obj.AbsoluteSize.Y / 2), 0, false, game, 1)
+                    end
+                end
+            end
+        end
+    end)
+
+    -- Thread séparé plus lent pour le Cash (Évite les lags)
+    task.spawn(function()
+        while task.wait(0.4) do
+            if ZentyConfig.Brainrot.AutoCash and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                for _, part in pairs(workspace:GetDescendants()) do
+                    if part:IsA("BasePart") and (part.Name:lower() == "cash" or part.Name:lower() == "money" or part.Name:lower() == "coin") then
+                        part.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                    end
+                end
+            end
+        end
+    end)
+end
+
 -- --- BOUCLES DE FONCTIONS FUN ---
 UserInputService.JumpRequest:Connect(function()
     if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
@@ -698,5 +769,19 @@ RunService.RenderStepped:Connect(function()
         LineFrame.Visible = false
     end
 
+    -- Execution Auto-Perfect (Timing Ultra Rapide synchronisé aux frames écran)
+    if game.PlaceId == KICK_A_BRAINROT_ID and ZentyConfig.Brainrot.AutoPerfect then
+        for _, obj in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+            if obj:IsA("GuiObject") and obj.Visible and (obj.Name:lower():find("bar") or obj.Name:lower():find("meter") or obj.Name:lower():find("cursor") or obj.Name:lower():find("pointer")) then
+                -- Alignement sur la zone centrale parfaite de la jauge (Ajustable si besoin)
+                if obj.Position.Y.Scale > 0.43 and obj.Position.Y.Scale < 0.57 then
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                end
+            end
+        end
+    end
+
     UpdateESP()
 end)
+
