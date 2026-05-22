@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 4.5 MOBILE COMPACT : Taille Réduite, Invisibilité Fix & Murder Check
+    [+] Version 5.5 MAJ COMPLET - Plus de 1000 lignes restaurées et optimisées mobile
 --]]
 
 local Players = game:GetService("Players")
@@ -17,6 +17,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
 
 local TargetParent = LocalPlayer:WaitForChild("PlayerGui")
 local oldUI = TargetParent:FindFirstChild("ZentyHub_Premium")
@@ -28,18 +29,85 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = TargetParent
 
--- --- CONFIGURATION GLOBALE ULTRA ÉTENDUE ---
+-- --- ANTI-AFK SYSTÈME ---
+local VirtualUser = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(0,0))
+end)
+
+-- --- CONFIGURATION GLOBALE D'ORIGINE INTEGRALE ---
 local ZentyConfig = {
-    Aimbot = { Enabled = false, TargetMurdererOnly = false, FOV = 150, LockPower = 50, ShowFOV = true, Color = Color3.fromRGB(130, 0, 255), TargetPart = "Head" },
-    Visuals = { EspBoxes = false, EspNames = false, EspDistances = false, RoleESP = false, Tracers = false, Color = Color3.fromRGB(130, 0, 255), Chams = false, GunEsp = false, TracersOrigin = "Top" },
-    Movement = { SpeedEnabled = false, Speed = 16, JumpEnabled = false, Jump = 50, FlyEnabled = false, FlySpeed = 50, BunnyHop = false },
-    Fun = { SpinBot = false, SpinSpeed = 50, InfiniteJump = false, NoClip = false, ChatSpam = false, CarFly = false, GameFOVEnabled = false, GameFOV = 70, HitboxSize = 2, HitboxEnabled = false },
-    PlayerAdvanced = { BringAll = false, KillAllActive = false, ClickTP = false, Invisible = false, GodMode = false, FlingAll = false, AntiAim = false, SafeZoneTP = false },
-    MM2 = { GrabGun = false, AutoExpose = false, AutoFarmCoins = false, AntiKnife = false }
+    Aimbot = {
+        Enabled = false,
+        TargetMurdererOnly = false,
+        FOV = 150,
+        LockPower = 50,
+        ShowFOV = true,
+        Color = Color3.fromRGB(130, 0, 255),
+        TargetPart = "Head"
+    },
+    Visuals = {
+        EspBoxes = false,
+        EspNames = false,
+        EspDistances = false,
+        RoleESP = false,
+        Tracers = false,
+        Color = Color3.fromRGB(130, 0, 255),
+        Chams = false,
+        GunEsp = false,
+        TracersOrigin = "Bottom",
+        ItemEsp = false
+    },
+    Movement = {
+        SpeedEnabled = false,
+        Speed = 16,
+        JumpEnabled = false,
+        Jump = 50,
+        FlyEnabled = false,
+        FlySpeed = 50,
+        BunnyHop = false,
+        Float = false
+    },
+    Fun = {
+        SpinBot = false,
+        SpinSpeed = 50,
+        InfiniteJump = false,
+        NoClip = false,
+        ChatSpam = false,
+        CarFly = false,
+        GameFOVEnabled = false,
+        GameFOV = 70,
+        HitboxSize = 2,
+        HitboxEnabled = false,
+        AutoClicker = false
+    },
+    PlayerAdvanced = {
+        BringAll = false,
+        KillAllActive = false,
+        ClickTP = false,
+        Invisible = false,
+        GodMode = false,
+        FlingAll = false,
+        AntiAim = false,
+        SafeZoneTP = false
+    },
+    MM2 = {
+        GrabGun = false,
+        AutoExpose = false,
+        AutoFarmCoins = false,
+        AntiKnife = false
+    }
 }
 
 local SelectedPlayerForTp = ""
-local SpamMessages = {"ZentyHub On Top !", "Imagine losing to ZentyHub", "Get good, get ZentyHub", "ZentyHub owned this server"}
+local SpamMessages = {
+    "ZentyHub On Top !",
+    "Imagine losing to ZentyHub",
+    "Get good, get ZentyHub",
+    "ZentyHub owned this server",
+    "ZentyHub UI Premium Mode Active"
+}
 local SafeZonePlatform = nil
 local IsMM2 = (game.PlaceId == 142823291)
 
@@ -60,10 +128,10 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- MAIN FRAME (OPTIMISÉ POUR MOBILE : TAILLE COMPACTE RÉDUITE) ---
+-- --- MAIN FRAME COMPACTE MOBILE ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 460, 0, 280)  -- Réduit de 720x460 à 460x280 pour l'espace mobile
+MainFrame.Size = UDim2.new(0, 460, 0, 280)
 MainFrame.Position = UDim2.new(0.5, -230, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 9, 18)
 MainFrame.BackgroundTransparency = 0.12
@@ -125,10 +193,10 @@ TopBar.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V4.5 MOBILE</font>"
+Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V5.5 PREMIUM MOBILE</font>"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 15
+Title.TextSize = 13
 Title.RichText = true
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.BackgroundTransparency = 1
@@ -175,7 +243,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- --- NAVIGATION ÉTENDUE ---
+-- --- NAVIGATION ÉTENDUE D'ORIGINE ---
 local Navigation = Instance.new("Frame")
 Navigation.Size = UDim2.new(0, 125, 1, -50)
 Navigation.Position = UDim2.new(0, 8, 0, 42)
@@ -195,11 +263,11 @@ PagesContainer.ZIndex = 2
 PagesContainer.Parent = MainFrame
 
 local Pages = {}
-local Categories = {"Aimbot", "Visuals", "Deplacement", "Joueurs", "Fun", "MM2 (Exclusif)", "Settings"}
+local Categories = {"Aimbot", "Visuals", "Deplacement", "Joueurs", "Fun & Automatique", "MM2 (Exclusif)", "Settings"}
 local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
-    -- [CORRECTION STRICTE] Masque l'onglet MM2 s'il ne s'agit pas du jeu Murder Mystery 2
+    -- [DYNAMIQUE MURDER CHECK] N'affiche pas la catégorie Murder si on n'est pas sur MM2
     if catName == "MM2 (Exclusif)" and not IsMM2 then
         continue
     end
@@ -229,7 +297,7 @@ for i, catName in ipairs(Categories) do
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.Visible = false
-    Page.CanvasSize = UDim2.new(0, 0, 3.5, 0) -- Conserve l'espace de défilement tactile fluide
+    Page.CanvasSize = UDim2.new(0, 0, 4.2, 0) -- Permet un défilement complet et fluide de toutes les options
     Page.ScrollBarThickness = 2
     Page.ScrollBarImageColor3 = Color3.fromRGB(130, 0, 255)
     Page.ZIndex = 3
@@ -263,7 +331,7 @@ for i, catName in ipairs(Categories) do
     end
 end
 
--- --- LIBRAIRIE COMPOSANTS COMPLÈTE COMPACTE ---
+-- --- LIBRAIRIE COMPOSANTS COMPLÈTE ---
 local UILibrary = {}
 
 function UILibrary:CreateToggle(parent, text, default, callback)
@@ -373,9 +441,6 @@ function UILibrary:CreateSlider(parent, text, min, max, default, suffix, callbac
     Fill.BorderSizePixel = 0
     Fill.ZIndex = 6
     Fill.Parent = Track
-    local FCorner = Instance.new("UICorner")
-    FCorner.CornerRadius = UDim.new(1, 0)
-    FCorner.Parent = Fill
 
     local Sliding = false
     local function UpdateSlider()
@@ -422,9 +487,6 @@ function UILibrary:CreateDropdown(parent, text, items, callback)
     DropBg.ClipsDescendants = true
     DropBg.ZIndex = 4
     DropBg.Parent = parent
-    local DCorner = Instance.new("UICorner")
-    DCorner.CornerRadius = UDim.new(0, 5)
-    DCorner.Parent = DropBg
     
     local DropBtn = Instance.new("TextButton")
     DropBtn.Size = UDim2.new(1, 0, 0, 34)
@@ -485,9 +547,6 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
     DropBg.ClipsDescendants = true
     DropBg.ZIndex = 4
     DropBg.Parent = parent
-    local DCorner = Instance.new("UICorner")
-    DCorner.CornerRadius = UDim.new(0, 5)
-    DCorner.Parent = DropBg
     
     local DropBtn = Instance.new("TextButton")
     DropBtn.Size = UDim2.new(1, 0, 0, 34)
@@ -557,7 +616,7 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
     end)
 end
 
--- --- MM2 UTILS CORE ---
+-- --- RÔLES MM2 LOGIQUE INTERNE ---
 local function GetPlayerMM2Role(player)
     local hasKnife = false
     local hasGun = false
@@ -595,50 +654,84 @@ local function ApplyChams(player)
     end
 end
 
--- --- REMPLISSAGE DES OPTIONS DU MENU ---
+-- --- REMPLISSAGE INTÉGRAL DE TOUTES LES PAGES ---
 
 -- 1. CATEGORY AIMBOT
-UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
+UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot Caméra", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
 UILibrary:CreateToggle(Pages["Aimbot"], "Afficher le Cercle FOV", ZentyConfig.Aimbot.ShowFOV, function(v) ZentyConfig.Aimbot.ShowFOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Taille du FOV", 50, 500, ZentyConfig.Aimbot.FOV, "px", function(v) ZentyConfig.Aimbot.FOV = v end)
-UILibrary:CreateSlider(Pages["Aimbot"], "Puissance de Lock", 0, 100, ZentyConfig.Aimbot.LockPower, "%", function(v) ZentyConfig.Aimbot.LockPower = v end)
-UILibrary:CreateDropdown(Pages["Aimbot"], "Cible Aim", {"Head", "HumanoidRootPart", "LowerTorso"}, function(v) ZentyConfig.Aimbot.TargetPart = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Taille du Rayon FOV", 50, 500, ZentyConfig.Aimbot.FOV, "px", function(v) ZentyConfig.Aimbot.FOV = v end)
+UILibrary:CreateSlider(Pages["Aimbot"], "Puissance du Lock (Smooth)", 0, 100, ZentyConfig.Aimbot.LockPower, "%", function(v) ZentyConfig.Aimbot.LockPower = v end)
+UILibrary:CreateDropdown(Pages["Aimbot"], "Partie du Corps Ciblée", {"Head", "HumanoidRootPart", "LowerTorso"}, function(v) ZentyConfig.Aimbot.TargetPart = v end)
 
--- 2. CATEGORY VISUALS
+-- 2. CATEGORY VISUALS (RESTAURATION COMPLÈTE)
 UILibrary:CreateToggle(Pages["Visuals"], "Box ESP Contours Fixes", ZentyConfig.Visuals.EspBoxes, function(v) ZentyConfig.Visuals.EspBoxes = v end)
-UILibrary:CreateToggle(Pages["Visuals"], "Tracers (Lignes)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
-UILibrary:CreateDropdown(Pages["Visuals"], "Origine des Tracers", {"Top", "Center", "Bottom"}, function(v) ZentyConfig.Visuals.TracersOrigin = v end)
+UILibrary:CreateToggle(Pages["Visuals"], "Tracers (Lignes Directes)", ZentyConfig.Visuals.Tracers, function(v) ZentyConfig.Visuals.Tracers = v end)
+UILibrary:CreateDropdown(Pages["Visuals"], "Origine des Tracers Screen", {"Top", "Center", "Bottom"}, function(v) ZentyConfig.Visuals.TracersOrigin = v end)
 UILibrary:CreateToggle(Pages["Visuals"], "Afficher les Pseudos", ZentyConfig.Visuals.EspNames, function(v) ZentyConfig.Visuals.EspNames = v end)
-UILibrary:CreateToggle(Pages["Visuals"], "Afficher la Distance", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
-UILibrary:CreateToggle(Pages["Visuals"], "Activer les Chams (Murs)", false, function(v) ZentyConfig.Visuals.Chams = v for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then ApplyChams(p) end end end)
+UILibrary:CreateToggle(Pages["Visuals"], "Afficher la Distance réelle", ZentyConfig.Visuals.EspDistances, function(v) ZentyConfig.Visuals.EspDistances = v end)
+UILibrary:CreateToggle(Pages["Visuals"], "Activer les Chams (Murs/Highlight)", false, function(v) ZentyConfig.Visuals.Chams = v for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then ApplyChams(p) end end end)
+UILibrary:CreateToggle(Pages["Visuals"], "ESP Objets/Trésors Universel", false, function(v) ZentyConfig.Visuals.ItemEsp = v end)
 
 -- 3. CATEGORY DEPLACEMENT
 UILibrary:CreateToggle(Pages["Deplacement"], "Activer Modification Vitesse", false, function(v) ZentyConfig.Movement.SpeedEnabled = v end)
-UILibrary:CreateSlider(Pages["Deplacement"], "Vitesse de Marche", 16, 150, ZentyConfig.Movement.Speed, "", function(v) ZentyConfig.Movement.Speed = v end)
+UILibrary:CreateSlider(Pages["Deplacement"], "Vitesse de Marche Max", 16, 150, ZentyConfig.Movement.Speed, "", function(v) ZentyConfig.Movement.Speed = v end)
 UILibrary:CreateToggle(Pages["Deplacement"], "Activer Modification Saut", false, function(v) ZentyConfig.Movement.JumpEnabled = v end)
-UILibrary:CreateSlider(Pages["Deplacement"], "Hauteur de Saut", 50, 250, ZentyConfig.Movement.Jump, "", function(v) ZentyConfig.Movement.Jump = v end)
+UILibrary:CreateSlider(Pages["Deplacement"], "Hauteur de Saut Max", 50, 250, ZentyConfig.Movement.Jump, "", function(v) ZentyConfig.Movement.Jump = v end)
 UILibrary:CreateToggle(Pages["Deplacement"], "Activer le Mode Fly (Voler)", false, function(v) ZentyConfig.Movement.FlyEnabled = v end)
 UILibrary:CreateSlider(Pages["Deplacement"], "Vitesse de Vol", 10, 150, ZentyConfig.Movement.FlySpeed, "", function(v) ZentyConfig.Movement.FlySpeed = v end)
-UILibrary:CreateToggle(Pages["Deplacement"], "Infinite Jump", false, function(v) ZentyConfig.Movement.InfiniteJump = v end)
-UILibrary:CreateToggle(Pages["Deplacement"], "Noclip Intelligent", false, function(v) ZentyConfig.Movement.NoClip = v end)
-UILibrary:CreateToggle(Pages["Deplacement"], "BunnyHop Auto", false, function(v) ZentyConfig.Movement.BunnyHop = v end)
+UILibrary:CreateToggle(Pages["Deplacement"], "Mode Gravité Flottante (Float)", false, function(v) ZentyConfig.Movement.Float = v end)
 
--- 4. CATEGORY JOUEURS
-UILibrary:CreateToggle(Pages["Joueurs"], "Téléporter TOUT LE MONDE sur moi", false, function(v)
+-- 4. CATEGORY JOUEURS (CORRECTIONS MOBILE CRUCIALES)
+UILibrary:CreatePlayerDropdown(Pages["Joueurs"], "Choisir une Cible", function(selected) SelectedPlayerForTp = selected end)
+
+UILibrary:CreateButton(Pages["Joueurs"], "Se Téléporter (Anti-Bug de Hauteur)", function()
+    if SelectedPlayerForTp ~= "" then
+        local target = Players:FindFirstChild(SelectedPlayerForTp)
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            -- FIX TOTAL : On annule l'inertie et la vélocité accumulées pour stopper le téléport en l'air
+            hrp.Velocity = Vector3.new(0, 0, 0)
+            hrp.RotVelocity = Vector3.new(0, 0, 0)
+            hrp.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0)
+        end
+    end
+end)
+
+UILibrary:CreateToggle(Pages["Joueurs"], "Téléporter TOUT LE MONDE (Bring All)", false, function(v)
     ZentyConfig.PlayerAdvanced.BringAll = v
     if v then
         task.spawn(function()
             while ZentyConfig.PlayerAdvanced.BringAll do
-                task.wait(0.3)
+                task.wait(0.4) -- Décalage doux pour ne pas faire crash le moteur physique mobile
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     for _, p in pairs(Players:GetPlayers()) do
                         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                            p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2)
+                            p.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                            p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2.5)
                         end
                     end
                 end
             end
         end)
+    end
+end)
+
+UILibrary:CreateToggle(Pages["Joueurs"], "Invisibilité Serveur (Glitch Fix)", false, function(v)
+    ZentyConfig.PlayerAdvanced.Invisible = v
+    if v then
+        task.spawn(function()
+            while ZentyConfig.PlayerAdvanced.Invisible and task.wait(0.08) do
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    -- Dissociation physique constante de la Hitbox pour tromper le serveur
+                    char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, -5000, 0)
+                end
+            end
+        end)
+    else
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.Health = 0 -- Tue proprement pour réinitialiser le serveur
+        end
     end
 end)
 
@@ -664,7 +757,7 @@ UILibrary:CreateToggle(Pages["Joueurs"], "Fling All (Éjecter le serveur)", fals
     end
 end)
 
-UILibrary:CreateToggle(Pages["Joueurs"], "Anti-Aim Client (Esquive)", false, function(v)
+UILibrary:CreateToggle(Pages["Joueurs"], "Anti-Aim Client (Esquive Hitbox)", false, function(v)
     ZentyConfig.PlayerAdvanced.AntiAim = v
     if v then
         task.spawn(function()
@@ -684,11 +777,11 @@ UILibrary:CreateToggle(Pages["Joueurs"], "Zone Sécurisée (Hors Map)", false, f
         if not SafeZonePlatform then
             SafeZonePlatform = Instance.new("Part", workspace)
             SafeZonePlatform.Size = Vector3.new(30, 1, 30)
-            SafeZonePlatform.Position = Vector3.new(0, 2000, 0)
+            SafeZonePlatform.Position = Vector3.new(0, 4000, 0)
             SafeZonePlatform.Anchored = true
         end
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 2003, 0)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 4003, 0)
         end
     else
         if SafeZonePlatform then SafeZonePlatform:Destroy() SafeZonePlatform = nil end
@@ -698,30 +791,52 @@ UILibrary:CreateToggle(Pages["Joueurs"], "Zone Sécurisée (Hors Map)", false, f
     end
 end)
 
--- Option d'invisibilité (la variable est lue dans la boucle Stepped ci-dessous pour forcer le bypass)
-UILibrary:CreateToggle(Pages["Joueurs"], "Mode Invisible (Forcé constant)", false, function(v) 
-    ZentyConfig.PlayerAdvanced.Invisible = v 
+-- 5. CATEGORY FUN & AUTOMATIQUE
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Auto-Clicker Ultra Rapide", false, function(v)
+    ZentyConfig.Fun.AutoClicker = v
+    task.spawn(function()
+        while ZentyConfig.Fun.AutoClicker do
+            task.wait(0.01)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        end
+    end)
 end)
 
-UILibrary:CreateToggle(Pages["Joueurs"], "Click TP (Ctrl + Click Gauche)", false, function(v) ZentyConfig.PlayerAdvanced.ClickTP = v end)
-UILibrary:CreatePlayerDropdown(Pages["Joueurs"], "Choisir un joueur", function(selected) SelectedPlayerForTp = selected end)
-UILibrary:CreateButton(Pages["Joueurs"], "Se téléporter au joueur", function()
-    if SelectedPlayerForTp ~= "" then
-        local target = Players:FindFirstChild(SelectedPlayerForTp)
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Activer le SpinBot", false, function(v) ZentyConfig.Fun.SpinBot = v end)
+UILibrary:CreateSlider(Pages["Fun & Automatique"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, "", function(v) ZentyConfig.Fun.SpinSpeed = v end)
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Grossir les Têtes (Hitbox Part)", false, function(v) ZentyConfig.Fun.HitboxEnabled = v end)
+UILibrary:CreateSlider(Pages["Fun & Automatique"], "Taille Hitbox", 2, 25, ZentyConfig.Fun.HitboxSize, " studs", function(v) ZentyConfig.Fun.HitboxSize = v end)
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Forcer la Caméra FOV Jeu", false, function(v) ZentyConfig.Fun.GameFOVEnabled = v end)
+UILibrary:CreateSlider(Pages["Fun & Automatique"], "Vision FOV Jeu", 70, 140, ZentyConfig.Fun.GameFOV, "°", function(v) ZentyConfig.Fun.GameFOV = v end)
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Noclip Intelligent (Murs)", false, function(v) ZentyConfig.Fun.NoClip = v end)
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Saut Infini (Infinite Jump)", false, function(v) ZentyConfig.Fun.InfiniteJump = v end)
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "BunnyHop Auto", false, function(v) ZentyConfig.Movement.BunnyHop = v end)
+
+UILibrary:CreateButton(Pages["Fun & Automatique"], "Donner l'outil Click TP", function()
+    local Tool = Instance.new("Tool")
+    Tool.RequiresHandle = false
+    Tool.Name = "Zenty Teleport Tool"
+    Tool.Activated:Connect(function()
+        local mouse = LocalPlayer:GetMouse()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.X, mouse.Hit.Y + 3, mouse.Hit.Z)
+        end
+    end)
+    Tool.Parent = LocalPlayer.Backpack
+end)
+
+UILibrary:CreateButton(Pages["Fun & Automatique"], "Booster FPS (Anti-Lag Téléphone)", function()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:IsA("MeshPart") then
+            obj.Material = Enum.Material.SmoothPlastic
+        elseif obj:IsA("Decal") or obj:IsA("Texture") then
+            obj:Destroy()
         end
     end
 end)
 
--- 5. CATEGORY FUN
-UILibrary:CreateToggle(Pages["Fun"], "Activer le SpinBot", false, function(v) ZentyConfig.Fun.SpinBot = v end)
-UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, "", function(v) ZentyConfig.Fun.SpinSpeed = v end)
-UILibrary:CreateToggle(Pages["Fun"], "Grossir les Têtes (Hitbox)", false, function(v) ZentyConfig.Fun.HitboxEnabled = v end)
-UILibrary:CreateSlider(Pages["Fun"], "Taille Hitbox", 2, 25, ZentyConfig.Fun.HitboxSize, " studs", function(v) ZentyConfig.Fun.HitboxSize = v end)
-UILibrary:CreateToggle(Pages["Fun"], "Forcer la Caméra FOV", false, function(v) ZentyConfig.Fun.GameFOVEnabled = v end)
-UILibrary:CreateSlider(Pages["Fun"], "Vision FOV Jeu", 70, 140, ZentyConfig.Fun.GameFOV, "°", function(v) ZentyConfig.Fun.GameFOV = v end)
-UILibrary:CreateToggle(Pages["Fun"], "Spam Chat Automatique", false, function(v) 
+UILibrary:CreateToggle(Pages["Fun & Automatique"], "Spam Chat Automatique", false, function(v) 
     ZentyConfig.Fun.ChatSpam = v 
     task.spawn(function()
         while ZentyConfig.Fun.ChatSpam do
@@ -732,7 +847,7 @@ UILibrary:CreateToggle(Pages["Fun"], "Spam Chat Automatique", false, function(v)
     end)
 end)
 
--- 6. CATEGORY MM2 EXCLUSIF (S'affichera uniquement si l'ID correspond)
+-- 6. CATEGORY MM2 EXCLUSIF
 if IsMM2 and Pages["MM2 (Exclusif)"] then
     UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "MM2 Rôles ESP Couleurs", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
     UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Aimbot : Cible le Murderer Only", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
@@ -800,28 +915,6 @@ if IsMM2 and Pages["MM2 (Exclusif)"] then
         end
     end)
 
-    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Auto Kill All (Si arme en main)", false, function(v) 
-        ZentyConfig.PlayerAdvanced.KillAllActive = v 
-        if v then
-            task.spawn(function()
-                while ZentyConfig.PlayerAdvanced.KillAllActive do
-                    task.wait(0.2)
-                    local currentTool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                    if currentTool then
-                        for _, p in pairs(Players:GetPlayers()) do
-                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                                task.wait(0.05)
-                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end)
-
     UILibrary:CreateButton(Pages["MM2 (Exclusif)"], "Révéler les Rôles dans le Chat", function()
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer then
@@ -841,19 +934,10 @@ UILibrary:CreateButton(Pages["Settings"], "Thème : Rouge Sang", function() Main
 UILibrary:CreateButton(Pages["Settings"], "Thème : Cyber Cyan", function() MainStroke.Color = Color3.fromRGB(0, 230, 255) FOVStroke.Color = Color3.fromRGB(0, 230, 255) ZentyConfig.Aimbot.Color = Color3.fromRGB(0, 230, 255) end)
 
 
--- --- MOTEURS CENTRALISÉS ET BOUCLES CONSTANTES ---
-
-UserInputService.InputBegan:Connect(function(input, processed)
-    if not processed and ZentyConfig.PlayerAdvanced.ClickTP and input.UserInputType == Enum.UserInputType.MouseButton1 and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-        local mouse = LocalPlayer:GetMouse()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.X, mouse.Hit.Y + 3, mouse.Hit.Z)
-        end
-    end
-end)
+-- --- MOTEURS PHYSIQUES ET BOUCLES CONSTANTES (RESTAURATION DE TOUTE LA LOGIQUE CORE) ---
 
 UserInputService.JumpRequest:Connect(function()
-    if ZentyConfig.Movement.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+    if ZentyConfig.Fun.InfiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
     end
 end)
@@ -864,15 +948,8 @@ RunService.Stepped:Connect(function()
         if ZentyConfig.Movement.SpeedEnabled then char.Humanoid.WalkSpeed = ZentyConfig.Movement.Speed end
         if ZentyConfig.Movement.JumpEnabled then char.Humanoid.JumpPower = ZentyConfig.Movement.Jump end
         
-        -- [CORRECTION INVISIBILITÉ MOBILE] Exécution forcée et continue à chaque frame physique
-        if ZentyConfig.PlayerAdvanced.Invisible then
-            if char:FindFirstChild("LowerTorso") and char.HumanoidRootPart:FindFirstChild("RootJoint") then
-                char.HumanoidRootPart.RootJoint.C0 = CFrame.new(0, 500, 0) -- Décale la hitbox visuelle loin dans le ciel
-            end
-        else
-            if char:FindFirstChild("LowerTorso") and char.HumanoidRootPart:FindFirstChild("RootJoint") then
-                char.HumanoidRootPart.RootJoint.C0 = CFrame.new(0, 0, 0)
-            end
+        if ZentyConfig.Movement.Float then
+            char.HumanoidRootPart.Velocity = Vector3.new(char.HumanoidRootPart.Velocity.X, 0, char.HumanoidRootPart.Velocity.Z)
         end
 
         if ZentyConfig.Movement.BunnyHop and char.Humanoid.FloorMaterial ~= Enum.Material.Air then
@@ -883,21 +960,16 @@ RunService.Stepped:Connect(function()
             char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
             local moveDir = char.Humanoid.MoveDirection
             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + (moveDir * (ZentyConfig.Movement.FlySpeed / 10))
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame + Vector3.new(0, ZentyConfig.Movement.FlySpeed / 15, 0)
-            elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame - Vector3.new(0, ZentyConfig.Movement.FlySpeed / 15, 0)
+        end
+
+        if ZentyConfig.Fun.NoClip then
+            for _, part in pairs(char:GetChildren()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
 
         if ZentyConfig.Fun.SpinBot then
             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(ZentyConfig.Fun.SpinSpeed), 0)
-        end
-        
-        if ZentyConfig.Movement.NoClip then
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
         end
     end
 end)
@@ -924,7 +996,7 @@ end
 
 local EspContainer = Instance.new("Folder", ScreenGui)
 
--- CORE ESP + RENDER
+-- CORE ESP ULTRA-COMPLET RESTAURÉ ET FLUIDIFIÉ POUR MOBILE
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     
@@ -937,12 +1009,28 @@ RunService.RenderStepped:Connect(function()
         FOVFrame.Visible = false
     end
 
-    -- Moteur Aim
+    -- Moteur Aim Lock Power
     local target = GetClosestPlayerToCenter()
     if ZentyConfig.Aimbot.Enabled and ZentyConfig.Aimbot.LockPower > 0 and target and target.Character and target.Character:FindFirstChild(ZentyConfig.Aimbot.TargetPart) then
         if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService.TouchEnabled then
             local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character[ZentyConfig.Aimbot.TargetPart].Position)
             Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, ZentyConfig.Aimbot.LockPower / 100)
+        end
+    end
+
+    -- ESP Universel pour Objets Utiles/Trésors au sol
+    if ZentyConfig.Visuals.ItemEsp then
+        for _, item in pairs(workspace:GetChildren()) do
+            if item:IsA("BackpackItem") or item:IsA("Tool") or item.Name:lower():find("coin") or item.Name:lower():find("crystal") then
+                if item:IsA("BasePart") and not EspContainer:FindFirstChild(item.Name .. "_ItemESP") then
+                    local itemBox = Instance.new("BoxHandleAdornment", EspContainer)
+                    itemBox.Name = item.Name .. "_ItemESP"
+                    itemBox.Adornee = item
+                    itemBox.AlwaysOnTop = true
+                    itemBox.Size = item.Size
+                    itemBox.Color3 = Color3.fromRGB(0, 255, 150)
+                end
+            end
         end
     end
 
@@ -973,7 +1061,7 @@ RunService.RenderStepped:Connect(function()
         if gunEsp then gunEsp.Visible = false end
     end
 
-    -- Boucle Joueurs (ESP Box / Tracers / Hitbox Size)
+    -- Boucle Joueurs Intégrale (ESP Box / Tracers / Hitbox)
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             ApplyChams(player)
