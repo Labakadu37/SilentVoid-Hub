@@ -6,7 +6,7 @@
     ███████╗███████╗██║  ████║   ██║      ██║   ██║  ██║╚██████╔╝██████╦╝
     ╚══════╝╚══════╝╚═╝   ╚═══╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
     
-    [+] Version 4.0 ULTRA OVERPOWERED : Panel Massif Sans Perte de Code (600+ Lignes)
+    [+] Version 4.5 MOBILE COMPACT : Taille Réduite, Invisibilité Fix & Murder Check
 --]]
 
 local Players = game:GetService("Players")
@@ -41,6 +41,7 @@ local ZentyConfig = {
 local SelectedPlayerForTp = ""
 local SpamMessages = {"ZentyHub On Top !", "Imagine losing to ZentyHub", "Get good, get ZentyHub", "ZentyHub owned this server"}
 local SafeZonePlatform = nil
+local IsMM2 = (game.PlaceId == 142823291)
 
 -- --- CERCLE DE FOV ---
 local FOVFrame = Instance.new("Frame")
@@ -59,11 +60,11 @@ FOVStroke.Thickness = 1.5
 FOVStroke.Color = ZentyConfig.Aimbot.Color
 FOVStroke.Parent = FOVFrame
 
--- --- MAIN FRAME (PANEL GEANT CONFIGURÉ) ---
+-- --- MAIN FRAME (OPTIMISÉ POUR MOBILE : TAILLE COMPACTE RÉDUITE) ---
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 720, 0, 460)
-MainFrame.Position = UDim2.new(0.5, -360, 0.5, -230)
+MainFrame.Size = UDim2.new(0, 460, 0, 280)  -- Réduit de 720x460 à 460x280 pour l'espace mobile
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(12, 9, 18)
 MainFrame.BackgroundTransparency = 0.12
 MainFrame.BorderSizePixel = 0
@@ -75,12 +76,12 @@ PanelBackgroundImg.Name = "PanelBackgroundImg"
 PanelBackgroundImg.Size = UDim2.new(1, 0, 1, 0)
 PanelBackgroundImg.BackgroundTransparency = 1
 PanelBackgroundImg.Image = "rbxassetid://1000057472" 
-PanelBackgroundImg.ImageTransparency = 0.8
+PanelBackgroundImg.ImageTransparency = 0.82
 PanelBackgroundImg.ScaleType = Enum.ScaleType.Crop
 PanelBackgroundImg.ZIndex = 0
 PanelBackgroundImg.Parent = MainFrame
 
--- Système de Drag (Glissement) Restauré et Sécurisé
+-- Système de Drag Touch & Glissement Mobile
 local dragging, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -105,7 +106,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
@@ -116,18 +117,18 @@ MainStroke.Parent = MainFrame
 -- Topbar
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 45)
+TopBar.Size = UDim2.new(1, 0, 0, 38)
 TopBar.BackgroundTransparency = 1
 TopBar.ZIndex = 2
 TopBar.Parent = MainFrame
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(0, 400, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V4.0 ULTRA OVERPOWERED</font>"
+Title.Size = UDim2.new(0, 300, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "ZentyHub <font color='rgb(180, 100, 255)'>▼ V4.5 MOBILE</font>"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.PlayerAdvanced = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
 Title.RichText = true
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.BackgroundTransparency = 1
@@ -135,25 +136,25 @@ Title.Parent = TopBar
 
 -- Boutons Fenêtre
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -40, 0.5, -15)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -34, 0.5, -13)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(130, 0, 255)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 14
+CloseBtn.TextSize = 12
 CloseBtn.ZIndex = 3
 CloseBtn.Parent = TopBar
 CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-MinimizeBtn.Position = UDim2.new(1, -78, 0.5, -15)
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+MinimizeBtn.Position = UDim2.new(1, -66, 0.5, -13)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
 MinimizeBtn.Text = "–"
 MinimizeBtn.TextColor3 = Color3.fromRGB(180, 100, 255)
 MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.TextSize = 14
+MinimizeBtn.TextSize = 12
 MinimizeBtn.ZIndex = 3
 MinimizeBtn.Parent = TopBar
 
@@ -166,52 +167,57 @@ MinimizeBtn.MouseButton1Click:Connect(function()
         end
     end
     if MenuMinimized then
-        TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 720, 0, 45)}):Play()
+        TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 460, 0, 38)}):Play()
         PanelBackgroundImg.Visible = false
     else
-        TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 720, 0, 460)}):Play()
+        TweenService:Create(MainFrame, TweenInfo.new(0.25), {Size = UDim2.new(0, 460, 0, 280)}):Play()
         PanelBackgroundImg.Visible = true
     end
 end)
 
 -- --- NAVIGATION ÉTENDUE ---
 local Navigation = Instance.new("Frame")
-Navigation.Size = UDim2.new(0, 160, 1, -60)
-Navigation.Position = UDim2.new(0, 10, 0, 50)
+Navigation.Size = UDim2.new(0, 125, 1, -50)
+Navigation.Position = UDim2.new(0, 8, 0, 42)
 Navigation.BackgroundTransparency = 1
 Navigation.ZIndex = 2
 Navigation.Parent = MainFrame
 
 local NavLayout = Instance.new("UIListLayout")
-NavLayout.Padding = UDim.new(0, 6)
+NavLayout.Padding = UDim.new(0, 4)
 NavLayout.Parent = Navigation
 
 local PagesContainer = Instance.new("Frame")
-PagesContainer.Size = UDim2.new(1, -190, 1, -60)
-PagesContainer.Position = UDim2.new(0, 180, 0, 50)
+PagesContainer.Size = UDim2.new(1, -145, 1, -50)
+PagesContainer.Position = UDim2.new(0, 138, 0, 42)
 PagesContainer.BackgroundTransparency = 1
 PagesContainer.ZIndex = 2
 PagesContainer.Parent = MainFrame
 
 local Pages = {}
-local Categories = {"Aimbot", "Visuals", "Deplacement", "Joueurs (Avance)", "Fun", "MM2 (Exclusif)", "Settings"}
+local Categories = {"Aimbot", "Visuals", "Deplacement", "Joueurs", "Fun", "MM2 (Exclusif)", "Settings"}
 local IsFirstPage = true
 
 for i, catName in ipairs(Categories) do
+    -- [CORRECTION STRICTE] Masque l'onglet MM2 s'il ne s'agit pas du jeu Murder Mystery 2
+    if catName == "MM2 (Exclusif)" and not IsMM2 then
+        continue
+    end
+
     local NavBtn = Instance.new("TextButton")
-    NavBtn.Size = UDim2.new(1, 0, 0, 36)
+    NavBtn.Size = UDim2.new(1, 0, 0, 28)
     NavBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
     NavBtn.BackgroundTransparency = 0.3
     NavBtn.Text = "  " .. catName
     NavBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     NavBtn.Font = Enum.Font.GothamSemibold
-    NavBtn.TextSize = 13
+    NavBtn.TextSize = 11
     NavBtn.TextXAlignment = Enum.TextXAlignment.Left
     NavBtn.ZIndex = 3
     NavBtn.Parent = Navigation
     
     local BtnCorner = Instance.new("UICorner")
-    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.CornerRadius = UDim.new(0, 5)
     BtnCorner.Parent = NavBtn
     
     local BtnStroke = Instance.new("UIStroke")
@@ -223,14 +229,14 @@ for i, catName in ipairs(Categories) do
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.Visible = false
-    Page.CanvasSize = UDim2.new(0, 0, 3.2, 0) -- Énorme espace de défilement pour toutes les commandes
-    Page.ScrollBarThickness = 3
+    Page.CanvasSize = UDim2.new(0, 0, 3.5, 0) -- Conserve l'espace de défilement tactile fluide
+    Page.ScrollBarThickness = 2
     Page.ScrollBarImageColor3 = Color3.fromRGB(130, 0, 255)
     Page.ZIndex = 3
     Page.Parent = PagesContainer
     
     local PageLayout = Instance.new("UIListLayout")
-    PageLayout.Padding = UDim.new(0, 8)
+    PageLayout.Padding = UDim.new(0, 6)
     PageLayout.Parent = Page
 
     Pages[catName] = Page
@@ -257,36 +263,36 @@ for i, catName in ipairs(Categories) do
     end
 end
 
--- --- LIBRAIRIE COMPOSANTS COMPLÈTE ET SÉCURISÉE ---
+-- --- LIBRAIRIE COMPOSANTS COMPLÈTE COMPACTE ---
 local UILibrary = {}
 
 function UILibrary:CreateToggle(parent, text, default, callback)
     local Enabled = default
     local ToggleBg = Instance.new("Frame")
-    ToggleBg.Size = UDim2.new(1, -10, 0, 40)
+    ToggleBg.Size = UDim2.new(1, -6, 0, 34)
     ToggleBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
     ToggleBg.BackgroundTransparency = 0.2
     ToggleBg.ZIndex = 4
     ToggleBg.Parent = parent
     local TCorner = Instance.new("UICorner")
-    TCorner.CornerRadius = UDim.new(0, 6)
+    TCorner.CornerRadius = UDim.new(0, 5)
     TCorner.Parent = ToggleBg
     
     local TText = Instance.new("TextLabel")
-    TText.Size = UDim2.new(0, 250, 1, 0)
-    TText.Position = UDim2.new(0, 15, 0, 0)
+    TText.Size = UDim2.new(0, 200, 1, 0)
+    TText.Position = UDim2.new(0, 10, 0, 0)
     TText.BackgroundTransparency = 1
     TText.Text = text
     TText.TextColor3 = Color3.fromRGB(230, 230, 230)
     TText.Font = Enum.Font.Gotham
-    TText.TextSize = 13
+    TText.TextSize = 11
     TText.TextXAlignment = Enum.TextXAlignment.Left
     TText.ZIndex = 5
     TText.Parent = ToggleBg
     
     local Switch = Instance.new("TextButton")
-    Switch.Size = UDim2.new(0, 45, 0, 22)
-    Switch.Position = UDim2.new(1, -60, 0.5, -11)
+    Switch.Size = UDim2.new(0, 38, 0, 18)
+    Switch.Position = UDim2.new(1, -48, 0.5, -9)
     Switch.BackgroundColor3 = Enabled and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(40, 35, 50)
     Switch.Text = ""
     Switch.ZIndex = 5
@@ -296,8 +302,8 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     SCorner.Parent = Switch
     
     local SliderCircle = Instance.new("Frame")
-    SliderCircle.Size = UDim2.new(0, 16, 0, 16)
-    SliderCircle.Position = Enabled and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+    SliderCircle.Size = UDim2.new(0, 14, 0, 14)
+    SliderCircle.Position = Enabled and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
     SliderCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     SliderCircle.ZIndex = 6
     SliderCircle.Parent = Switch
@@ -307,52 +313,52 @@ function UILibrary:CreateToggle(parent, text, default, callback)
     
     Switch.MouseButton1Click:Connect(function()
         Enabled = not Enabled
-        local targetPos = Enabled and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+        local targetPos = Enabled and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
         local targetColor = Enabled and Color3.fromRGB(130, 0, 255) or Color3.fromRGB(40, 35, 50)
-        TweenService:Create(SliderCircle, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = targetPos}):Play()
-        TweenService:Create(Switch, TweenInfo.new(0.25), {BackgroundColor3 = targetColor}):Play()
+        TweenService:Create(SliderCircle, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {Position = targetPos}):Play()
+        TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
         callback(Enabled)
     end)
 end
 
 function UILibrary:CreateSlider(parent, text, min, max, default, suffix, callback)
     local SliderBg = Instance.new("Frame")
-    SliderBg.Size = UDim2.new(1, -10, 0, 50)
+    SliderBg.Size = UDim2.new(1, -6, 0, 42)
     SliderBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
     SliderBg.BackgroundTransparency = 0.2
     SliderBg.ZIndex = 4
     SliderBg.Parent = parent
     local SCorner = Instance.new("UICorner")
-    SCorner.CornerRadius = UDim.new(0, 6)
+    SCorner.CornerRadius = UDim.new(0, 5)
     SCorner.Parent = SliderBg
     
     local SText = Instance.new("TextLabel")
-    SText.Size = UDim2.new(0, 200, 0, 25)
-    SText.Position = UDim2.new(0, 15, 0, 2)
+    SText.Size = UDim2.new(0, 180, 0, 20)
+    SText.Position = UDim2.new(0, 10, 0, 2)
     SText.BackgroundTransparency = 1
     SText.Text = text
     SText.TextColor3 = Color3.fromRGB(230, 230, 230)
     SText.Font = Enum.Font.Gotham
-    SText.TextSize = 13
+    SText.TextSize = 11
     SText.TextXAlignment = Enum.TextXAlignment.Left
     SText.ZIndex = 5
     SText.Parent = SliderBg
     
     local ValText = Instance.new("TextLabel")
-    ValText.Size = UDim2.new(0, 65, 0, 25)
-    ValText.Position = UDim2.new(1, -80, 0, 2)
+    ValText.Size = UDim2.new(0, 60, 0, 20)
+    ValText.Position = UDim2.new(1, -70, 0, 2)
     ValText.BackgroundTransparency = 1
     ValText.Text = tostring(default) .. suffix
     ValText.TextColor3 = Color3.fromRGB(180, 100, 255)
     ValText.Font = Enum.Font.GothamBold
-    ValText.TextSize = 13
+    ValText.TextSize = 11
     ValText.TextXAlignment = Enum.TextXAlignment.Right
     ValText.ZIndex = 5
     ValText.Parent = SliderBg
 
     local Track = Instance.new("TextButton")
-    Track.Size = UDim2.new(1, -30, 0, 6)
-    Track.Position = UDim2.new(0, 15, 0, 32)
+    Track.Size = UDim2.new(1, -20, 0, 5)
+    Track.Position = UDim2.new(0, 10, 0, 26)
     Track.BackgroundColor3 = Color3.fromRGB(45, 40, 55)
     Track.Text = ""
     Track.ZIndex = 5
@@ -383,23 +389,23 @@ function UILibrary:CreateSlider(parent, text, min, max, default, suffix, callbac
         callback(value)
     end
     Track.MouseButton1Down:Connect(function() Sliding = true UpdateSlider() end)
-    UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then Sliding = false end end)
-    UserInputService.InputChanged:Connect(function(input) if Sliding and input.UserInputType == Enum.UserInputType.MouseMovement then UpdateSlider() end end)
+    UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then Sliding = false end end)
+    UserInputService.InputChanged:Connect(function(input) if Sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then UpdateSlider() end end)
 end
 
 function UILibrary:CreateButton(parent, text, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1, -10, 0, 35)
+    Btn.Size = UDim2.new(1, -6, 0, 30)
     Btn.BackgroundColor3 = Color3.fromRGB(35, 25, 50)
     Btn.BackgroundTransparency = 0.1
     Btn.Text = text
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Font = Enum.Font.GothamBold
-    Btn.TextSize = 13
+    Btn.TextSize = 11
     Btn.ZIndex = 4
     Btn.Parent = parent
     local BCorner = Instance.new("UICorner")
-    BCorner.CornerRadius = UDim.new(0, 6)
+    BCorner.CornerRadius = UDim.new(0, 5)
     BCorner.Parent = Btn
     local BStroke = Instance.new("UIStroke")
     BStroke.Thickness = 1
@@ -410,30 +416,30 @@ end
 
 function UILibrary:CreateDropdown(parent, text, items, callback)
     local DropBg = Instance.new("Frame")
-    DropBg.Size = UDim2.new(1, -10, 0, 40)
+    DropBg.Size = UDim2.new(1, -6, 0, 34)
     DropBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
     DropBg.BackgroundTransparency = 0.2
     DropBg.ClipsDescendants = true
     DropBg.ZIndex = 4
     DropBg.Parent = parent
     local DCorner = Instance.new("UICorner")
-    DCorner.CornerRadius = UDim.new(0, 6)
+    DCorner.CornerRadius = UDim.new(0, 5)
     DCorner.Parent = DropBg
     
     local DropBtn = Instance.new("TextButton")
-    DropBtn.Size = UDim2.new(1, 0, 0, 40)
+    DropBtn.Size = UDim2.new(1, 0, 0, 34)
     DropBtn.BackgroundTransparency = 1
     DropBtn.Text = "  " .. text .. " : " .. tostring(items[1])
     DropBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     DropBtn.Font = Enum.Font.GothamSemibold
-    DropBtn.TextSize = 13
+    DropBtn.TextSize = 11
     DropBtn.TextXAlignment = Enum.TextXAlignment.Left
     DropBtn.ZIndex = 5
     DropBtn.Parent = DropBg
 
     local ContentFrame = Instance.new("Frame")
-    ContentFrame.Size = UDim2.new(1, 0, 0, #items * 30)
-    ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+    ContentFrame.Size = UDim2.new(1, 0, 0, #items * 26)
+    ContentFrame.Position = UDim2.new(0, 0, 0, 34)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.ZIndex = 5
     ContentFrame.Parent = DropBg
@@ -444,19 +450,19 @@ function UILibrary:CreateDropdown(parent, text, items, callback)
     local Toggled = false
     for _, item in pairs(items) do
         local OptBtn = Instance.new("TextButton")
-        OptBtn.Size = UDim2.new(1, 0, 0, 30)
+        OptBtn.Size = UDim2.new(1, 0, 0, 26)
         OptBtn.BackgroundColor3 = Color3.fromRGB(28, 22, 38)
         OptBtn.Text = "    " .. tostring(item)
         OptBtn.TextColor3 = Color3.fromRGB(160, 160, 160)
         OptBtn.Font = Enum.Font.Gotham
-        OptBtn.TextSize = 12
+        OptBtn.TextSize = 11
         OptBtn.TextXAlignment = Enum.TextXAlignment.Left
         OptBtn.ZIndex = 6
         OptBtn.Parent = ContentFrame
         OptBtn.MouseButton1Click:Connect(function()
             DropBtn.Text = "  " .. text .. " : " .. tostring(item)
             Toggled = false
-            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
+            TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 34)}):Play()
             callback(item)
         end)
     end
@@ -464,39 +470,39 @@ function UILibrary:CreateDropdown(parent, text, items, callback)
     DropBtn.MouseButton1Click:Connect(function()
         Toggled = not Toggled
         if Toggled then
-            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40 + (#items * 30))}):Play()
+            TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 34 + (#items * 26))}):Play()
         else
-            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
+            TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 34)}):Play()
         end
     end)
 end
 
 function UILibrary:CreatePlayerDropdown(parent, text, callback)
     local DropBg = Instance.new("Frame")
-    DropBg.Size = UDim2.new(1, -10, 0, 40)
+    DropBg.Size = UDim2.new(1, -6, 0, 34)
     DropBg.BackgroundColor3 = Color3.fromRGB(20, 16, 28)
     DropBg.BackgroundTransparency = 0.2
     DropBg.ClipsDescendants = true
     DropBg.ZIndex = 4
     DropBg.Parent = parent
     local DCorner = Instance.new("UICorner")
-    DCorner.CornerRadius = UDim.new(0, 6)
+    DCorner.CornerRadius = UDim.new(0, 5)
     DCorner.Parent = DropBg
     
     local DropBtn = Instance.new("TextButton")
-    DropBtn.Size = UDim2.new(1, 0, 0, 40)
+    DropBtn.Size = UDim2.new(1, 0, 0, 34)
     DropBtn.BackgroundTransparency = 1
     DropBtn.Text = "  " .. text .. " : Aucun"
     DropBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     DropBtn.Font = Enum.Font.GothamSemibold
-    DropBtn.TextSize = 13
+    DropBtn.TextSize = 11
     DropBtn.TextXAlignment = Enum.TextXAlignment.Left
     DropBtn.ZIndex = 5
     DropBtn.Parent = DropBg
 
     local ContentFrame = Instance.new("Frame")
-    ContentFrame.Size = UDim2.new(1, 0, 0, 120)
-    ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+    ContentFrame.Size = UDim2.new(1, 0, 0, 100)
+    ContentFrame.Position = UDim2.new(0, 0, 0, 34)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.ZIndex = 5
     ContentFrame.Parent = DropBg
@@ -520,33 +526,33 @@ function UILibrary:CreatePlayerDropdown(parent, text, callback)
             if p ~= LocalPlayer then
                 count = count + 1
                 local OptBtn = Instance.new("TextButton")
-                OptBtn.Size = UDim2.new(1, 0, 0, 30)
+                OptBtn.Size = UDim2.new(1, 0, 0, 26)
                 OptBtn.BackgroundColor3 = Color3.fromRGB(28, 22, 38)
                 OptBtn.Text = "    " .. p.Name
                 OptBtn.TextColor3 = Color3.fromRGB(160, 160, 160)
                 OptBtn.Font = Enum.Font.Gotham
-                OptBtn.TextSize = 12
+                OptBtn.TextSize = 11
                 OptBtn.TextXAlignment = Enum.TextXAlignment.Left
                 OptBtn.ZIndex = 7
                 OptBtn.Parent = ScrollList
                 OptBtn.MouseButton1Click:Connect(function()
                     DropBtn.Text = "  " .. text .. " : " .. p.Name
                     Toggled = false
-                    TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
+                    TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 34)}):Play()
                     callback(p.Name)
                 end)
             end
         end
-        ScrollList.CanvasSize = UDim2.new(0, 0, 0, count * 30)
+        ScrollList.CanvasSize = UDim2.new(0, 0, 0, count * 26)
     end
 
     DropBtn.MouseButton1Click:Connect(function()
         Toggled = not Toggled
         if Toggled then
             RefreshPlayers()
-            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 160)}):Play()
+            TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 134)}):Play()
         else
-            TweenService:Create(DropBg, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, 40)}):Play()
+            TweenService:Create(DropBg, TweenInfo.new(0.25), {Size = UDim2.new(1, -6, 0, 34)}):Play()
         end
     end)
 end
@@ -589,7 +595,7 @@ local function ApplyChams(player)
     end
 end
 
--- --- REMPLISSAGE DES OPTIONS DU MENU (ZÉRO PERTE + MASS COMMANDES) ---
+-- --- REMPLISSAGE DES OPTIONS DU MENU ---
 
 -- 1. CATEGORY AIMBOT
 UILibrary:CreateToggle(Pages["Aimbot"], "Activer l'Aimbot", ZentyConfig.Aimbot.Enabled, function(v) ZentyConfig.Aimbot.Enabled = v end)
@@ -617,8 +623,8 @@ UILibrary:CreateToggle(Pages["Deplacement"], "Infinite Jump", false, function(v)
 UILibrary:CreateToggle(Pages["Deplacement"], "Noclip Intelligent", false, function(v) ZentyConfig.Movement.NoClip = v end)
 UILibrary:CreateToggle(Pages["Deplacement"], "BunnyHop Auto", false, function(v) ZentyConfig.Movement.BunnyHop = v end)
 
--- 4. CATEGORY JOUEURS (AVANCE) --> REMPLACÉ ET ENRICHI SELON TES SOUHAITS EXACTS
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Téléporter TOUT LE MONDE sur moi (Bring All)", false, function(v)
+-- 4. CATEGORY JOUEURS
+UILibrary:CreateToggle(Pages["Joueurs"], "Téléporter TOUT LE MONDE sur moi", false, function(v)
     ZentyConfig.PlayerAdvanced.BringAll = v
     if v then
         task.spawn(function()
@@ -636,8 +642,7 @@ UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Téléporter TOUT LE MONDE su
     end
 end)
 
--- [AJOUT] FLING ALL (ÉJECTER TOUT LE SERVEUR DANS LES AIRS)
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Fling All (Faire voler tout le serveur)", false, function(v)
+UILibrary:CreateToggle(Pages["Joueurs"], "Fling All (Éjecter le serveur)", false, function(v)
     ZentyConfig.PlayerAdvanced.FlingAll = v
     if v then
         task.spawn(function()
@@ -659,8 +664,7 @@ UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Fling All (Faire voler tout l
     end
 end)
 
--- [AJOUT] ANTI-AIM / SPINBOT DEFENSE (RÉDUIT LES CHANCES DE SE FAIRE VISER)
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Anti-Aim Client (Esquive les tirs)", false, function(v)
+UILibrary:CreateToggle(Pages["Joueurs"], "Anti-Aim Client (Esquive)", false, function(v)
     ZentyConfig.PlayerAdvanced.AntiAim = v
     if v then
         task.spawn(function()
@@ -674,8 +678,7 @@ UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Anti-Aim Client (Esquive les 
     end
 end)
 
--- [AJOUT] TP SECURISE COMPLET (ZONE PROTECTION HORS MAP)
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Téléporter dans une Zone Sécurisée", false, function(v)
+UILibrary:CreateToggle(Pages["Joueurs"], "Zone Sécurisée (Hors Map)", false, function(v)
     ZentyConfig.PlayerAdvanced.SafeZoneTP = v
     if v then
         if not SafeZonePlatform then
@@ -690,24 +693,19 @@ UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Téléporter dans une Zone S�
     else
         if SafeZonePlatform then SafeZonePlatform:Destroy() SafeZonePlatform = nil end
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.Health = 0 -- Respawn automatique hors zone
+            LocalPlayer.Character.Humanoid.Health = 0
         end
     end
 end)
 
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Click TP (Ctrl + Click Gauche)", false, function(v) ZentyConfig.PlayerAdvanced.ClickTP = v end)
-UILibrary:CreateToggle(Pages["Joueurs (Avance)"], "Mode Invisible (Semi-Bypass)", false, function(v) 
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("LowerTorso") then
-        local root = char.HumanoidRootPart
-        if root:FindFirstChild("RootJoint") then
-            root.RootJoint.C0 = v and CFrame.new(0, 500, 0) or CFrame.new(0, 0, 0)
-        end
-    end
+-- Option d'invisibilité (la variable est lue dans la boucle Stepped ci-dessous pour forcer le bypass)
+UILibrary:CreateToggle(Pages["Joueurs"], "Mode Invisible (Forcé constant)", false, function(v) 
+    ZentyConfig.PlayerAdvanced.Invisible = v 
 end)
 
-UILibrary:CreatePlayerDropdown(Pages["Joueurs (Avance)"], "Choisir un joueur", function(selected) SelectedPlayerForTp = selected end)
-UILibrary:CreateButton(Pages["Joueurs (Avance)"], "Se téléporter au joueur choisi", function()
+UILibrary:CreateToggle(Pages["Joueurs"], "Click TP (Ctrl + Click Gauche)", false, function(v) ZentyConfig.PlayerAdvanced.ClickTP = v end)
+UILibrary:CreatePlayerDropdown(Pages["Joueurs"], "Choisir un joueur", function(selected) SelectedPlayerForTp = selected end)
+UILibrary:CreateButton(Pages["Joueurs"], "Se téléporter au joueur", function()
     if SelectedPlayerForTp ~= "" then
         local target = Players:FindFirstChild(SelectedPlayerForTp)
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
@@ -719,14 +717,10 @@ end)
 -- 5. CATEGORY FUN
 UILibrary:CreateToggle(Pages["Fun"], "Activer le SpinBot", false, function(v) ZentyConfig.Fun.SpinBot = v end)
 UILibrary:CreateSlider(Pages["Fun"], "Vitesse du Spin", 10, 200, ZentyConfig.Fun.SpinSpeed, "", function(v) ZentyConfig.Fun.SpinSpeed = v end)
-
--- [AJOUT] CONFIGURATEUR TAILLE HITBOX (GROSSE TÊTE ENNEMIE)
-UILibrary:CreateToggle(Pages["Fun"], "Grossir les Têtes (Hitbox Magnifiée)", false, function(v) ZentyConfig.Fun.HitboxEnabled = v end)
-UILibrary:CreateSlider(Pages["Fun"], "Multiplicateur de Hitbox", 2, 25, ZentyConfig.Fun.HitboxSize, " studs", function(v) ZentyConfig.Fun.HitboxSize = v end)
-
+UILibrary:CreateToggle(Pages["Fun"], "Grossir les Têtes (Hitbox)", false, function(v) ZentyConfig.Fun.HitboxEnabled = v end)
+UILibrary:CreateSlider(Pages["Fun"], "Taille Hitbox", 2, 25, ZentyConfig.Fun.HitboxSize, " studs", function(v) ZentyConfig.Fun.HitboxSize = v end)
 UILibrary:CreateToggle(Pages["Fun"], "Forcer la Caméra FOV", false, function(v) ZentyConfig.Fun.GameFOVEnabled = v end)
 UILibrary:CreateSlider(Pages["Fun"], "Vision FOV Jeu", 70, 140, ZentyConfig.Fun.GameFOV, "°", function(v) ZentyConfig.Fun.GameFOV = v end)
-
 UILibrary:CreateToggle(Pages["Fun"], "Spam Chat Automatique", false, function(v) 
     ZentyConfig.Fun.ChatSpam = v 
     task.spawn(function()
@@ -738,108 +732,108 @@ UILibrary:CreateToggle(Pages["Fun"], "Spam Chat Automatique", false, function(v)
     end)
 end)
 
--- 6. CATEGORY MM2 EXCLUSIF
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "MM2 Rôles ESP Couleurs", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Aimbot : Cible Uniquement le Murderer", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "ESP de l'Arme au Sol", false, function(v) ZentyConfig.Visuals.GunEsp = v end)
-
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Prendre le Pistolet Auto s'il tombe", false, function(v)
-    ZentyConfig.MM2.GrabGun = v
-    if v then
-        task.spawn(function()
-            while ZentyConfig.MM2.GrabGun do
-                task.wait(0.2)
-                local gunDrop = workspace:FindFirstChild("GunDrop")
-                if gunDrop and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = gunDrop.CFrame
+-- 6. CATEGORY MM2 EXCLUSIF (S'affichera uniquement si l'ID correspond)
+if IsMM2 and Pages["MM2 (Exclusif)"] then
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "MM2 Rôles ESP Couleurs", ZentyConfig.Visuals.RoleESP, function(v) ZentyConfig.Visuals.RoleESP = v end)
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Aimbot : Cible le Murderer Only", ZentyConfig.Aimbot.TargetMurdererOnly, function(v) ZentyConfig.Aimbot.TargetMurdererOnly = v end)
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "ESP de l'Arme au Sol", false, function(v) ZentyConfig.Visuals.GunEsp = v end)
+    
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Prendre le Pistolet Auto", false, function(v)
+        ZentyConfig.MM2.GrabGun = v
+        if v then
+            task.spawn(function()
+                while ZentyConfig.MM2.GrabGun do
+                    task.wait(0.2)
+                    local gunDrop = workspace:FindFirstChild("GunDrop")
+                    if gunDrop and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = gunDrop.CFrame
+                    end
                 end
-            end
-        end)
-    end
-end)
+            end)
+        end
+    end)
 
--- [AJOUT] AUTO-FARM COINS (TÉLÉPORTE SUR TOUTES LES PIÈCES DES MAPS DE MM2)
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Auto-Farm de Pièces (Coins)", false, function(v)
-    ZentyConfig.MM2.AutoFarmCoins = v
-    if v then
-        task.spawn(function()
-            while ZentyConfig.MM2.AutoFarmCoins do
-                task.wait(0.4)
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local normalContainer = workspace:FindFirstChild("Normal")
-                    if normalContainer then
-                        local coinContainer = normalContainer:FindFirstChild("CoinContainer")
-                        if coinContainer then
-                            for _, coin in pairs(coinContainer:GetChildren()) do
-                                if coin:IsA("BasePart") and ZentyConfig.MM2.AutoFarmCoins then
-                                    LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame
-                                    task.wait(0.2)
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Auto-Farm de Pièces (Coins)", false, function(v)
+        ZentyConfig.MM2.AutoFarmCoins = v
+        if v then
+            task.spawn(function()
+                while ZentyConfig.MM2.AutoFarmCoins do
+                    task.wait(0.4)
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local normalContainer = workspace:FindFirstChild("Normal")
+                        if normalContainer then
+                            local coinContainer = normalContainer:FindFirstChild("CoinContainer")
+                            if coinContainer then
+                                for _, coin in pairs(coinContainer:GetChildren()) do
+                                    if coin:IsA("BasePart") and ZentyConfig.MM2.AutoFarmCoins then
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame
+                                        task.wait(0.2)
+                                    end
                                 end
                             end
                         end
                     end
                 end
-            end
-        end)
-    end
-end)
+            end)
+        end
+    end)
 
--- [AJOUT] ANTI-KNIFE KILL (TÉLÉPORTE AUTOMATIQUEMENT HORS DE PORTÉE DU MURDERER S'IL S'APPROCHE APPRÊTÉ)
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Anti-Knife (Bypass Couteau Tueur)", false, function(v)
-    ZentyConfig.MM2.AntiKnife = v
-    if v then
-        task.spawn(function()
-            while ZentyConfig.MM2.AntiKnife do
-                task.wait(0.1)
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    for _, p in pairs(Players:GetPlayers()) do
-                        if p ~= LocalPlayer and GetPlayerMM2Role(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                            local isKnifeEquipped = p.Character:FindFirstChild("Knife")
-                            if distance < 18 and isKnifeEquipped then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0) -- Esquive verticale
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Anti-Knife (Esquive Tueur)", false, function(v)
+        ZentyConfig.MM2.AntiKnife = v
+        if v then
+            task.spawn(function()
+                while ZentyConfig.MM2.AntiKnife do
+                    task.wait(0.1)
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if p ~= LocalPlayer and GetPlayerMM2Role(p) == "Murderer" and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                                local isKnifeEquipped = p.Character:FindFirstChild("Knife")
+                                if distance < 18 and isKnifeEquipped then
+                                    LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0)
+                                end
                             end
                         end
                     end
                 end
-            end
-        end)
-    end
-end)
+            end)
+        end
+    end)
 
-UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Auto Kill All (Si tu as l'arme en main)", false, function(v) 
-    ZentyConfig.PlayerAdvanced.KillAllActive = v 
-    if v then
-        task.spawn(function()
-            while ZentyConfig.PlayerAdvanced.KillAllActive do
-                task.wait(0.2)
-                local currentTool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if currentTool then
-                    for _, p in pairs(Players:GetPlayers()) do
-                        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                            task.wait(0.05)
-                            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    UILibrary:CreateToggle(Pages["MM2 (Exclusif)"], "Auto Kill All (Si arme en main)", false, function(v) 
+        ZentyConfig.PlayerAdvanced.KillAllActive = v 
+        if v then
+            task.spawn(function()
+                while ZentyConfig.PlayerAdvanced.KillAllActive do
+                    task.wait(0.2)
+                    local currentTool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if currentTool then
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                                task.wait(0.05)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                            end
                         end
                     end
                 end
-            end
-        end)
-    end
-end)
+            end)
+        end
+    end)
 
-UILibrary:CreateButton(Pages["MM2 (Exclusif)"], "Révéler les Rôles dans le Chat", function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            local role, _ = GetPlayerMM2Role(p)
-            if role == "Murderer" or role == "Sheriff" then
-                ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("[ZentyHub EXPOSE] " .. p.Name .. " est " .. role .. " !", "All")
-                task.wait(0.5)
+    UILibrary:CreateButton(Pages["MM2 (Exclusif)"], "Révéler les Rôles dans le Chat", function()
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                local role, _ = GetPlayerMM2Role(p)
+                if role == "Murderer" or role == "Sheriff" then
+                    ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("[ZentyHub EXPOSE] " .. p.Name .. " est " .. role .. " !", "All")
+                    task.wait(0.5)
+                end
             end
         end
-    end
-end)
+    end)
+end
 
 -- 7. CATEGORY SETTINGS
 UILibrary:CreateButton(Pages["Settings"], "Thème : Violet d'origine", function() MainStroke.Color = Color3.fromRGB(130, 0, 255) FOVStroke.Color = Color3.fromRGB(130, 0, 255) ZentyConfig.Aimbot.Color = Color3.fromRGB(130, 0, 255) end)
@@ -870,6 +864,17 @@ RunService.Stepped:Connect(function()
         if ZentyConfig.Movement.SpeedEnabled then char.Humanoid.WalkSpeed = ZentyConfig.Movement.Speed end
         if ZentyConfig.Movement.JumpEnabled then char.Humanoid.JumpPower = ZentyConfig.Movement.Jump end
         
+        -- [CORRECTION INVISIBILITÉ MOBILE] Exécution forcée et continue à chaque frame physique
+        if ZentyConfig.PlayerAdvanced.Invisible then
+            if char:FindFirstChild("LowerTorso") and char.HumanoidRootPart:FindFirstChild("RootJoint") then
+                char.HumanoidRootPart.RootJoint.C0 = CFrame.new(0, 500, 0) -- Décale la hitbox visuelle loin dans le ciel
+            end
+        else
+            if char:FindFirstChild("LowerTorso") and char.HumanoidRootPart:FindFirstChild("RootJoint") then
+                char.HumanoidRootPart.RootJoint.C0 = CFrame.new(0, 0, 0)
+            end
+        end
+
         if ZentyConfig.Movement.BunnyHop and char.Humanoid.FloorMaterial ~= Enum.Material.Air then
             char.Humanoid:ChangeState("Jumping")
         end
@@ -919,7 +924,7 @@ end
 
 local EspContainer = Instance.new("Folder", ScreenGui)
 
--- CORE ET RENDER GESTION ESP + HITBOX EXTENDER
+-- CORE ESP + RENDER
 RunService.RenderStepped:Connect(function()
     local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     
@@ -941,10 +946,10 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- ESP Arme Tombée
+    -- ESP Arme Tombée (Seulement si sur MM2)
     local gunDrop = workspace:FindFirstChild("GunDrop")
     local gunEsp = EspContainer:FindFirstChild("GunDropESP")
-    if gunDrop and ZentyConfig.Visuals.GunEsp then
+    if IsMM2 and gunDrop and ZentyConfig.Visuals.GunEsp then
         if not gunEsp then
             gunEsp = Instance.new("Frame", EspContainer)
             gunEsp.Name = "GunDropESP"
@@ -968,7 +973,7 @@ RunService.RenderStepped:Connect(function()
         if gunEsp then gunEsp.Visible = false end
     end
 
-    -- Boucle Joueurs (ESP Box / Tracers / Chams / Hitbox Size)
+    -- Boucle Joueurs (ESP Box / Tracers / Hitbox Size)
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             ApplyChams(player)
@@ -999,7 +1004,7 @@ RunService.RenderStepped:Connect(function()
                     local drawColor = ZentyConfig.Visuals.Color
                     local roleName = ""
                     local rName, rColor = GetPlayerMM2Role(player)
-                    if ZentyConfig.Visuals.RoleESP then drawColor = rColor roleName = rName end
+                    if IsMM2 and ZentyConfig.Visuals.RoleESP then drawColor = rColor roleName = rName end
 
                     -- Tracers Origin Calculateur
                     if ZentyConfig.Visuals.Tracers then
@@ -1028,7 +1033,7 @@ RunService.RenderStepped:Connect(function()
                         if existingTracer then existingTracer.Visible = false end
                     end
 
-                    -- Box ESP + Pseudo + Distance Text Moteur
+                    -- Box ESP + Pseudo + Distance
                     if ZentyConfig.Visuals.EspBoxes or ZentyConfig.Visuals.EspNames or ZentyConfig.Visuals.EspDistances then
                         local topPos = Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
                         local bottomPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3.5, 0))
@@ -1059,7 +1064,7 @@ RunService.RenderStepped:Connect(function()
                         existingEsp.EspText.Position = UDim2.new(0, 0, 0, -(boxHeight/2) - 15)
                         
                         local labelText = ""
-                        if ZentyConfig.Visuals.RoleESP then labelText = "["..roleName.."] " end
+                        if IsMM2 and ZentyConfig.Visuals.RoleESP then labelText = "["..roleName.."] " end
                         if ZentyConfig.Visuals.EspNames then labelText = labelText .. player.Name end
                         if ZentyConfig.Visuals.EspDistances then
                             local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
