@@ -6,7 +6,31 @@ nécessite aucune compilation.
 
 ---
 
-## Méthode 1 — CSS personnalisé (recommandée)
+## Installation automatique (copier-coller, 1 commande)
+
+Sur le VPS, en root :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Labakadu37/SilentVoid-Hub/claude/vps-ssh-pterodactyl-d8temq/docs/theme/install-theme.sh -o /tmp/install-theme.sh
+sudo bash /tmp/install-theme.sh
+```
+
+Le script télécharge le CSS, l'installe dans `public/theme/`, injecte la ligne
+`<link>` dans les trois fichiers blade (avec sauvegarde `.silentvoid.bak`),
+vide le cache et redémarre php-fpm.
+
+Pour tout annuler :
+
+```bash
+sudo bash /tmp/install-theme.sh --uninstall
+```
+
+Relancer le script met simplement le thème à jour (pas de doublon).
+
+
+---
+
+## Méthode 1 (manuelle) — CSS personnalisé (recommandée)
 
 ### 1. Déposer le fichier
 
