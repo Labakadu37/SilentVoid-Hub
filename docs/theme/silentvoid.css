@@ -1,5 +1,5 @@
 /* =========================================================
-   SilentVoid — thème Pterodactyl (noir / bleu dégradé)
+   Nyaka Ptero — thème Pterodactyl (noir / bleu dégradé)
    À déposer dans : /var/www/pterodactyl/public/theme/silentvoid.css
    ========================================================= */
 
@@ -236,12 +236,132 @@ a:hover { color: var(--sv-cyan) !important; }
 .label-danger,  .bg-red     { background: var(--sv-danger) !important; }
 .label-primary, .bg-blue    { background: var(--sv-blue) !important; }
 
-/* ---------- Barre de défilement ---------- */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #060a12; }
-::-webkit-scrollbar-thumb {
+/* ---------- Barre de défilement (corrigée) ---------- */
+/* Uniquement la barre verticale de la page : plus de grosse barre bleue
+   horizontale sous la navigation sur mobile. */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { width: 8px; }
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track { background: #060a12; }
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, var(--sv-blue-deep), var(--sv-blue));
     border-radius: 8px;
-    border: 2px solid #060a12;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--sv-cyan); }
+/* Aucune barre horizontale visible nulle part */
+*::-webkit-scrollbar:horizontal { height: 0 !important; display: none !important; }
+* { scrollbar-width: thin; scrollbar-color: var(--sv-blue) #060a12; }
+
+
+/* =====================================================================
+   INTERFACE CLIENT (React) — les classes sont générées automatiquement,
+   on cible donc la structure du DOM.
+   ===================================================================== */
+
+/* Plus aucun fond blanc dans l'application */
+#app div,
+#app section,
+#app main,
+#app header,
+#app footer { background-color: transparent !important; }
+
+/* --- Page de connexion --- */
+#app form > div {
+    background: linear-gradient(180deg, rgba(17, 26, 46, .96), rgba(7, 12, 23, .98)) !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .75), var(--sv-glow) !important;
+    padding: 28px 22px !important;
+}
+
+#app form > div * { background-color: transparent !important; }
+
+/* On masque le dinosaure d'origine */
+#app form img { display: none !important; }
+
+/* Logo texte NYAKA PTERO à la place */
+#app form > div::before {
+    content: "NYAKA PTERO";
+    display: block;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    margin: 4px 0 26px;
+    background: linear-gradient(90deg, var(--sv-blue), var(--sv-cyan), var(--sv-blue-soft));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 14px rgba(47, 123, 255, .45));
+}
+
+/* Titres et libellés */
+#app h1, #app h2, #app h3 { color: var(--sv-text) !important; }
+
+#app form label,
+#app label {
+    color: var(--sv-blue-soft) !important;
+    text-transform: uppercase;
+    font-size: 11px !important;
+    letter-spacing: .1em;
+}
+
+#app p, #app span, #app li, #app td { color: var(--sv-text) !important; }
+
+/* Champs de la page de connexion (priorité sur la règle transparente) */
+#app form input,
+#app input[type="text"],
+#app input[type="email"],
+#app input[type="password"],
+#app input[type="number"],
+#app textarea,
+#app select {
+    background-color: #070d19 !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: 10px !important;
+    color: var(--sv-text) !important;
+}
+
+#app form input:focus,
+#app input:focus,
+#app textarea:focus,
+#app select:focus {
+    border-color: var(--sv-blue) !important;
+    box-shadow: 0 0 0 3px rgba(47, 123, 255, .2) !important;
+}
+
+/* Boutons du client */
+#app button {
+    background: linear-gradient(135deg, var(--sv-blue-deep), var(--sv-blue)) !important;
+    border: 1px solid rgba(79, 157, 255, .45) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em;
+    transition: all .18s ease !important;
+}
+
+#app button:hover {
+    background: linear-gradient(135deg, var(--sv-blue), var(--sv-cyan)) !important;
+    box-shadow: var(--sv-glow) !important;
+}
+
+/* --- Barre de navigation du client --- */
+#app nav,
+#app > div > nav {
+    background: linear-gradient(90deg, #060b16, #0d1830 50%, #060b16) !important;
+    border-bottom: 1px solid var(--sv-border) !important;
+    overflow-x: auto;
+}
+
+#app nav a { color: var(--sv-text-dim) !important; }
+#app nav a:hover { color: #fff !important; }
+
+/* --- Cartes du tableau de bord (serveurs, sous-pages) --- */
+#app a > div,
+#app main > div > div {
+    border-radius: 12px !important;
+}
+
+/* Pied de page */
+#app footer, #app footer a { color: var(--sv-text-dim) !important; }
