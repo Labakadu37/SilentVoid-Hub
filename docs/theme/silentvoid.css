@@ -1,0 +1,247 @@
+/* =========================================================
+   SilentVoid — thème Pterodactyl (noir / bleu dégradé)
+   À déposer dans : /var/www/pterodactyl/public/theme/silentvoid.css
+   ========================================================= */
+
+:root {
+    --sv-bg-0:      #05070d;   /* fond le plus sombre */
+    --sv-bg-1:      #0a0f1c;   /* fond des cartes */
+    --sv-bg-2:      #111a2e;   /* fond survolé / entêtes */
+    --sv-border:    #1c2942;
+    --sv-blue:      #2f7bff;   /* bleu principal */
+    --sv-blue-soft: #4f9dff;
+    --sv-blue-deep: #0b3d91;
+    --sv-cyan:      #35d0ff;
+    --sv-text:      #e6edf7;
+    --sv-text-dim:  #8fa3c0;
+    --sv-danger:    #ff4d63;
+    --sv-success:   #23c07d;
+    --sv-radius:    10px;
+    --sv-glow:      0 0 24px rgba(47, 123, 255, .25);
+}
+
+/* ---------- Fond global avec dégradé ---------- */
+html, body {
+    background: var(--sv-bg-0) !important;
+    color: var(--sv-text) !important;
+}
+
+body {
+    background-image:
+        radial-gradient(1200px 600px at 15% -10%, rgba(47, 123, 255, .18), transparent 60%),
+        radial-gradient(900px 500px at 85% 110%, rgba(53, 208, 255, .12), transparent 60%),
+        linear-gradient(160deg, #05070d 0%, #070c17 45%, #050912 100%) !important;
+    background-attachment: fixed !important;
+    font-family: "Inter", "Rubik", system-ui, sans-serif !important;
+}
+
+/* ---------- Barre de navigation ---------- */
+#pterodactyl nav,
+nav.navbar,
+.navbar-static-top,
+.main-header .navbar,
+.main-header .logo {
+    background: linear-gradient(90deg, #060b16 0%, #0d1830 50%, #060b16 100%) !important;
+    border-bottom: 1px solid var(--sv-border) !important;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, .6) !important;
+}
+
+/* Trait bleu lumineux sous la navbar */
+#pterodactyl nav::after,
+.main-header::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--sv-blue), var(--sv-cyan), var(--sv-blue), transparent);
+    opacity: .8;
+}
+
+/* ---------- Sidebar admin (AdminLTE) ---------- */
+.main-sidebar,
+.left-side,
+.sidebar {
+    background: linear-gradient(180deg, #070c18 0%, #0a1120 100%) !important;
+    border-right: 1px solid var(--sv-border) !important;
+}
+
+.sidebar-menu > li > a {
+    color: var(--sv-text-dim) !important;
+    border-left: 3px solid transparent !important;
+    transition: all .18s ease;
+}
+
+.sidebar-menu > li > a:hover,
+.sidebar-menu > li.active > a {
+    color: #fff !important;
+    background: linear-gradient(90deg, rgba(47, 123, 255, .22), transparent) !important;
+    border-left-color: var(--sv-blue) !important;
+}
+
+.sidebar-menu > li.header {
+    color: var(--sv-blue-soft) !important;
+    background: transparent !important;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+/* ---------- Cartes / conteneurs ---------- */
+.box,
+.panel,
+.content-box,
+[class*="ContentBox"],
+.card {
+    background: linear-gradient(180deg, rgba(17, 26, 46, .85), rgba(10, 15, 28, .95)) !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: var(--sv-radius) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .45) !important;
+    color: var(--sv-text) !important;
+}
+
+.box-header,
+.panel-heading {
+    background: transparent !important;
+    border-bottom: 1px solid var(--sv-border) !important;
+    color: #fff !important;
+}
+
+.box-header .box-title,
+.panel-title {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* ---------- Boutons ---------- */
+.btn-primary,
+button[type="submit"],
+.btn-success {
+    background: linear-gradient(135deg, var(--sv-blue-deep), var(--sv-blue)) !important;
+    border: 1px solid rgba(79, 157, 255, .5) !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    transition: all .18s ease !important;
+}
+
+.btn-primary:hover,
+button[type="submit"]:hover,
+.btn-success:hover {
+    background: linear-gradient(135deg, var(--sv-blue), var(--sv-cyan)) !important;
+    box-shadow: var(--sv-glow) !important;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #8c1226, var(--sv-danger)) !important;
+    border: 1px solid rgba(255, 77, 99, .45) !important;
+    border-radius: 8px !important;
+}
+
+.btn-default,
+.btn-secondary {
+    background: var(--sv-bg-2) !important;
+    border: 1px solid var(--sv-border) !important;
+    color: var(--sv-text) !important;
+    border-radius: 8px !important;
+}
+
+/* ---------- Champs de formulaire ---------- */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+.form-control {
+    background: #070d19 !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: 8px !important;
+    color: var(--sv-text) !important;
+    box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus {
+    border-color: var(--sv-blue) !important;
+    box-shadow: 0 0 0 3px rgba(47, 123, 255, .18) !important;
+    outline: none !important;
+}
+
+::placeholder { color: #55688a !important; }
+
+/* ---------- Tableaux ---------- */
+.table,
+table {
+    color: var(--sv-text) !important;
+    background: transparent !important;
+}
+
+.table > thead > tr > th,
+table thead th {
+    background: linear-gradient(180deg, #0f1a30, #0b1425) !important;
+    color: var(--sv-blue-soft) !important;
+    border-bottom: 1px solid var(--sv-border) !important;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 11px;
+}
+
+.table > tbody > tr > td,
+table tbody td {
+    border-color: rgba(28, 41, 66, .7) !important;
+}
+
+.table > tbody > tr:hover,
+table tbody tr:hover {
+    background: rgba(47, 123, 255, .07) !important;
+}
+
+/* ---------- Console (terminal du serveur) ---------- */
+.xterm,
+.terminal,
+[class*="TerminalDiv"] {
+    background: #04070f !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: var(--sv-radius) !important;
+}
+
+/* ---------- Barres de progression / graphiques ---------- */
+.progress-bar {
+    background: linear-gradient(90deg, var(--sv-blue), var(--sv-cyan)) !important;
+}
+
+/* ---------- Liens ---------- */
+a { color: var(--sv-blue-soft) !important; }
+a:hover { color: var(--sv-cyan) !important; }
+
+/* ---------- Écran de connexion ---------- */
+.login-page,
+.register-page,
+#login-position {
+    background:
+        radial-gradient(800px 400px at 50% 0%, rgba(47, 123, 255, .22), transparent 65%),
+        linear-gradient(160deg, #05070d, #081020) !important;
+}
+
+.login-box-body,
+.register-box-body {
+    background: rgba(10, 15, 28, .92) !important;
+    border: 1px solid var(--sv-border) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .65), var(--sv-glow) !important;
+    backdrop-filter: blur(6px);
+}
+
+/* ---------- Badges d'état ---------- */
+.label-success, .bg-green   { background: var(--sv-success) !important; }
+.label-danger,  .bg-red     { background: var(--sv-danger) !important; }
+.label-primary, .bg-blue    { background: var(--sv-blue) !important; }
+
+/* ---------- Barre de défilement ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #060a12; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--sv-blue-deep), var(--sv-blue));
+    border-radius: 8px;
+    border: 2px solid #060a12;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--sv-cyan); }
