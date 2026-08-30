@@ -1,0 +1,20 @@
+{
+  "name": "silentvoid-hub",
+  "version": "1.0.0",
+  "description": "Script Roblox",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Labakadu37/SilentVoid-Hub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Labakadu37/SilentVoid-Hub/issues"
+  },
+  "homepage": "https://github.com/Labakadu37/SilentVoid-Hub#readme"
+}

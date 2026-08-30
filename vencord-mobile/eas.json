@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 23.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "distribution": "store"
+    },
+    "android-dev": {
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "distribution": "internal",
+      "channel": "development"
+    },
+    "android-apk": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal",
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccount": "~/.android/keystore.json",
+        "track": "production"
+      }
+    }
+  }
+}

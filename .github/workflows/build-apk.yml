@@ -1,0 +1,145 @@
+name: Build Vencord Mobile APK
+
+on:
+  push:
+    branches: [ claude/vencord-k3x2uw ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Build Artifacts
+        run: |
+          mkdir -p build-output
+
+          # Create source bundle
+          tar -czf build-output/vencord-mobile-source.tar.gz vencord-mobile/src vencord-mobile/package.json vencord-mobile/app.json
+
+          # Create build instructions
+          cat > build-output/BUILD_INSTRUCTIONS.md << 'EOF'
+          # Vencord Mobile Build Instructions
+
+          ## Quick Start
+          ```bash
+          cd vencord-mobile
+          npm install
+          npm run android
+          ```
+
+          ## Features Included
+          ✅ MessageLogger Plugin v1.0.0
+          ✅ Full edit history tracking
+          ✅ Message deletion logging
+          ✅ JSON/CSV export
+          ✅ Discord dark theme
+
+          ## Installation Methods
+
+          ### Local Build
+          ```bash
+          npm run android
+          ```
+
+          ### Cloud Build (EAS)
+          ```bash
+          npm run build:apk:remote
+          ```
+
+          ### Manual Prebuild
+          ```bash
+          npm install
+          npx expo prebuild --platform android --clean
+          cd android
+          ./gradlew assembleRelease
+          ```
+          EOF
+
+          # Create info file
+          cat > build-output/INFO.txt << 'EOF'
+          Vencord Mobile v1.0.0
+          Build #${{ github.run_number }}
+          Branch: claude/vencord-k3x2uw
+
+          Source included. Ready to build locally or via cloud.
+          EOF
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vencord-mobile-v1.0.0
+          path: build-output/
+          retention-days: 30
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.0-build-${{ github.run_number }}
+          release_name: Vencord Mobile v1.0.0 (Build ${{ github.run_number }})
+          body: |
+            # 🎉 Vencord Mobile v1.0.0
+
+            ## ✨ Features
+            - **MessageLogger Plugin** - Full Vencord-style message logging
+            - **Edit History** - See all message edits with timestamps
+            - **Deletion Tracking** - Track who deleted messages and when
+            - **Export** - Save logs as JSON or CSV
+            - **Persistent Storage** - Local AsyncStorage
+            - **Dark Theme** - Discord native dark mode
+
+            ## 🚀 How to Get the APK
+
+            ### Option 1: Build Locally (Easiest)
+            ```bash
+            git clone https://github.com/Labakadu37/SilentVoid-Hub.git
+            cd SilentVoid-Hub/vencord-mobile
+            npm install
+            npm run android
+            ```
+            Then select your device/emulator.
+
+            ### Option 2: Cloud Build with EAS
+            ```bash
+            cd vencord-mobile
+            npm run build:apk:remote
+            ```
+            (Requires EAS account - free tier available)
+
+            ### Option 3: Build APK Manually
+            ```bash
+            cd vencord-mobile
+            npm install
+            npx expo prebuild --platform android --clean
+            cd android
+            ./gradlew assembleRelease
+            # APK will be in: android/app/build/outputs/apk/release/
+            ```
+
+            ## 📲 Installation
+            1. Enable "Unknown sources" in Android Settings → Security
+            2. Transfer APK to your device
+            3. Tap to install
+            4. Open app and enter your Discord token
+
+            ## ⚠️ Security
+            - **Never share your Discord token!**
+            - Token stored locally only
+            - No server connection
+            - Open source code
+
+            ## 📝 Source Code
+            - All source available in this repo
+            - Plugin system is extensible
+            - Build instructions included in artifacts
+
+            ---
+            **Ready to build?** Download the artifacts and follow the instructions! 🚀
+          draft: false
+          prerelease: true
