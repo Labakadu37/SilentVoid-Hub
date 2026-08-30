@@ -22,40 +22,49 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'vencord-mobile/package-lock.json'
 
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install dependencies
         working-directory: vencord-mobile
         run: npm ci
 
-      - name: Setup Expo token
-        run: |
-          echo "EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}" >> $GITHUB_ENV
-
-      - name: Setup Expo CLI
-        run: npm install -g eas-cli expo-cli
-
-      - name: Authenticate with EAS
-        run: |
-          echo "${{ secrets.EXPO_TOKEN }}" | eas login --non-interactive || true
-
-      - name: Build APK with EAS
+      - name: Prebuild for Android
         working-directory: vencord-mobile
         run: |
-          npx eas build \
-            --platform android \
-            --non-interactive \
-            --wait \
-            --output=vencord-mobile.apk
+          npm install -g expo-cli
+          npx expo prebuild --platform android --clean
+
+      - name: Build APK
+        working-directory: vencord-mobile
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Rename APK
+        working-directory: vencord-mobile/android/app/build/outputs/apk/release
+        run: |
+          mv app-release-unsigned.apk vencord-mobile.apk || mv app-release.apk vencord-mobile.apk || true
+          ls -la
 
       - name: Upload APK to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: vencord-mobile-apk
-          path: vencord-mobile/vencord-mobile.apk
+          path: vencord-mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: 'warn'
           retention-days: 30
 
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
-        if: startsWith(github.ref, 'refs/heads/claude/vencord-k3x2uw')
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -82,11 +91,11 @@ jobs:
 
       - name: Upload to Release
         uses: actions/upload-release-asset@v1
-        if: startsWith(github.ref, 'refs/heads/claude/vencord-k3x2uw')
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: vencord-mobile/vencord-mobile.apk
-          asset_name: vencord-mobile.apk
+          asset_path: vencord-mobile/android/app/build/outputs/apk/release/vencord-mobile.apk
+          asset_name: vencord-mobile-v1.0.0.apk
           asset_content_type: application/vnd.android.package-archive
