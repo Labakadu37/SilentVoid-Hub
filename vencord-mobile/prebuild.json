@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 28,
+            "targetSdkVersion": 34,
+            "compileSdkVersion": 34,
+            "kotlinVersion": "1.9.0",
+            "enableMultiDex": true,
+            "extraProguardRules": "-keep class com.vencordmobile.** { *; }"
+          }
+        }
+      ]
+    ]
+  }
+}
