@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useMessageStore } from '../store/messageStore';
 
 export interface MessagesListProps {
@@ -10,6 +10,7 @@ export interface MessagesListProps {
 export const MessagesList: React.FC<MessagesListProps> = ({ channelId, userId }) => {
   const messages = useMessageStore((state) => state.messages);
   const [filteredMessages, setFilteredMessages] = useState(messages);
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (channelId) {
@@ -21,22 +22,76 @@ export const MessagesList: React.FC<MessagesListProps> = ({ channelId, userId })
     }
   }, [messages, channelId, userId]);
 
-  const renderMessage = ({ item }: { item: any }) => (
-    <View style={styles.messageContainer}>
-      <View style={styles.messageHeader}>
-        <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.timestamp}>
-          {new Date(item.timestamp).toLocaleString()}
-        </Text>
-      </View>
-      <Text style={[styles.content, item.deleted && styles.deletedContent]}>
-        {item.deleted ? '[Message deleted]' : item.content}
-      </Text>
-      {item.edited && (
-        <Text style={styles.editedLabel}>(edited)</Text>
-      )}
-    </View>
-  );
+  const toggleMessageHistory = (messageId: string) => {
+    const newExpanded = new Set(expandedMessages);
+    if (newExpanded.has(messageId)) {
+      newExpanded.delete(messageId);
+    } else {
+      newExpanded.add(messageId);
+    }
+    setExpandedMessages(newExpanded);
+  };
+
+  const renderMessage = ({ item }: { item: any }) => {
+    const isDeleted = !!item.deletedAt;
+    const hasEdits = item.editHistory.length > 0;
+    const isExpanded = expandedMessages.has(item.id);
+
+    return (
+      <TouchableOpacity
+        style={styles.messageContainer}
+        onPress={() => hasEdits && toggleMessageHistory(item.id)}
+        activeOpacity={hasEdits ? 0.7 : 1}
+      >
+        <View style={styles.messageHeader}>
+          <Text style={styles.username}>{item.username}</Text>
+          <Text style={styles.timestamp}>
+            {new Date(item.timestamp).toLocaleString()}
+          </Text>
+        </View>
+
+        {isDeleted ? (
+          <View style={styles.deletedContainer}>
+            <Text style={styles.deletedContent}>
+              [Message deleted{item.deletedBy ? ` by ${item.deletedBy}` : ''}]
+            </Text>
+            {item.editHistory.length > 0 && (
+              <Text style={styles.hiddenContentLabel}>
+                (Had {item.editHistory.length + 1} edits before deletion)
+              </Text>
+            )}
+          </View>
+        ) : (
+          <>
+            <Text style={styles.content}>{item.content}</Text>
+            {hasEdits && (
+              <Text style={styles.editedLabel}>
+                (edited {item.editHistory.length}x) {isExpanded ? '▼' : '▶'}
+              </Text>
+            )}
+          </>
+        )}
+
+        {isExpanded && hasEdits && (
+          <View style={styles.editHistory}>
+            <Text style={styles.editHistoryTitle}>Edit History:</Text>
+            {item.editHistory.map((edit: any, idx: number) => (
+              <View key={idx} style={styles.editItem}>
+                <Text style={styles.editContent}>{edit.content}</Text>
+                <Text style={styles.editTime}>
+                  {new Date(edit.timestamp).toLocaleTimeString()}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.editItem}>
+              <Text style={styles.editContent}>{item.content}</Text>
+              <Text style={styles.editTime}>Current</Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <FlatList
@@ -78,13 +133,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4
   },
+  deletedContainer: {
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#2c2f33',
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ed4245'
+  },
   deletedContent: {
     color: '#72767d',
-    fontStyle: 'italic'
+    fontStyle: 'italic',
+    fontSize: 13
+  },
+  hiddenContentLabel: {
+    color: '#72767d',
+    fontSize: 11,
+    marginTop: 4
   },
   editedLabel: {
     color: '#72767d',
     fontSize: 11,
     marginTop: 4
+  },
+  editHistory: {
+    marginTop: 8,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: '#7289da'
+  },
+  editHistoryTitle: {
+    color: '#7289da',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  editItem: {
+    marginBottom: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#2c2f33',
+    borderRadius: 3
+  },
+  editContent: {
+    color: '#dcddde',
+    fontSize: 13
+  },
+  editTime: {
+    color: '#72767d',
+    fontSize: 10,
+    marginTop: 2
   }
 });

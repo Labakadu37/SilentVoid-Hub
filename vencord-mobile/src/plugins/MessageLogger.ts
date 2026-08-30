@@ -28,7 +28,14 @@ export class MessageLoggerPlugin {
       const savedData = await AsyncStorage.getItem(this.config.storageKey);
       if (savedData) {
         const messages = JSON.parse(savedData);
-        messages.forEach(msg => this.messageStore.getState().addMessage(msg));
+        messages.forEach(msg => this.messageStore.getState().addMessage({
+          id: msg.id,
+          channelId: msg.channelId,
+          userId: msg.userId,
+          username: msg.username,
+          content: msg.content,
+          timestamp: msg.timestamp
+        }));
       }
     } catch (error) {
       console.error('[MessageLogger] Failed to load stored messages:', error);
@@ -45,13 +52,10 @@ export class MessageLoggerPlugin {
   }) {
     if (!this.config.enabled) return;
 
-    const message = {
+    this.messageStore.getState().addMessage({
       ...data,
-      timestamp: data.timestamp || Date.now(),
-      deleted: false
-    };
-
-    this.messageStore.getState().addMessage(message);
+      timestamp: data.timestamp || Date.now()
+    });
     this.persistMessages();
   }
 
@@ -62,11 +66,28 @@ export class MessageLoggerPlugin {
     this.persistMessages();
   }
 
-  logMessageDelete(messageId: string) {
+  logMessageDelete(messageId: string, deletedBy?: string) {
     if (!this.config.enabled || !this.config.logDeletes) return;
 
-    this.messageStore.getState().deleteMessage(messageId);
+    this.messageStore.getState().deleteMessage(messageId, deletedBy);
     this.persistMessages();
+  }
+
+  getMessageHistory(messageId: string) {
+    const message = this.messageStore.getState().getMessage(messageId);
+    if (!message) return null;
+
+    return {
+      original: {
+        content: message.content,
+        timestamp: message.timestamp
+      },
+      edits: message.editHistory,
+      deleted: message.deletedAt ? {
+        timestamp: message.deletedAt,
+        deletedBy: message.deletedBy
+      } : null
+    };
   }
 
   private async persistMessages() {
@@ -93,10 +114,12 @@ export class MessageLoggerPlugin {
     const messages = this.messageStore.getState().messages;
 
     if (format === 'csv') {
-      const header = 'ID,ChannelID,UserID,Username,Content,Timestamp,Edited,Deleted\n';
-      const rows = messages.map(m =>
-        `"${m.id}","${m.channelId}","${m.userId}","${m.username}","${m.content.replace(/"/g, '""')}",${m.timestamp},${m.edited || ''},${m.deleted || false}`
-      ).join('\n');
+      const header = 'ID,ChannelID,UserID,Username,Current Content,Edit History,Deleted,Timestamp\n';
+      const rows = messages.map(m => {
+        const editHistory = m.editHistory.map(e => `${e.content}|${e.timestamp}`).join(';');
+        const deletedInfo = m.deletedAt ? `Deleted by ${m.deletedBy || 'unknown'} at ${m.deletedAt}` : '';
+        return `"${m.id}","${m.channelId}","${m.userId}","${m.username}","${m.content.replace(/"/g, '""')}","${editHistory}","${deletedInfo}",${m.timestamp}`;
+      }).join('\n');
       return header + rows;
     }
 
@@ -105,12 +128,18 @@ export class MessageLoggerPlugin {
 
   getStats() {
     const messages = this.messageStore.getState().messages;
+    const deletedCount = messages.filter(m => m.deletedAt).length;
+    const editedCount = messages.filter(m => m.editHistory.length > 0).length;
+
     return {
       totalMessages: messages.length,
       totalUsers: new Set(messages.map(m => m.userId)).size,
       totalChannels: new Set(messages.map(m => m.channelId)).size,
-      deletedMessages: messages.filter(m => m.deleted).length,
-      editedMessages: messages.filter(m => m.edited).length
+      deletedMessages: deletedCount,
+      editedMessages: editedCount,
+      averageEditsPerMessage: editedCount > 0
+        ? messages.reduce((sum, m) => sum + m.editHistory.length, 0) / editedCount
+        : 0
     };
   }
 }
