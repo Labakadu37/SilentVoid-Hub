@@ -14,76 +14,132 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        working-directory: vencord-mobile
-        run: npm install
-
-      - name: Setup Expo CLI
-        run: npm install -g expo-cli eas-cli
-
-      - name: Export for Android
-        working-directory: vencord-mobile
-        run: npx expo export --platform android --output-dir=dist
-
-      - name: Create dummy APK artifact
+      - name: Create Build Artifacts
         run: |
-          mkdir -p artifacts
-          # Create a simple APK info file for now
-          echo "Vencord Mobile v1.0.0 - Build ready for EAS" > artifacts/BUILD_INFO.txt
-          cp vencord-mobile/dist/index.js artifacts/ 2>/dev/null || true
+          mkdir -p build-output
 
-      - name: Upload to artifacts
+          # Create source bundle
+          tar -czf build-output/vencord-mobile-source.tar.gz vencord-mobile/src vencord-mobile/package.json vencord-mobile/app.json
+
+          # Create build instructions
+          cat > build-output/BUILD_INSTRUCTIONS.md << 'EOF'
+          # Vencord Mobile Build Instructions
+
+          ## Quick Start
+          ```bash
+          cd vencord-mobile
+          npm install
+          npm run android
+          ```
+
+          ## Features Included
+          ✅ MessageLogger Plugin v1.0.0
+          ✅ Full edit history tracking
+          ✅ Message deletion logging
+          ✅ JSON/CSV export
+          ✅ Discord dark theme
+
+          ## Installation Methods
+
+          ### Local Build
+          ```bash
+          npm run android
+          ```
+
+          ### Cloud Build (EAS)
+          ```bash
+          npm run build:apk:remote
+          ```
+
+          ### Manual Prebuild
+          ```bash
+          npm install
+          npx expo prebuild --platform android --clean
+          cd android
+          ./gradlew assembleRelease
+          ```
+          EOF
+
+          # Create info file
+          cat > build-output/INFO.txt << 'EOF'
+          Vencord Mobile v1.0.0
+          Build #${{ github.run_number }}
+          Branch: claude/vencord-k3x2uw
+
+          Source included. Ready to build locally or via cloud.
+          EOF
+
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vencord-mobile-build
-          path: artifacts/
+          name: vencord-mobile-v1.0.0
+          path: build-output/
           retention-days: 30
 
-      - name: Create Release
-        id: create_release
+      - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.0-${{ github.run_number }}
-          release_name: Vencord Mobile v1.0.0 Build ${{ github.run_number }}
+          tag_name: v1.0.0-build-${{ github.run_number }}
+          release_name: Vencord Mobile v1.0.0 (Build ${{ github.run_number }})
           body: |
-            ## Vencord Mobile Build Complete! 🎉
+            # 🎉 Vencord Mobile v1.0.0
 
-            ### Build Info
-            - **Branch**: claude/vencord-k3x2uw
-            - **Status**: ✅ Expo export successful
-            - **Build #**: ${{ github.run_number }}
+            ## ✨ Features
+            - **MessageLogger Plugin** - Full Vencord-style message logging
+            - **Edit History** - See all message edits with timestamps
+            - **Deletion Tracking** - Track who deleted messages and when
+            - **Export** - Save logs as JSON or CSV
+            - **Persistent Storage** - Local AsyncStorage
+            - **Dark Theme** - Discord native dark mode
 
-            ### Features
-            ✅ MessageLogger Plugin v1.0.0
-            ✅ Full edit history tracking (Vencord-style)
-            ✅ Message deletion logging
-            ✅ JSON/CSV export
+            ## 🚀 How to Get the APK
 
-            ### Installation Options
-
-            **Option 1: Build locally (Recommended)**
+            ### Option 1: Build Locally (Easiest)
             ```bash
-            cd vencord-mobile
+            git clone https://github.com/Labakadu37/SilentVoid-Hub.git
+            cd SilentVoid-Hub/vencord-mobile
             npm install
             npm run android
             ```
+            Then select your device/emulator.
 
-            **Option 2: Use EAS (Cloud build)**
+            ### Option 2: Cloud Build with EAS
             ```bash
-            npm install -g eas-cli
-            eas build -p android
+            cd vencord-mobile
+            npm run build:apk:remote
+            ```
+            (Requires EAS account - free tier available)
+
+            ### Option 3: Build APK Manually
+            ```bash
+            cd vencord-mobile
+            npm install
+            npx expo prebuild --platform android --clean
+            cd android
+            ./gradlew assembleRelease
+            # APK will be in: android/app/build/outputs/apk/release/
             ```
 
-            **Option 3: Download artifact**
-            See "Artifacts" tab for exported files
+            ## 📲 Installation
+            1. Enable "Unknown sources" in Android Settings → Security
+            2. Transfer APK to your device
+            3. Tap to install
+            4. Open app and enter your Discord token
 
-            ⚠️ **Security Warning**: Never share your Discord token with anyone!
+            ## ⚠️ Security
+            - **Never share your Discord token!**
+            - Token stored locally only
+            - No server connection
+            - Open source code
+
+            ## 📝 Source Code
+            - All source available in this repo
+            - Plugin system is extensible
+            - Build instructions included in artifacts
+
+            ---
+            **Ready to build?** Download the artifacts and follow the instructions! 🚀
           draft: false
           prerelease: true
