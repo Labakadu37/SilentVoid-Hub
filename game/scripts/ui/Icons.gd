@@ -54,6 +54,8 @@ static func draw(ci: CanvasItem, kind: String, r: Rect2, color: Color, outline: 
 		"chat": _chat(ci, r, color, outline)
 		"friends": _friends(ci, r, color, outline)
 		"lock": _lock(ci, r, color, outline)
+		"menu": _menu(ci, r, color)
+		"quest": _quest(ci, r, color, outline)
 		"skull": _skull(ci, r, color, outline)
 		"ball": _ball(ci, r, color, outline)
 		"left": _chevron(ci, r, color, true)
@@ -157,6 +159,21 @@ static func _friends(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
 	_shape(ci, r, [[0.46, 0.90], [0.52, 0.60], [0.88, 0.60], [0.96, 0.90]], color.darkened(0.2), o)
 	_disc(ci, r, 0.34, 0.30, 0.18, color, o)
 	_shape(ci, r, [[0.04, 0.92], [0.12, 0.58], [0.56, 0.58], [0.64, 0.92]], color, o)
+
+
+static func _menu(ci: CanvasItem, r: Rect2, color: Color) -> void:
+	for i in 3:
+		var y := 0.26 + float(i) * 0.24
+		ci.draw_line(_p(r, 0.14, y), _p(r, 0.86, y), UiSkin.OUTLINE, maxf(4.0, r.size.x * 0.20))
+		ci.draw_line(_p(r, 0.14, y), _p(r, 0.86, y), color, maxf(2.0, r.size.x * 0.13))
+
+
+static func _quest(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
+	_shape(ci, r, [[0.14, 0.14], [0.86, 0.14], [0.86, 0.94], [0.14, 0.94]], color, o)
+	_shape(ci, r, [[0.34, 0.04], [0.66, 0.04], [0.66, 0.22], [0.34, 0.22]], color.darkened(0.3), o)
+	var w := maxf(3.0, r.size.x * 0.11)
+	ci.draw_polyline(PackedVector2Array([_p(r, 0.30, 0.56), _p(r, 0.45, 0.70), _p(r, 0.72, 0.38)]),
+			UiSkin.OUTLINE, w, true)
 
 
 static func _lock(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:

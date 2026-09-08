@@ -20,8 +20,21 @@ var currencies := {
 	"trophies": 12480,
 	"gems": 148,
 	"coins": 3260,
+	"power": 9225,
 	"tickets": 12,
 }
+
+# Passe de combat
+var pass_level := 27
+var pass_xp := 795
+var pass_xp_needed := 950
+
+## Paliers de rang, comme les ligues de trophees.
+const RANKS := [
+	{"name": "BRONZE", "at": 0}, {"name": "ARGENT", "at": 2000},
+	{"name": "OR", "at": 5000}, {"name": "PLATINE", "at": 9000},
+	{"name": "DIAMANT", "at": 14000}, {"name": "MAITRE", "at": 20000},
+]
 
 var brawlers: Array[Dictionary] = []
 var modes: Array[Dictionary] = []
@@ -49,46 +62,71 @@ func _process(delta: float) -> void:
 
 func _build_brawlers() -> void:
 	brawlers = [
+		# ---- Le brawler signature du jeu -------------------------------------
 		{
-			"name": "VOID", "rarity": "LEGENDAIRE", "rarity_color": Color("ffb300"),
-			"power": 11, "trophies": 940, "unlocked": true, "price": 0,
-			"skin": Color("e8d5ff"), "suit": Color("6d28d9"), "accent": Color("22d3ee"),
-			"hair": Color("2b1e63"), "weapon": "staff", "hat": "hood",
-			"tagline": "Frappe a distance, invisible une seconde apres son tir.",
+			"name": "VOID", "rarity": "LEGENDAIRE", "rarity_color": Color("ffc531"),
+			"role": "ASSASSIN", "power": 11, "trophies": 940, "unlocked": true, "price": 0,
+			"skin": Color("e8d5ff"), "suit": Color("6d28d9"), "accent": Color("2fd9e0"),
+			"hair": Color("241a4e"), "weapon": "staff", "hat": "hood", "cape": true, "glow_eyes": true,
+			"hp": 3600, "damage": 360, "shots": 3, "reload": 1.5, "range": 6.5, "speed": 820,
+			"attack": "ECLAT DE NEANT",
+			"attack_desc": "Projette trois eclats en cone. Plus on est pres, plus ils touchent.",
+			"super": "FAILLE",
+			"super_desc": "Traverse les murs jusqu'au point vise et inflige des degats a l'arrivee.",
+			"gadget": "SILENCE",
+			"gadget_desc": "Devient inciblable pendant 1 seconde et recupere 1200 PV.",
+			"star_power": "OMBRE PORTEE",
+			"star_power_desc": "Invisible 1,5 seconde apres chaque Super.",
+			"tagline": "Frappe, disparait, recommence.",
 		},
 		{
-			"name": "SHELDY", "rarity": "MYTHIQUE", "rarity_color": Color("ff4d6d"),
-			"power": 9, "trophies": 812, "unlocked": true, "price": 0,
-			"skin": Color("f5c69a"), "suit": Color("e94560"), "accent": Color("ffd23f"),
-			"hair": Color("3b2a1a"), "weapon": "gun", "hat": "cap",
+			"name": "SHELDY", "rarity": "MYTHIQUE", "rarity_color": Color("f5476a"),
+			"role": "COMBATTANT", "power": 9, "trophies": 812, "unlocked": true, "price": 0,
+			"skin": Color("f5c69a"), "suit": Color("f5476a"), "accent": Color("ffc531"),
+			"hair": Color("3b2a1a"), "weapon": "gun", "hat": "cap", "cape": false,
+			"hp": 4200, "damage": 300, "shots": 5, "reload": 1.4, "range": 5.0, "speed": 770,
+			"attack": "GERBE DE PLOMB", "super": "DOUBLE CANON",
+			"gadget": "RECUL", "star_power": "CHARGEUR RAPIDE",
 			"tagline": "Fusil a dispersion, redoutable au corps a corps.",
 		},
 		{
-			"name": "BRUTUS", "rarity": "EPIQUE", "rarity_color": Color("a855f7"),
-			"power": 8, "trophies": 655, "unlocked": true, "price": 0,
-			"skin": Color("c98a5b"), "suit": Color("ff8c1a"), "accent": Color("241a4e"),
-			"hair": Color("1a1238"), "weapon": "hammer", "hat": "helmet",
-			"tagline": "Tank. Encaisse tout et renvoie encore plus fort.",
+			"name": "BRUTUS", "rarity": "EPIQUE", "rarity_color": Color("9b5cf0"),
+			"role": "TANK", "power": 8, "trophies": 655, "unlocked": true, "price": 0,
+			"skin": Color("c98a5b"), "suit": Color("ff8a2b"), "accent": Color("2a3050"),
+			"hair": Color("161a33"), "weapon": "hammer", "hat": "helmet", "cape": false,
+			"hp": 7600, "damage": 1120, "shots": 1, "reload": 1.8, "range": 2.4, "speed": 720,
+			"attack": "COUP DE MASSE", "super": "ONDE DE CHOC",
+			"gadget": "SECOND SOUFFLE", "star_power": "PEAU DE FER",
+			"tagline": "Encaisse tout et renvoie encore plus fort.",
 		},
 		{
-			"name": "NOVA", "rarity": "SUPER RARE", "rarity_color": Color("3ba7ff"),
-			"power": 7, "trophies": 501, "unlocked": true, "price": 0,
-			"skin": Color("ffd9c0"), "suit": Color("22d3ee"), "accent": Color("ffffff"),
-			"hair": Color("ff4d6d"), "weapon": "bow", "hat": "hair",
-			"tagline": "Tir tendu longue portee. Fragile mais mortelle.",
+			"name": "NOVA", "rarity": "SUPER RARE", "rarity_color": Color("2fa8ff"),
+			"role": "SNIPER", "power": 7, "trophies": 501, "unlocked": true, "price": 0,
+			"skin": Color("ffd9c0"), "suit": Color("2fd9e0"), "accent": Color("ffffff"),
+			"hair": Color("f5476a"), "weapon": "bow", "hat": "hair", "cape": false,
+			"hp": 2800, "damage": 1500, "shots": 1, "reload": 1.9, "range": 10.0, "speed": 770,
+			"attack": "TIR TENDU", "super": "PLUIE DE FLECHES",
+			"gadget": "PAS DE COTE", "star_power": "OEIL DE LYNX",
+			"tagline": "Longue portee. Fragile mais mortelle.",
 		},
 		{
-			"name": "PIXO", "rarity": "RARE", "rarity_color": Color("3ddc84"),
-			"power": 6, "trophies": 320, "unlocked": true, "price": 0,
-			"skin": Color("ffe0b2"), "suit": Color("3ddc84"), "accent": Color("ffd23f"),
-			"hair": Color("2f2a3f"), "weapon": "fist", "hat": "cap",
-			"tagline": "Rapide, colle a l'adversaire et ne lache plus.",
+			"name": "PIXO", "rarity": "RARE", "rarity_color": Color("35d07f"),
+			"role": "RAPIDE", "power": 6, "trophies": 320, "unlocked": true, "price": 0,
+			"skin": Color("ffe0b2"), "suit": Color("35d07f"), "accent": Color("ffc531"),
+			"hair": Color("2a3050"), "weapon": "fist", "hat": "cap", "cape": false,
+			"hp": 3400, "damage": 220, "shots": 4, "reload": 1.0, "range": 3.2, "speed": 900,
+			"attack": "RAFALE DE POINGS", "super": "CHARGE",
+			"gadget": "SPRINT", "star_power": "SECOND POING",
+			"tagline": "Colle a l'adversaire et ne lache plus.",
 		},
 		{
-			"name": "ZENTY", "rarity": "CHROMATIQUE", "rarity_color": Color("22d3ee"),
-			"power": 1, "trophies": 0, "unlocked": false, "price": 950,
-			"skin": Color("d7f9ff"), "suit": Color("0ea5e9"), "accent": Color("ffd23f"),
-			"hair": Color("0b2545"), "weapon": "staff", "hat": "crown",
+			"name": "ZENTY", "rarity": "CHROMATIQUE", "rarity_color": Color("2fd9e0"),
+			"role": "SUPPORT", "power": 1, "trophies": 0, "unlocked": false, "price": 950,
+			"skin": Color("d7f9ff"), "suit": Color("2fa8ff"), "accent": Color("ffc531"),
+			"hair": Color("161a33"), "weapon": "staff", "hat": "crown", "cape": true,
+			"hp": 3000, "damage": 240, "shots": 3, "reload": 1.6, "range": 6.0, "speed": 790,
+			"attack": "ONDE DE SOIN", "super": "BOUCLIER D'EQUIPE",
+			"gadget": "RAPPEL", "star_power": "AURA",
 			"tagline": "Nouveau. Disponible dans l'offre de la boutique.",
 		},
 	]
@@ -166,6 +204,32 @@ func request_match() -> void:
 
 func start_match() -> void:
 	match_started.emit(current_mode())
+
+
+## Progression 0..1 a l'interieur du palier de rang courant.
+func rank_progress() -> float:
+	var t := int(currencies.get("trophies", 0))
+	for i in range(RANKS.size() - 1, -1, -1):
+		if t >= int(RANKS[i]["at"]):
+			if i == RANKS.size() - 1:
+				return 1.0
+			var lo := float(RANKS[i]["at"])
+			var hi := float(RANKS[i + 1]["at"])
+			return clampf((float(t) - lo) / maxf(hi - lo, 1.0), 0.0, 1.0)
+	return 0.0
+
+
+func rank_label() -> String:
+	var t := int(currencies.get("trophies", 0))
+	var name := str(RANKS[0]["name"])
+	for r in RANKS:
+		if t >= int(r["at"]):
+			name = str(r["name"])
+	return name
+
+
+func pass_progress() -> float:
+	return clampf(float(pass_xp) / maxf(float(pass_xp_needed), 1.0), 0.0, 1.0)
 
 
 # ---------------------------------------------------------------- utils

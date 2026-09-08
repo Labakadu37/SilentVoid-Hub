@@ -5,3 +5,5 @@ build/
 *.tmp
 # Cle de signature Android
 android/
+.tools/
+build/

@@ -2,31 +2,47 @@
 class_name UiSkin
 extends RefCounted
 ## Palette + fabriques de StyleBox. Un seul endroit pour changer toute la DA.
+##
+## Direction artistique : une arene couverte, bois chaud et panneaux verts,
+## eclairee par des projecteurs. Zero bleu de fond, coins assombris (vignette),
+## panneaux tres contrastes avec de gros contours noirs.
 
-# --- Fond ---------------------------------------------------------------
-const BG_TOP := Color("41288f")
-const BG_BOTTOM := Color("120a2b")
-const BG_GLOW := Color("7b4ae0")
+# --- Decor --------------------------------------------------------------
+const HALL_TOP := Color("357a44")
+const HALL := Color("276036")
+const HALL_DARK := Color("173a20")
+const FLOOR := Color("a76c33")
+const FLOOR_DARK := Color("87542a")
+const FLOOR_LIGHT := Color("c48d48")
+const SPOT := Color("fff2c0")
+const DUST := Color("ffe9a8")
 
 # --- Panneaux -----------------------------------------------------------
-const PANEL := Color("241a4e")
-const PANEL_DARK := Color("1a1238")
-const PANEL_LIGHT := Color("342a6e")
-const OUTLINE := Color("0d0720")
+const PANEL := Color("2a3050")
+const PANEL_DARK := Color("161a33")
+const PANEL_LIGHT := Color("3c456e")
+const OUTLINE := Color("0a0c18")
 
 # --- Accents ------------------------------------------------------------
-const GOLD := Color("ffd23f")
-const GOLD_DARK := Color("d98600")
-const GREEN := Color("3ddc84")
-const RED := Color("ff4d6d")
-const BLUE := Color("3ba7ff")
-const PURPLE := Color("a855f7")
-const ORANGE := Color("ff8c1a")
-const CYAN := Color("22d3ee")
+const GOLD := Color("ffc531")
+const GOLD_DARK := Color("e08a00")
+const ORANGE := Color("ff8a2b")
+const RED := Color("f5476a")
+const GREEN := Color("35d07f")
+const BLUE := Color("2fa8ff")
+const PURPLE := Color("9b5cf0")
+const CYAN := Color("2fd9e0")
+const CREAM := Color("fff3d6")
 
 # --- Texte --------------------------------------------------------------
 const TEXT := Color("ffffff")
-const TEXT_DIM := Color("b9aee0")
+const TEXT_DIM := Color("bcc3dd")
+
+## Couleurs de la foule / des confettis.
+const CROWD := [
+	Color("ff8a2b"), Color("f5476a"), Color("ffc531"), Color("35d07f"),
+	Color("2fa8ff"), Color("fff3d6"), Color("9b5cf0"),
+]
 
 static var _boxes := {}
 
@@ -73,5 +89,6 @@ static func currency_color(id: String) -> Color:
 		"trophies": return GOLD
 		"gems": return GREEN
 		"coins": return Color("ffb300")
+		"power": return PURPLE
 		"tickets": return CYAN
 	return TEXT

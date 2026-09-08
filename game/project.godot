@@ -7,6 +7,7 @@ config_version=5
 
 config/name="SilentVoid Brawl"
 config/description="Lobby style Brawl Stars / Stumble Guys"
+config/version="0.1.0"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -14,6 +15,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameState="*res://autoload/GameState.gd"
+Net="*res://autoload/Net.gd"
 
 [display]
 
@@ -27,3 +29,4 @@ window/handheld/orientation="landscape"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

@@ -53,18 +53,52 @@ static func rr(ci: CanvasItem, rect: Rect2, color: Color, radius: int,
 	ci.draw_style_box(UiSkin.box(color, radius, border, bcolor), rect)
 
 
+## Ombre portee sous un element : c'est elle qui donne le relief facon Supercell.
+static func shadow(ci: CanvasItem, rect: Rect2, radius: int, dy: float = 7.0,
+		alpha: float = 0.30) -> void:
+	rr(ci, Rect2(rect.position + Vector2(0.0, dy), rect.size), Color(0, 0, 0, alpha), radius)
+
+
+## Panneau complet : ombre + fond + gros contour + liseré clair en haut.
+static func card(ci: CanvasItem, rect: Rect2, color: Color = UiSkin.PANEL,
+		radius: int = 20, border: int = 5, dy: float = 7.0) -> void:
+	shadow(ci, rect, radius, dy)
+	rr(ci, rect, color, radius, border, UiSkin.OUTLINE)
+	var lip := Rect2(rect.position + Vector2(border + 2.0, border + 1.0),
+			Vector2(rect.size.x - (border + 2.0) * 2.0, clampf(rect.size.y * 0.18, 4.0, 16.0)))
+	ci.draw_style_box(UiSkin.box_top(Color(1, 1, 1, 0.10), maxi(radius - border, 2)), lip)
+
+
+## Banniere penchee (titres de section facon Brawl Stars).
+static func banner(ci: CanvasItem, rect: Rect2, color: Color, skew: float = 10.0) -> void:
+	var pts := PackedVector2Array([
+		rect.position + Vector2(skew, 0.0),
+		rect.position + Vector2(rect.size.x, 0.0),
+		rect.position + Vector2(rect.size.x - skew, rect.size.y),
+		rect.position + Vector2(0.0, rect.size.y)])
+	var sh := PackedVector2Array()
+	for p in pts:
+		sh.append(p + Vector2(0.0, 5.0))
+	ci.draw_colored_polygon(sh, Color(0, 0, 0, 0.28))
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	ci.draw_polyline(closed, UiSkin.OUTLINE, 7.0, true)
+	ci.draw_colored_polygon(pts, color)
+
+
 ## Bouton/pastille facon Supercell : une "levre" sombre dessous + une face + un reflet.
 static func chunky(ci: CanvasItem, rect: Rect2, color: Color, radius: int,
 		lip: float, pressed: bool = false, hovered: bool = false) -> Rect2:
 	var face_h := rect.size.y - lip
+	shadow(ci, rect, radius, 6.0, 0.26)
 	var lip_rect := Rect2(rect.position + Vector2(0.0, lip), Vector2(rect.size.x, face_h))
-	rr(ci, lip_rect, color.darkened(0.45), radius, 0)
+	rr(ci, lip_rect, color.darkened(0.42), radius, 5, UiSkin.OUTLINE)
 	var face := Rect2(rect.position + Vector2(0.0, lip if pressed else 0.0), Vector2(rect.size.x, face_h))
-	var fill := color.lightened(0.10) if hovered else color
-	rr(ci, face, fill, radius, 3, color.darkened(0.55))
+	var fill := color.lightened(0.12) if hovered else color
+	rr(ci, face, fill, radius, 5, UiSkin.OUTLINE)
 	# reflet sur la moitie haute
-	var gloss := Rect2(face.position + Vector2(5.0, 4.0), Vector2(face.size.x - 10.0, face.size.y * 0.44))
-	ci.draw_style_box(UiSkin.box_top(Color(1, 1, 1, 0.20), maxi(radius - 5, 2)), gloss)
+	var gloss := Rect2(face.position + Vector2(7.0, 6.0), Vector2(face.size.x - 14.0, face.size.y * 0.42))
+	ci.draw_style_box(UiSkin.box_top(Color(1, 1, 1, 0.24), maxi(radius - 6, 2)), gloss)
 	return face
 
 

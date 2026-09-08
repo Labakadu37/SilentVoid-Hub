@@ -1,17 +1,15 @@
 # SilentVoid-Hub
 
-Deux choses vivent dans ce depot :
-
 ## 🎮 `game/` — SilentVoid Brawl (Godot 4)
 
-Le jeu. On commence par le **lobby**, dans le style Brawl Stars / Stumble Guys :
-bandeau de monnaies, evenements, perso anime sur son estrade, gros bouton JOUER,
-barre de navigation et ecran de matchmaking.
+Le jeu. Lobby complet dans l'esprit Brawl Stars / Stumble Guys, multijoueur
+fonctionnel (vrais joueurs + bots en renfort) et export **APK Android**.
 
-👉 Tout est explique dans [`game/README.md`](game/README.md).
+👉 [`game/README.md`](game/README.md)
 
 ```bash
-godot --path game
+godot --path game        # jouer
+cd game && ./build.sh apk   # construire l'APK
 ```
 
 ## 📜 Scripts Roblox

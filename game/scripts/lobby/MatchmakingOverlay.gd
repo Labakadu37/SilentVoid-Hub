@@ -7,15 +7,10 @@ extends Control
 signal cancelled
 signal ready_to_play
 
-const NAMES := ["Kyro", "Mina", "Blaze", "Nox", "Pixel", "Sasha", "Ryu", "Wave", "Tako"]
-
 var mode: Dictionary = {}
 var _slots := 6
-var _filled := 1
 var _t := 0.0
 var _found := false
-var _fill_timer := 0.0
-var _next_fill := 0.6
 var _panel_rect := Rect2()
 var _cancel: ChunkyButton
 var _players: Array[Dictionary] = []
@@ -33,7 +28,7 @@ func _ready() -> void:
 	_cancel.title_size = 20
 	_cancel.corner_radius = 18
 	_cancel.lip = 8.0
-	_cancel.pressed.connect(func(): cancelled.emit())
+	_cancel.pressed.connect(func(): Net.cancel_match(); cancelled.emit())
 	add_child(_cancel)
 	resized.connect(_layout)
 	_layout()
@@ -43,17 +38,35 @@ func _ready() -> void:
 func start(m: Dictionary) -> void:
 	mode = m
 	_slots = int(m.get("slots", 6))
-	_filled = 1
 	_found = false
 	_t = 0.0
-	_fill_timer = 0.0
-	_next_fill = 0.5
 	_players.clear()
-	_players.append({"name": GameState.player_name, "me": true})
+	Net.roster_updated.connect(_on_roster)
+	Net.match_ready.connect(_on_match_ready)
+	Net.find_match(m)
 	modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, 0.2)
 	_layout()
+
+
+func _on_roster(roster: Array) -> void:
+	_players = []
+	for e in roster:
+		_players.append(e as Dictionary)
+	queue_redraw()
+
+
+func _on_match_ready(roster: Array) -> void:
+	_on_roster(roster)
+	_on_full()
+
+
+func _exit_tree() -> void:
+	if Net.roster_updated.is_connected(_on_roster):
+		Net.roster_updated.disconnect(_on_roster)
+	if Net.match_ready.is_connected(_on_match_ready):
+		Net.match_ready.disconnect(_on_match_ready)
 
 
 const CELL := Vector2(96, 94)
@@ -69,26 +82,17 @@ func _layout() -> void:
 		float(_rows) * CELL.y + float(_rows - 1) * GAP.y)
 
 	var w := clampf(grid_size.x + 80.0, 420.0, maxf(size.x * 0.86, 420.0))
-	var h := 118.0 + grid_size.y + 104.0
+	var h := 118.0 + grid_size.y + 122.0
 	_panel_rect = Rect2(Vector2((size.x - w) * 0.5, (size.y - h) * 0.5), Vector2(w, h))
 	_grid = Rect2(_panel_rect.position + Vector2((w - grid_size.x) * 0.5, 112.0), grid_size)
 	if _cancel:
 		_cancel.size = Vector2(210, 58)
-		_cancel.position = _panel_rect.position + Vector2((w - 210.0) * 0.5, h - 74.0)
+		_cancel.position = _panel_rect.position + Vector2((w - 210.0) * 0.5, h - 72.0)
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	_t += delta
-	if not _found:
-		_fill_timer += delta
-		if _fill_timer >= _next_fill and _filled < _slots:
-			_fill_timer = 0.0
-			_next_fill = randf_range(0.35, 0.9)
-			_players.append({"name": NAMES[randi() % NAMES.size()] + str(randi() % 90 + 10), "me": false})
-			_filled += 1
-			if _filled >= _slots:
-				_on_full()
 	queue_redraw()
 
 
@@ -104,7 +108,7 @@ func _draw() -> void:
 	var f := Painter.font(self)
 	self.draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.01, 0.09, 0.78))
 
-	Painter.rr(self, _panel_rect, UiSkin.PANEL, 26, 5, UiSkin.OUTLINE)
+	Painter.card(self, _panel_rect, UiSkin.PANEL, 24, 6, 9.0)
 	var col: Color = mode.get("color", UiSkin.PURPLE)
 	var head := Rect2(_panel_rect.position + Vector2(6, 6), Vector2(_panel_rect.size.x - 12.0, 54.0))
 	self.draw_style_box(UiSkin.box_top(col, 22), head)
@@ -126,8 +130,12 @@ func _draw() -> void:
 		if i < _players.size():
 			var p: Dictionary = _players[i]
 			var pc: Color = (UiSkin.GOLD if bool(p.get("me", false)) else col)
-			Painter.rr(self, r, pc.darkened(0.25), 16, 3, UiSkin.OUTLINE)
+			Painter.rr(self, r, pc.darkened(0.25), 16, 4, UiSkin.OUTLINE)
 			Icons.draw(self, "brawler", r.grow(-16.0), UiSkin.TEXT)
+			if bool(p.get("bot", false)):
+				var bt := Rect2(r.position + Vector2(r.size.x - 30.0, -6.0), Vector2(32, 18))
+				Painter.rr(self, bt, UiSkin.PANEL_LIGHT, 6, 3, UiSkin.OUTLINE)
+				Painter.text(self, f, bt, "BOT", 10, UiSkin.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER, 0)
 			Painter.text(self, f, Rect2(Vector2(cx, cy + CELL.y - 22.0), Vector2(CELL.x, 20.0)),
 					str(p.get("name", "")), 12, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 3)
 		else:
@@ -142,6 +150,11 @@ func _draw() -> void:
 		Painter.text(self, f, vs, "VS", 18, UiSkin.GOLD, HORIZONTAL_ALIGNMENT_CENTER, 4)
 
 	if not _found:
-		Painter.text(self, f, Rect2(Vector2(_panel_rect.position.x, _grid.position.y + _grid.size.y + 6.0),
+		var online := Net.is_online()
+		var status := "EN LIGNE - recherche de vrais joueurs" if online else "HORS LIGNE - des bots completent"
+		Painter.text(self, f, Rect2(Vector2(_panel_rect.position.x, _grid.position.y + _grid.size.y + 4.0),
 				Vector2(_panel_rect.size.x, 22.0)),
-				"%d / %d joueurs" % [_players.size(), _slots], 15, UiSkin.TEXT_DIM, HORIZONTAL_ALIGNMENT_CENTER, 0)
+				"%d / %d joueurs" % [_players.size(), _slots], 15, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 0)
+		Painter.text(self, f, Rect2(Vector2(_panel_rect.position.x, _grid.position.y + _grid.size.y + 24.0),
+				Vector2(_panel_rect.size.x, 20.0)),
+				status, 12, (UiSkin.GREEN if online else UiSkin.TEXT_DIM), HORIZONTAL_ALIGNMENT_CENTER, 0)

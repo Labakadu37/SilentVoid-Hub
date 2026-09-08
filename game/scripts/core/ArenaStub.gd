@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var f := Painter.font(self)
 	var col: Color = mode.get("color", UiSkin.PURPLE)
-	self.draw_rect(Rect2(Vector2.ZERO, size), UiSkin.BG_BOTTOM)
+	self.draw_rect(Rect2(Vector2.ZERO, size), UiSkin.PANEL_DARK)
 	Painter.glow(self, size * 0.5, size.y * 0.7, Color(col, 0.5))
 	Painter.text(self, f, Rect2(Vector2(0, size.y * 0.30), Vector2(size.x, 60)),
 			str(mode.get("name", "PARTIE")), 44, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 8)
