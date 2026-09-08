@@ -1,0 +1,7 @@
+# Dossier de cache/import genere par Godot
+.godot/
+# Exports
+build/
+*.tmp
+# Cle de signature Android
+android/

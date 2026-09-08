@@ -1,0 +1,102 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/lobby/Lobby.gd" id="1_lobby"]
+[ext_resource type="Script" path="res://scripts/lobby/Background.gd" id="2_bg"]
+[ext_resource type="Script" path="res://scripts/lobby/TopBar.gd" id="3_top"]
+[ext_resource type="Script" path="res://scripts/lobby/EventPanel.gd" id="4_events"]
+[ext_resource type="Script" path="res://scripts/lobby/BrawlerStage.gd" id="5_stage"]
+[ext_resource type="Script" path="res://scripts/lobby/PlayDock.gd" id="6_play"]
+[ext_resource type="Script" path="res://scripts/lobby/BottomNav.gd" id="7_nav"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+
+[node name="Background" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_bg")
+
+[node name="Stage" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 340.0
+offset_top = 76.0
+offset_right = -24.0
+offset_bottom = -228.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("5_stage")
+
+[node name="TopBar" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 68.0
+grow_horizontal = 2
+script = ExtResource("3_top")
+
+[node name="EventPanel" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 84.0
+offset_right = 316.0
+offset_bottom = -124.0
+grow_vertical = 2
+script = ExtResource("4_events")
+
+[node name="PlayDock" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -496.0
+offset_top = -230.0
+offset_right = -24.0
+offset_bottom = -122.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("6_play")
+
+[node name="BottomNav" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -108.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("7_nav")
+
+[node name="Overlays" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

@@ -1,0 +1,29 @@
+; SilentVoid Brawl — projet Godot 4
+; Editez ce fichier depuis Godot (Projet > Parametres) plutot qu'a la main.
+
+config_version=5
+
+[application]
+
+config/name="SilentVoid Brawl"
+config/description="Lobby style Brawl Stars / Stumble Guys"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameState="*res://autoload/GameState.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="landscape"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
