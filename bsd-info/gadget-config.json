@@ -1,6 +1,6 @@
 {
   "interaction": {
     "type": "script",
-    "path": "agent.js"
+    "path": "/data/local/tmp/bsd-info/agent.js"
   }
 }
