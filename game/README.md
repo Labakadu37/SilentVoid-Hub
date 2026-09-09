@@ -130,6 +130,23 @@ Ils sont assembles a partir de formes primitives (spheres, capsules, boites)
 par `scripts/brawler/BrawlerModel3D.gd` — aucun fichier de modele a fournir, et
 un nouveau brawler ne demande qu'une entree de plus dans `GameState`.
 
+### Brancher un vrai modele 3D
+
+Un brawler peut fournir un fichier au lieu d'etre construit en code : ajoute une
+cle `model` dans son entree `GameState` et le reste suit (mise a l'echelle sur la
+hauteur des autres, pose au sol, contour cartoon ajoute sur toutes ses surfaces).
+
+```gdscript
+{"name": "ROXA", "model": "res://assets/models/roxa.glb", ...}
+```
+
+`.obj` (un maillage) et `.glb` / `.gltf` (une scene entiere, plusieurs
+maillages) sont geres. C'est la porte d'entree pour un modele sculpte dans
+Blender le jour ou tu en auras un : les primitives ci-dessous plafonnent, elles
+ne remplaceront jamais un vrai modeleur.
+
+### Construction en code
+
 Deux regles, apprises en corrigeant une premiere version ratee :
 
 1. **C'est un humain.** Nuque, oreilles, nez, cheveux coiffes, membres en deux

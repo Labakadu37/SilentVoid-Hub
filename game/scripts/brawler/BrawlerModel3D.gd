@@ -161,6 +161,14 @@ func build(data: Dictionary) -> void:
 		c.queue_free()
 	parts.clear()
 
+	# Un brawler peut fournir un vrai modele 3D ("model": "res://.../x.obj").
+	# Dans ce cas on l'affiche tel quel, avec le meme contour cartoon, et on
+	# saute entierement la construction en primitives.
+	var model_path := str(data.get("model", ""))
+	if not model_path.is_empty() and ResourceLoader.exists(model_path):
+		_from_file(model_path, data)
+		return
+
 	body = Node3D.new()
 	body.name = "Body"
 	body.position = Vector3(0.0, WAIST_Y, 0.0)
@@ -180,6 +188,76 @@ func build(data: Dictionary) -> void:
 	# l'arme d'abord, elle donne les points de prise ; les bras suivent
 	var grips := _weapon(str(data.get("weapon", "gun")), accent, suit, locked)
 	_arms(suit, skin, grips)
+
+
+## Affiche un modele importe (.obj, .glb, .gltf, .fbx...), mis a l'echelle pour
+## occuper la meme hauteur que les brawlers construits en code, et pose au sol.
+##
+## Un .obj donne un Mesh, un .glb donne une scene entiere : les deux sont geres.
+## Le contour cartoon est ajoute par-dessus les materiaux du fichier, sur toutes
+## les surfaces trouvees, y compris dans les sous-noeuds.
+func _from_file(path: String, _data: Dictionary) -> void:
+	var res := load(path)
+	body = Node3D.new()
+	body.name = "Body"
+	add_child(body)
+
+	var holder := Node3D.new()
+	holder.name = "model"
+	body.add_child(holder)
+	parts["model"] = holder
+
+	if res is Mesh:
+		var mi := MeshInstance3D.new()
+		mi.mesh = res
+		holder.add_child(mi)
+	elif res is PackedScene:
+		holder.add_child((res as PackedScene).instantiate())
+	else:
+		push_warning("Modele illisible : %s" % path)
+		return
+
+	var meshes: Array[MeshInstance3D] = []
+	_collect_meshes(holder, meshes)
+	if meshes.is_empty():
+		push_warning("Aucun maillage dans %s" % path)
+		return
+
+	var outline_mat := StandardMaterial3D.new()
+	outline_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	outline_mat.albedo_color = OUTLINE
+	outline_mat.cull_mode = BaseMaterial3D.CULL_FRONT
+	outline_mat.grow = true
+	outline_mat.grow_amount = OUTLINE_WIDTH
+
+	var bounds := AABB()
+	var first := true
+	for mi in meshes:
+		var m := mi.mesh
+		if m == null:
+			continue
+		for i in m.get_surface_count():
+			var src := mi.get_active_material(i)
+			var dup: BaseMaterial3D = (src as BaseMaterial3D).duplicate() if src is BaseMaterial3D \
+					else StandardMaterial3D.new()
+			dup.next_pass = outline_mat
+			mi.set_surface_override_material(i, dup)
+		var b := mi.transform * m.get_aabb()
+		bounds = b if first else bounds.merge(b)
+		first = false
+
+	# on cale la hauteur sur celle des brawlers dessines en code
+	var k: float = 2.68 / maxf(bounds.size.y, 0.001)
+	holder.scale = Vector3(k, k, k)
+	holder.position = Vector3(-bounds.get_center().x * k, -bounds.position.y * k,
+			-bounds.get_center().z * k)
+
+
+static func _collect_meshes(node: Node, out: Array[MeshInstance3D]) -> void:
+	if node is MeshInstance3D:
+		out.append(node)
+	for c in node.get_children():
+		_collect_meshes(c, out)
 
 
 func _legs(pants: Color, skin: Color) -> void:

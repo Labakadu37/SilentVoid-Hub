@@ -1,0 +1,35 @@
+newmtl skin
+Kd 0.840 0.670 0.540
+Ka 0.05 0.05 0.05
+Ks 0.05 0.05 0.05
+d 1.0
+illum 1
+
+newmtl outfit
+Kd 0.360 0.420 0.290
+Ka 0.05 0.05 0.05
+Ks 0.05 0.05 0.05
+d 1.0
+illum 1
+
+newmtl accent
+Kd 0.710 0.360 0.180
+Ka 0.05 0.05 0.05
+Ks 0.05 0.05 0.05
+d 1.0
+illum 1
+
+newmtl metal
+Kd 0.270 0.270 0.290
+Ka 0.05 0.05 0.05
+Ks 0.05 0.05 0.05
+d 1.0
+illum 1
+
+newmtl wood
+Kd 0.240 0.160 0.100
+Ka 0.05 0.05 0.05
+Ks 0.05 0.05 0.05
+d 1.0
+illum 1
+
