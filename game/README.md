@@ -124,11 +124,26 @@ godot --headless --path game res://scenes/dev/NetSmokeTest.tscn -- --join 127.0.
 
 ## Les brawlers sont en 3D
 
-![brawlers](docs/brawlers.png)
+![idle](docs/idle.gif)
 
 Ils sont assembles a partir de formes primitives (spheres, capsules, boites)
 par `scripts/brawler/BrawlerModel3D.gd` — aucun fichier de modele a fournir, et
 un nouveau brawler ne demande qu'une entree de plus dans `GameState`.
+
+Deux regles, apprises en corrigeant une premiere version ratee :
+
+1. **C'est un humain.** Nuque, oreilles, nez, cheveux coiffes, membres en deux
+   segments avec coude et genou. Sans anatomie on obtient une mascotte informe.
+2. **Les mains tiennent l'arme.** On place d'abord l'arme et ses points de
+   prise, puis les bras vont chercher ces points (`_bone()` tend une capsule
+   entre deux articulations). Jamais l'inverse, sinon l'arme flotte a cote.
+
+Le buste, les bras et l'arme sont tous enfants d'un meme pivot : quand le
+brawler respire ou se balance, les mains ne quittent jamais la poignee.
+
+L'animation d'attente : rebond, appui d'un pied sur l'autre, respiration du
+torse, tete qui suit, et **clignement des yeux** — c'est le signal de vie le
+plus lisible, et celui qui manquait le plus.
 
 Le rendu "cartoon" tient a une astuce : chaque piece porte une seconde passe de
 materiau en **coque inversee** (`cull_front` + `grow`) peinte en noir. Ca dessine
@@ -142,7 +157,21 @@ au milieu du lobby 2D : seul le brawler est en volume, le decor reste dessine.
 Coiffes disponibles : `cap`, `helmet`, `hood`, `crown`, `hair` (queue de cheval).
 Armes : `gun`, `hammer`, `bow`, `staff`, `fist`.
 
-## Le premier brawler : VOID
+## Le brawler de depart : RIKA
+
+Humaine, fusil a pompe tenu a deux mains, veste teal et queue de cheval orange.
+C'est elle qu'on voit en lançant le jeu.
+
+| | |
+| --- | --- |
+| Role | COMBATTANTE — brawler de depart |
+| PV | 4200 |
+| Attaque | **DOUBLE CHARGE** — deux gerbes de plomb (5 x 300), tout touche au contact |
+| Super | **DEFERLANTE** — vide le chargeur et repousse ce qui est devant |
+| Gadget | **RECUL** — le tir suivant la propulse en arriere |
+| Pouvoir stellaire | **CHARGEUR RAPIDE** — recharge 15 % plus vite sur la derniere munition |
+
+## Le brawler legendaire : VOID
 
 | | |
 | --- | --- |

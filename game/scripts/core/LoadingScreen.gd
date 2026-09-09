@@ -12,6 +12,11 @@ signal finished
 const MIN_TIME := 1.6
 const NET_TIMEOUT := 3.0
 
+const LOGO_PATH := "res://assets/ui/logo.png"
+
+static var _logo: Texture2D = null
+static var _logo_checked := false
+
 const TIPS := [
 	"Le Vide ronge l'arene : ce n'est pas le decor, c'est le chrono.",
 	"Tuer ne rapporte aucun point. Ca fait juste perdre du terrain a l'autre.",
@@ -98,17 +103,23 @@ func _draw() -> void:
 				48, Color(UiSkin.PURPLE, 0.13 + float(i) * 0.03), 14.0 - float(i) * 1.6)
 	Painter.glow(self, c, size.y * 0.46, Color(UiSkin.CYAN, 0.30))
 
-	# emblème
-	var r := size.y * 0.10
-	self.draw_circle(c, r * 1.18, Color(0, 0, 0, 0.45))
-	self.draw_arc(c, r, 0.0, TAU, 48, UiSkin.CYAN, 6.0)
-	Icons.draw(self, "shard", Rect2(c - Vector2(r, r) * 0.72, Vector2(r, r) * 1.44), UiSkin.CYAN)
-
-	# titre
-	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.135), Vector2(size.x, 34)),
-			GameState.TITLE_TOP, 26, UiSkin.CYAN, HORIZONTAL_ALIGNMENT_CENTER, 6)
-	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.185), Vector2(size.x, 70)),
-			GameState.TITLE_MAIN, 60, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 9, UiSkin.OUTLINE, 4.0)
+	# logo du jeu (image fournie), sinon on retombe sur le titre dessine
+	var logo := _get_logo()
+	if logo != null:
+		var lw := minf(size.x * 0.52, 620.0)
+		var lh := lw * float(logo.get_height()) / float(logo.get_width())
+		var lr := Rect2(Vector2((size.x - lw) * 0.5, c.y - lh * 0.46), Vector2(lw, lh))
+		self.draw_texture_rect(logo, lr, false)
+	else:
+		var r := size.y * 0.10
+		self.draw_circle(c, r * 1.18, Color(0, 0, 0, 0.45))
+		self.draw_arc(c, r, 0.0, TAU, 48, UiSkin.CYAN, 6.0)
+		Icons.draw(self, "shard", Rect2(c - Vector2(r, r) * 0.72, Vector2(r, r) * 1.44), UiSkin.CYAN)
+		Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.135), Vector2(size.x, 34)),
+				GameState.TITLE_TOP, 26, UiSkin.CYAN, HORIZONTAL_ALIGNMENT_CENTER, 6)
+		Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.185), Vector2(size.x, 70)),
+				GameState.TITLE_MAIN, 60, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 9,
+				UiSkin.OUTLINE, 4.0)
 
 	# barre de progression
 	var bw := minf(size.x * 0.46, 520.0)
@@ -126,3 +137,14 @@ func _draw() -> void:
 	Painter.text(self, f, Rect2(Vector2(0, size.y - 26.0), Vector2(size.x - 14.0, 20)),
 			"v%s" % str(ProjectSettings.get_setting("application/config/version", "0.1.0")),
 			12, Color(1, 1, 1, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, 0)
+
+
+## Charge le logo une seule fois. Absent, l'ecran retombe sur le titre dessine.
+static func _get_logo() -> Texture2D:
+	if not _logo_checked:
+		_logo_checked = true
+		if ResourceLoader.exists(LOGO_PATH):
+			var res := load(LOGO_PATH)
+			if res is Texture2D:
+				_logo = res
+	return _logo
