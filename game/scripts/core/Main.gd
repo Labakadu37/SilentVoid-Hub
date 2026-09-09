@@ -2,7 +2,7 @@ extends Control
 ## Racine du jeu : gere le passage lobby <-> partie.
 ## Pour l'instant la partie est un ecran temoin, le lobby est la premiere brique.
 
-const LOBBY_SCENE := preload("res://scenes/lobby/Lobby.tscn")
+const LOBBY_PATH := "res://scenes/lobby/Lobby.tscn"
 const ARENA_SCENE := preload("res://scenes/ArenaStub.tscn")
 
 var _current: Node = null
@@ -13,7 +13,21 @@ func _ready() -> void:
 		return
 	_auto_join()
 	GameState.match_started.connect(_on_match_started)
-	show_lobby()
+	_boot()
+
+
+## Ecran de chargement, puis le lobby.
+func _boot() -> void:
+	var loader := LoadingScreen.new()
+	loader.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(loader)
+	loader.begin(LOBBY_PATH)
+	loader.finished.connect(func():
+		# on instancie la scene reellement chargee par l'ecran de chargement,
+		# sinon son travail est jete et la ressource reste en cache.
+		var packed := loader.get_loaded_scene()
+		loader.queue_free()
+		_swap((packed if packed != null else load(LOBBY_PATH)).instantiate()))
 
 
 ## `godot --path game -- --join 192.168.1.20 [port]` rejoint un serveur au demarrage.
@@ -21,6 +35,7 @@ func _auto_join() -> void:
 	var args := OS.get_cmdline_user_args()
 	var i := args.find("--join")
 	if i < 0 or i + 1 >= args.size():
+		Net.auto_connect()   # cas normal : le joueur n'a rien a configurer
 		return
 	var host := str(args[i + 1])
 	var port := Net.DEFAULT_PORT
@@ -46,7 +61,12 @@ func _start_dedicated_server() -> bool:
 
 
 func show_lobby() -> void:
-	_swap(LOBBY_SCENE.instantiate())
+	_swap((load(LOBBY_PATH) as PackedScene).instantiate())
+
+
+func _exit_tree() -> void:
+	if _current and is_instance_valid(_current):
+		_current.queue_free()
 
 
 func _on_match_started(mode: Dictionary) -> void:

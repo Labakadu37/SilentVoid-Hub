@@ -19,6 +19,12 @@ enum State { OFFLINE, CONNECTING, ONLINE, QUEUED, IN_MATCH }
 
 const DEFAULT_PORT := 8910
 const DEFAULT_HOST := "127.0.0.1"
+
+## Serveur officiel du jeu. Mets ici l'adresse de ton VPS (ex "brawl.mondomaine.fr")
+## et le jeu s'y connectera tout seul au demarrage, sans que le joueur ait rien a
+## taper. Laisse vide : le jeu reste jouable, les parties se remplissent de bots.
+const OFFICIAL_SERVER := ""
+const PREF_PATH := "user://server.txt"
 const MAX_CLIENTS := 64
 ## Delai avant que les bots completent la partie (secondes de recherche).
 const BOT_FILL_AFTER := 5.0
@@ -39,6 +45,42 @@ var _local_roster: Array = []
 var _local_mode: Dictionary = {}
 var _local_timer := 0.0
 var _searching := false
+
+
+## Adresse retenue : serveur perso du joueur s'il en a mis un, sinon l'officiel.
+func configured_server() -> String:
+	if FileAccess.file_exists(PREF_PATH):
+		var f := FileAccess.open(PREF_PATH, FileAccess.READ)
+		if f:
+			var t := f.get_as_text().strip_edges()
+			f.close()
+			if not t.is_empty():
+				return t
+	return OFFICIAL_SERVER
+
+
+func set_custom_server(value: String) -> void:
+	var f := FileAccess.open(PREF_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(value.strip_edges())
+		f.close()
+
+
+## Appelee au demarrage : le joueur n'a rien a faire.
+func auto_connect() -> void:
+	var addr := configured_server()
+	if addr.is_empty():
+		last_error = ""
+		_set_state(State.OFFLINE)
+		return
+	var host := addr
+	var port := DEFAULT_PORT
+	if addr.contains(":"):
+		var parts := addr.rsplit(":", true, 1)
+		host = parts[0]
+		if parts[1].is_valid_int():
+			port = int(parts[1])
+	connect_to_server(host, port)
 
 
 func _ready() -> void:
@@ -234,7 +276,7 @@ func _on_connected() -> void:
 
 
 func _on_connection_failed() -> void:
-	last_error = "Serveur injoignable : la partie se jouera avec des bots."
+	last_error = "Serveur injoignable. Les parties se remplissent de bots."
 	disconnect_from_server()
 
 

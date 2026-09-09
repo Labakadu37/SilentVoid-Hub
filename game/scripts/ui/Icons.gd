@@ -36,7 +36,19 @@ static func _disc(ci: CanvasItem, r: Rect2, cx: float, cy: float, rad: float, co
 
 
 ## Point d'entree unique : Icons.draw(self, "gem", rect, couleur)
+##
+## L'icone est dessinee deux fois : une copie sombre legerement decalee vers le
+## bas, puis la vraie par-dessus. Ca donne une epaisseur, au lieu de la decoupe
+## vectorielle parfaitement plate qui trahit tout de suite le rendu automatique.
 static func draw(ci: CanvasItem, kind: String, r: Rect2, color: Color, outline: bool = true) -> void:
+	var off := maxf(1.5, r.size.y * 0.07)
+	ci.draw_set_transform(Vector2(0.0, off), 0.0, Vector2.ONE)
+	_dispatch(ci, kind, r, color.darkened(0.55), outline)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_dispatch(ci, kind, r, color, outline)
+
+
+static func _dispatch(ci: CanvasItem, kind: String, r: Rect2, color: Color, outline: bool = true) -> void:
 	match kind:
 		"trophy": _trophy(ci, r, color, outline)
 		"gem": _gem(ci, r, color, outline)
@@ -55,6 +67,10 @@ static func draw(ci: CanvasItem, kind: String, r: Rect2, color: Color, outline: 
 		"friends": _friends(ci, r, color, outline)
 		"lock": _lock(ci, r, color, outline)
 		"menu": _menu(ci, r, color)
+		"anchor": _anchor(ci, r, color, outline)
+		"void": _void(ci, r, color, outline)
+		"shard": _shard(ci, r, color, outline)
+		"beacon": _beacon(ci, r, color, outline)
 		"quest": _quest(ci, r, color, outline)
 		"skull": _skull(ci, r, color, outline)
 		"ball": _ball(ci, r, color, outline)
@@ -159,6 +175,45 @@ static func _friends(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
 	_shape(ci, r, [[0.46, 0.90], [0.52, 0.60], [0.88, 0.60], [0.96, 0.90]], color.darkened(0.2), o)
 	_disc(ci, r, 0.34, 0.30, 0.18, color, o)
 	_shape(ci, r, [[0.04, 0.92], [0.12, 0.58], [0.56, 0.58], [0.64, 0.92]], color, o)
+
+
+## Ancre : l'objectif central de nos modes.
+static func _anchor(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
+	var w := maxf(3.0, r.size.x * 0.13)
+	_disc(ci, r, 0.5, 0.16, 0.11, color, o)
+	ci.draw_line(_p(r, 0.5, 0.24), _p(r, 0.5, 0.86), UiSkin.OUTLINE, w + 4.0)
+	ci.draw_line(_p(r, 0.5, 0.24), _p(r, 0.5, 0.86), color, w)
+	ci.draw_line(_p(r, 0.24, 0.36), _p(r, 0.76, 0.36), UiSkin.OUTLINE, w + 4.0)
+	ci.draw_line(_p(r, 0.24, 0.36), _p(r, 0.76, 0.36), color, w)
+	ci.draw_arc(_p(r, 0.5, 0.60), r.size.x * 0.34, 0.12 * PI, 0.88 * PI, 20, UiSkin.OUTLINE, w + 4.0)
+	ci.draw_arc(_p(r, 0.5, 0.60), r.size.x * 0.34, 0.12 * PI, 0.88 * PI, 20, color, w)
+
+
+## Le Vide : une spirale qui aspire.
+static func _void(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
+	_disc(ci, r, 0.5, 0.5, 0.46, color.darkened(0.55), o)
+	for i in 3:
+		var rad := r.size.x * (0.36 - float(i) * 0.10)
+		ci.draw_arc(_p(r, 0.5, 0.5), rad, float(i) * 1.1, float(i) * 1.1 + PI * 1.35, 22,
+				color, maxf(2.0, r.size.x * 0.09))
+	_disc(ci, r, 0.5, 0.5, 0.09, UiSkin.OUTLINE, false)
+
+
+## Eclat : le fragment que le Vide recrache.
+static func _shard(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
+	_shape(ci, r, [[0.5, 0.04], [0.80, 0.34], [0.66, 0.96], [0.34, 0.96], [0.20, 0.34]], color, o)
+	ci.draw_colored_polygon(_poly(r, [[0.5, 0.08], [0.74, 0.35], [0.5, 0.52], [0.26, 0.35]]),
+			color.lightened(0.38))
+
+
+## Balise : gele le Vide autour d'elle.
+static func _beacon(ci: CanvasItem, r: Rect2, color: Color, o: bool) -> void:
+	_shape(ci, r, [[0.38, 0.30], [0.62, 0.30], [0.70, 0.94], [0.30, 0.94]], color, o)
+	_disc(ci, r, 0.5, 0.24, 0.16, color.lightened(0.35), o)
+	for i in 2:
+		var rad := r.size.x * (0.28 + float(i) * 0.14)
+		ci.draw_arc(_p(r, 0.5, 0.24), rad, -PI * 0.85, -PI * 0.15, 14, color,
+				maxf(2.0, r.size.x * 0.07))
 
 
 static func _menu(ci: CanvasItem, r: Rect2, color: Color) -> void:

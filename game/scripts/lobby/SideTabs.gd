@@ -11,7 +11,7 @@ signal tab_pressed(id: String)
 @export var gap := 8.0
 @export var compact := false          # petit format (colonne de droite)
 
-var _buttons: Array[ChunkyButton] = []
+var _buttons: Array[IconTab] = []
 
 
 func setup(list: Array) -> void:
@@ -32,15 +32,12 @@ func _build() -> void:
 	_buttons.clear()
 	for i in tabs.size():
 		var t: Dictionary = tabs[i]
-		var b := ChunkyButton.new()
-		b.base_color = t.get("color", UiSkin.PANEL_LIGHT)
-		b.title = str(t.get("label", ""))
+		var b := IconTab.new()
+		b.accent = t.get("color", UiSkin.PURPLE)
+		b.label = str(t.get("label", ""))
 		b.icon_kind = str(t.get("icon", ""))
-		b.vertical = true
-		b.title_size = 13 if compact else 14
-		b.corner_radius = 16
-		b.lip = 7.0
 		b.badge = int(t.get("badge", 0))
+		b.compact = compact
 		b.size = tab_size
 		b.position = Vector2(0.0, float(i) * (tab_size.y + gap))
 		var id := str(t.get("id", ""))

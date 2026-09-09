@@ -37,7 +37,7 @@ func _ready() -> void:
 		s.base_color = Color(1, 1, 1, 0.16)
 		s.icon_kind = "plus"
 		s.icon_color = Color(1, 1, 1, 0.85)
-		s.corner_radius = 14
+		s.corner_radius = 11
 		s.lip = 5.0
 		var idx := i
 		s.pressed.connect(func(): team_slot_pressed.emit(idx))
@@ -62,7 +62,7 @@ func _arrow(kind: String) -> ChunkyButton:
 	b.base_color = UiSkin.PANEL_LIGHT
 	b.icon_kind = kind
 	b.icon_color = UiSkin.GOLD
-	b.corner_radius = 14
+	b.corner_radius = 11
 	b.lip = 6.0
 	add_child(b)
 	return b

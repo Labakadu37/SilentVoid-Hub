@@ -24,7 +24,7 @@ func _ready() -> void:
 	_play.base_color = UiSkin.GOLD
 	_play.title = "JOUER"
 	_play.title_size = 38
-	_play.corner_radius = 20
+	_play.corner_radius = 15
 	_play.lip = 10.0
 	_play.shine = true
 	_play.pressed.connect(func(): play_pressed.emit())
@@ -36,7 +36,7 @@ func _ready() -> void:
 	_quests.title = "QUETES"
 	_quests.vertical = true
 	_quests.title_size = 12
-	_quests.corner_radius = 16
+	_quests.corner_radius = 12
 	_quests.lip = 8.0
 	_quests.badge = 3
 	_quests.pressed.connect(func(): quests_pressed.emit())

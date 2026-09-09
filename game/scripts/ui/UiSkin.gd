@@ -21,7 +21,26 @@ const DUST := Color("ffe9a8")
 const PANEL := Color("2a3050")
 const PANEL_DARK := Color("161a33")
 const PANEL_LIGHT := Color("3c456e")
-const OUTLINE := Color("0a0c18")
+const OUTLINE := Color("120f22")
+
+## Contour d'un bouton : une version tres sombre de SA couleur, jamais du noir
+## pur. C'est ce qui evite l'effet "bloc vectoriel" trop propre.
+static func rim(color: Color) -> Color:
+	var c := Color.from_hsv(fposmod(color.h - 0.02, 1.0), minf(color.s * 1.05, 1.0),
+			maxf(color.v * 0.20, 0.06))
+	return c.lerp(Color("15101f"), 0.38)
+
+
+## Levre du bas d'un bouton. Ce n'est PAS la couleur assombrie : la teinte glisse
+## vers le chaud, comme le liseré orange sous le bouton jaune de Brawl Stars.
+static func lip(color: Color) -> Color:
+	return Color.from_hsv(fposmod(color.h - 0.048, 1.0),
+			minf(color.s * 1.18 + 0.06, 1.0), color.v * 0.66)
+
+
+## Liseré clair pose juste a l'interieur du contour.
+static func inner(color: Color) -> Color:
+	return Color.from_hsv(color.h, maxf(color.s * 0.72, 0.0), minf(color.v * 1.18 + 0.10, 1.0))
 
 # --- Accents ------------------------------------------------------------
 const GOLD := Color("ffc531")
@@ -77,6 +96,27 @@ static func box_top(color: Color, radius: int) -> StyleBoxFlat:
 	sb.anti_aliasing = true
 	_boxes[key] = sb
 	return sb
+
+
+## Comme box_top, mais arrondi en bas (ombrage du bas des boutons).
+static func box_bottom(color: Color, radius: int) -> StyleBoxFlat:
+	var key := "bot|%s|%d" % [color.to_html(), radius]
+	if _boxes.has(key):
+		return _boxes[key]
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = color
+	sb.corner_radius_bottom_left = radius
+	sb.corner_radius_bottom_right = radius
+	sb.corner_radius_top_left = int(radius * 0.35)
+	sb.corner_radius_top_right = int(radius * 0.35)
+	sb.anti_aliasing = true
+	_boxes[key] = sb
+	return sb
+
+
+## Vide le cache de StyleBox (appele a l'extinction du jeu).
+static func release_cache() -> void:
+	_boxes.clear()
 
 
 static func empty() -> StyleBoxEmpty:

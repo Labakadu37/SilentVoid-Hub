@@ -48,6 +48,12 @@ func _ready() -> void:
 	load_profile()
 
 
+func _exit_tree() -> void:
+	# les caches statiques vivent hors de l'arbre : on les libere explicitement
+	Painter.release_cache()
+	UiSkin.release_cache()
+
+
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -133,26 +139,41 @@ func _build_brawlers() -> void:
 
 
 func _build_modes() -> void:
+	# Nos modes, batis autour d'une seule idee : LE VIDE DEVORE L'ARENE.
+	# On ne gagne pas en tuant, on gagne en gardant du terrain.
 	modes = [
 		{
-			"id": "gems", "name": "RAZZIA DE GEMMES", "map": "Mine Hantee",
-			"color": Color("a855f7"), "icon": "gem", "team": "3v3", "slots": 6,
+			"id": "ancrage", "name": "ANCRAGE", "map": "Faille Nord",
+			"color": Color("2fd9e0"), "icon": "anchor", "team": "3v3", "slots": 6,
 			"timer": 3.0 * 3600.0 + 742.0, "reward": "Coffre", "special": false,
+			"goal": "Tiens les Ancres pour repousser le Vide chez l'adversaire.",
+			"rules": "Le Vide ronge l'arene depuis les bords. Chaque Ancre capturee le "
+				+ "freine de ton cote et l'accelere en face. Eliminer un adversaire ne "
+				+ "rapporte aucun point : ca lui coute 6 s, donc du terrain.",
 		},
 		{
-			"id": "ball", "name": "BRAWLBALL", "map": "Stade Central",
-			"color": Color("3ba7ff"), "icon": "ball", "team": "3v3", "slots": 6,
-			"timer": 1.0 * 3600.0 + 1256.0, "reward": "Coffre", "special": false,
-		},
-		{
-			"id": "solo", "name": "SURVIVANT", "map": "Zone Toxique",
-			"color": Color("ff4d6d"), "icon": "skull", "team": "SOLO", "slots": 10,
+			"id": "souffle", "name": "DERNIER SOUFFLE", "map": "Le Cratere",
+			"color": Color("f5476a"), "icon": "void", "team": "SOLO", "slots": 10,
 			"timer": 5.0 * 3600.0 + 88.0, "reward": "Coffre", "special": false,
+			"goal": "Dix joueurs, une arene qui retrecit. Le dernier debout gagne.",
+			"rules": "Chacun porte une Balise a usage unique : elle gele le Vide pendant "
+				+ "8 s dans un petit rayon. Savoir quand la poser vaut mieux que savoir viser.",
 		},
 		{
-			"id": "heist", "name": "BRAQUAGE", "map": "Coffre-Fort",
-			"color": Color("ff8c1a"), "icon": "coin", "team": "3v3", "slots": 6,
+			"id": "fracture", "name": "FRACTURE", "map": "Les Ruines",
+			"color": Color("ff8a2b"), "icon": "shard", "team": "3v3", "slots": 6,
+			"timer": 1.0 * 3600.0 + 1256.0, "reward": "Coffre", "special": false,
+			"goal": "Une seule Ancre au centre. Celui qui la lache recule.",
+			"rules": "Le Vide pousse toujours vers l'equipe qui ne tient pas l'Ancre. "
+				+ "Pas de temps mort : des qu'une equipe est acculee, la manche tombe.",
+		},
+		{
+			"id": "collecte", "name": "COLLECTE", "map": "Derive",
+			"color": Color("35d07f"), "icon": "beacon", "team": "3v3", "slots": 6,
 			"timer": 2.0 * 3600.0 + 410.0, "reward": "x2 Trophees", "special": true,
+			"goal": "Ramene les Eclats recraches par le Vide jusqu'a ton Ancre.",
+			"rules": "Chaque Eclat depose agrandit ton terrain. Mourir en fait tomber la "
+				+ "moitie sur place : porter beaucoup, c'est devenir une cible.",
 		},
 	]
 

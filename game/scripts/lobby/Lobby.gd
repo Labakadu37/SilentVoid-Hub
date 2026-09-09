@@ -16,14 +16,14 @@ var _net_panel: NetPanel = null
 
 
 func _ready() -> void:
-	left_tabs.tab_size = Vector2(132, 64)
+	left_tabs.tab_size = Vector2(128, 94)
 	left_tabs.setup([
 		{"id": "shop", "label": "BOUTIQUE", "icon": "shop", "color": UiSkin.ORANGE, "badge": 2},
 		{"id": "brawlers", "label": "BRAWLERS", "icon": "brawler", "color": UiSkin.PURPLE, "badge": 0},
 		{"id": "club", "label": "CLUB", "icon": "club", "color": UiSkin.GREEN, "badge": 0},
 	])
 	right_tabs.compact = true
-	right_tabs.tab_size = Vector2(92, 68)
+	right_tabs.tab_size = Vector2(96, 88)
 	right_tabs.setup([
 		{"id": "news", "label": "INFOS", "icon": "news", "color": UiSkin.BLUE, "badge": 1},
 		{"id": "friends", "label": "AMIS", "icon": "friends", "color": UiSkin.GREEN, "badge": 0},

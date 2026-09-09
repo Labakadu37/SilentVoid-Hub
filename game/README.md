@@ -6,6 +6,8 @@ s'exporte en **APK Android**.
 
 ![lobby](docs/lobby.png)
 
+![chargement](docs/loading.png)
+
 ## Lancer
 
 ```bash
@@ -25,9 +27,34 @@ Le script installe tout seul ce qui manque dans `game/.tools/` : Godot, les
 templates d'export, le SDK Android, un **JDK 17** (Godot 4.4 refuse les autres
 versions pour Android) et une cle de debug. Rien n'est installe sur le systeme.
 
+> Note : au demarrage, Godot affiche `ObjectDB instances leaked at exit` (un
+> objet). Ca vient de `ResourceLoader.load_threaded_request` utilise par l'ecran
+> de chargement, c'est signale a l'extinction du moteur et sans effet sur le jeu.
+>
 > Piege rencontre : sans `textures/vram_compression/import_etc2_astc=true` dans
 > `project.godot`, Godot refuse l'export Android **avec un message d'erreur vide**.
 > Le reglage est deja en place ici.
+
+## Le but du jeu
+
+**Le Vide devore l'arene. On ne gagne pas en tuant, on gagne en gardant du terrain.**
+
+C'est la seule regle qui compte, et elle change tout par rapport a un jeu de
+frags : eliminer un adversaire ne rapporte aucun point, ca lui coute simplement
+6 secondes de reapparition — donc du terrain. Le chrono, c'est le decor qui
+disparait.
+
+Les quatre modes en decoulent :
+
+| Mode | Format | Objectif |
+| --- | --- | --- |
+| **ANCRAGE** | 3v3 | Tenir les Ancres : chacune freine le Vide chez toi et l'accelere en face. |
+| **DERNIER SOUFFLE** | 10 joueurs solo | L'arene se referme. Une Balise a usage unique gele le Vide 8 s. |
+| **FRACTURE** | 3v3 | Une seule Ancre. Le Vide pousse toujours vers l'equipe qui ne la tient pas. |
+| **COLLECTE** | 3v3 | Ramener les Eclats recraches par le Vide. Mourir en fait tomber la moitie. |
+
+Tout est decrit dans `GameState._build_modes()` : chaque mode porte son `goal` et
+ses `rules`, affiches dans l'ecran de selection.
 
 ## L'interface
 
@@ -47,19 +74,37 @@ Le decor est une **arene couverte dessinee en code** : mur vert et lambris,
 banniere emblematique, projecteurs et leurs cones de lumiere, plancher bois en
 perspective, poussieres dans la lumiere, coins assombris.
 
+## Ecran de chargement
+
+Le jeu demarre sur un ecran de chargement (`scripts/core/LoadingScreen.gd`).
+La barre n'est pas decorative : 60 % suivent le chargement reel des scenes,
+40 % la tentative de connexion au serveur. Des astuces de jeu tournent en bas.
+
 ## Multijoueur
 
-Trois facons de jouer, toutes gerees par `autoload/Net.gd` :
+**Le joueur n'a aucune adresse a taper.** Le jeu se connecte tout seul au
+demarrage et le bouton JOUER cherche une partie, comme dans Brawl Stars.
+
+Pour que ca pointe vers ton serveur, une seule ligne a remplir dans
+`autoload/Net.gd` :
+
+```gdscript
+const OFFICIAL_SERVER := "brawl.mondomaine.fr:8910"
+```
+
+Laisse vide et le jeu reste jouable : les parties se remplissent de bots.
+Le panneau MULTIJOUEUR (bouton menu en haut a droite) affiche l'etat de la
+connexion ; l'adresse personnalisee est repliee derriere « Utiliser mon serveur »,
+pour ceux qui hebergent le leur.
+
+Sous le capot, `autoload/Net.gd` gere :
 
 ```bash
-# 1. Heberger un serveur (aucune interface, tourne sur un VPS ou un PC)
+# Heberger le serveur (aucune interface, tourne sur un VPS ou un PC)
 godot --headless --path game -- --server 8910
 
-# 2. Rejoindre depuis le jeu : bouton menu (en haut a droite) -> MULTIJOUEUR
-#    ou directement au lancement :
+# Forcer une adresse au lancement (debug)
 godot --path game -- --join 192.168.1.20 8910
-
-# 3. Sans serveur : le jeu reste jouable, des bots remplissent la partie.
 ```
 
 **La regle demandee est respectee** : on attend d'abord de vrais joueurs, et si
@@ -93,6 +138,26 @@ dessine par `scripts/ui/CharacterView.gd`.
 
 Cinq autres brawlers accompagnent VOID (SHELDY, BRUTUS, NOVA, PIXO, et ZENTY
 verrouille a 950 gemmes), chacun avec son role, ses stats et son apparence.
+
+## Les boutons
+
+Ils sont construits comme ceux de Supercell, pas comme des rectangles colores :
+
+1. un contour sombre **teinte dans la couleur du bouton** (jamais du noir pur) ;
+2. une **levre chaude** en dessous — la teinte glisse vers l'orange, elle n'est
+   pas seulement assombrie : c'est ce liseré orange sous le jaune qui fait
+   reconnaitre un bouton Brawl Stars ;
+3. une face en **degrade vertical** doux ;
+4. un **liseré clair** juste a l'interieur du bord ;
+5. un texte blanc a gros contour **plus une ombre portee**.
+
+Les coins restent volontairement peu arrondis (`rayon <= 26 % de la hauteur`) :
+c'est ce qui distingue un bouton de jeu d'une pilule d'interface web. Tout est
+dans `Painter.chunky()` et `UiSkin.rim() / lip() / inner()`.
+
+Les onglets des bords n'utilisent pas ce bouton : ce sont des `IconTab`, une
+tuile d'icone posee sur une plaque sombre. Varier les formes est ce qui enleve
+l'effet "grille de boutons generes".
 
 ## Zero asset a fournir
 

@@ -15,7 +15,7 @@ func _ready() -> void:
 	_back.base_color = UiSkin.GOLD
 	_back.title = "RETOUR AU LOBBY"
 	_back.title_size = 22
-	_back.corner_radius = 20
+	_back.corner_radius = 14
 	_back.lip = 9.0
 	_back.pressed.connect(func(): quit_requested.emit())
 	add_child(_back)

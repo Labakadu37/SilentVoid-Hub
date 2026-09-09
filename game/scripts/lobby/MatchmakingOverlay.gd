@@ -26,7 +26,7 @@ func _ready() -> void:
 	_cancel.base_color = UiSkin.RED
 	_cancel.title = "ANNULER"
 	_cancel.title_size = 20
-	_cancel.corner_radius = 18
+	_cancel.corner_radius = 13
 	_cancel.lip = 8.0
 	_cancel.pressed.connect(func(): Net.cancel_match(); cancelled.emit())
 	add_child(_cancel)

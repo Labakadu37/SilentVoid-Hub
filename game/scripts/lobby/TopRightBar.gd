@@ -26,7 +26,7 @@ func _ready() -> void:
 	_menu.base_color = UiSkin.PANEL_LIGHT
 	_menu.icon_kind = "menu"
 	_menu.icon_color = UiSkin.TEXT
-	_menu.corner_radius = 14
+	_menu.corner_radius = 11
 	_menu.lip = 6.0
 	_menu.badge = 4
 	_menu.pressed.connect(func(): menu_pressed.emit())

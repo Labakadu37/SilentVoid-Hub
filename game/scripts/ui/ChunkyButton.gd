@@ -24,7 +24,7 @@ extends Button
 	set(value):
 		icon_color = value
 		queue_redraw()
-@export var corner_radius: int = 18
+@export var corner_radius: int = 12
 @export var lip: float = 8.0
 @export var title_size: int = 24
 @export var subtitle_size: int = 14
@@ -37,6 +37,7 @@ extends Button
 
 var _hover := false
 var _shine_node: Control = null
+var _shine_tween: Tween = null
 
 
 func _ready() -> void:
@@ -85,15 +86,23 @@ func _setup_shine() -> void:
 	band.position = Vector2(-120, -size.y)
 	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_shine_node.add_child(band)
-	var tw := create_tween().set_loops()
-	tw.tween_property(band, "position:x", size.x + 120.0, 0.75).set_delay(1.8)
-	tw.tween_callback(func(): band.position.x = -120.0)
+	# tween infini : on le garde pour pouvoir l'arreter, sinon il survit au noeud
+	_shine_tween = create_tween().set_loops()
+	_shine_tween.tween_property(band, "position:x", size.x + 120.0, 0.75).set_delay(1.8)
+	_shine_tween.tween_callback(func(): band.position.x = -120.0)
+
+
+func _exit_tree() -> void:
+	if _shine_tween != null and _shine_tween.is_valid():
+		_shine_tween.kill()
+	_shine_tween = null
 
 
 func _draw() -> void:
 	var col := base_color if not disabled else base_color.darkened(0.4).lerp(Color("55507a"), 0.6)
 	var face := Painter.chunky(self, Rect2(Vector2.ZERO, size), col, corner_radius, lip, button_pressed, _hover)
 	var f := Painter.font(self)
+	var ol := maxi(4, int(float(title_size) * 0.16))   # contour proportionnel au corps
 	var pad := 12.0
 	var content := Rect2(face.position + Vector2(pad, 0), face.size - Vector2(pad * 2.0, 0))
 
@@ -104,7 +113,7 @@ func _draw() -> void:
 			Icons.draw(self, icon_kind, ir, icon_color)
 			Painter.text(self, f, Rect2(content.position + Vector2(0, content.size.y * 0.62),
 					Vector2(content.size.x, content.size.y * 0.30)), title, title_size, UiSkin.TEXT,
-					HORIZONTAL_ALIGNMENT_CENTER, 4)
+					HORIZONTAL_ALIGNMENT_CENTER, 4, UiSkin.OUTLINE, 2.0)
 		else:
 			Painter.text(self, f, content, title, title_size, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 4)
 	else:
@@ -118,11 +127,12 @@ func _draw() -> void:
 			if not centered:
 				text_rect = Rect2(content.position + Vector2(s + 10.0, 0), content.size - Vector2(s + 10.0, 0))
 		if subtitle.is_empty():
-			Painter.text(self, f, text_rect, title, title_size, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 5)
+			Painter.text(self, f, text_rect, title, title_size, UiSkin.TEXT,
+					HORIZONTAL_ALIGNMENT_CENTER, ol, UiSkin.OUTLINE, 3.0)
 		else:
 			Painter.text(self, f, Rect2(text_rect.position + Vector2(0, text_rect.size.y * 0.06),
 					Vector2(text_rect.size.x, text_rect.size.y * 0.52)), title, title_size,
-					UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 5)
+					UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, ol, UiSkin.OUTLINE, 3.0)
 			Painter.text(self, f, Rect2(text_rect.position + Vector2(0, text_rect.size.y * 0.56),
 					Vector2(text_rect.size.x, text_rect.size.y * 0.36)), subtitle, subtitle_size,
 					Color(1, 1, 1, 0.85), HORIZONTAL_ALIGNMENT_CENTER, 3)
