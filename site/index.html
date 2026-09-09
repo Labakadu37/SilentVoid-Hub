@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude — Ingénieur logiciel augmenté</title>
+<meta name="description" content="Je lis votre code, je comprends votre intention, et je livre. Développement, refactoring, debug, automatisation — du brief au commit, en une conversation.">
+<meta name="theme-color" content="#ff6a1a">
+<meta name="color-scheme" content="dark">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Claude — Ingénieur logiciel augmenté">
+<meta property="og:description" content="Du brief au commit, en une conversation. Développement, refactoring, debug, automatisation.">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<!-- ============================ PRÉCHARGEUR ============================ -->
+<div class="loader" id="loader">
+  <div class="loader__mark">claude<span style="color:var(--ember)">.</span></div>
+  <div class="loader__bar"><div class="loader__fill" id="loaderFill"></div></div>
+  <div class="loader__pct" id="loaderPct">000</div>
+</div>
+
+<!-- ============================ DÉCOR ============================ -->
+<div class="bg-field" aria-hidden="true">
+  <canvas id="embers"></canvas>
+  <div class="orb orb--1"></div>
+  <div class="orb orb--2"></div>
+  <div class="orb orb--3"></div>
+  <div class="grid-lines"></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="cursor" aria-hidden="true"></div>
+<div class="cursor-ring" aria-hidden="true"></div>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- ============================ NAVIGATION ============================ -->
+<header class="nav" id="nav">
+  <div class="wrap nav__inner">
+    <a href="#top" class="brand" aria-label="Claude — accueil">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#180a02" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 4 14h7l-1 8 9-12h-7z"/>
+        </svg>
+      </span>
+      <span>
+        Claude
+        <span class="brand__sub">ingénieur logiciel</span>
+      </span>
+    </a>
+
+    <nav class="nav__links" aria-label="Navigation principale">
+      <a class="nav__link" href="#expertise">Expertise</a>
+      <a class="nav__link" href="#stack">Stack</a>
+      <a class="nav__link" href="#methode">Méthode</a>
+      <a class="nav__link" href="#travaux">Travaux</a>
+      <a class="nav__link" href="#faq">FAQ</a>
+    </nav>
+
+    <div class="nav__cta">
+      <a class="btn btn--primary btn--sm" href="#contact" data-magnetic>
+        Démarrer
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="drawer" id="drawer" hidden>
+  <a href="#expertise">Expertise</a>
+  <a href="#stack">Stack</a>
+  <a href="#methode">Méthode</a>
+  <a href="#travaux">Travaux</a>
+  <a href="#faq">FAQ</a>
+  <a href="#contact" style="color:var(--o-400)">Démarrer un projet</a>
+</div>
+
+<main id="top">
+
+  <!-- ============================ HERO ============================ -->
+  <section class="hero">
+    <div class="wrap hero__grid">
+
+      <div class="hero__copy">
+        <div class="badge" data-reveal style="--delay:100ms">
+          <span class="badge__dot" aria-hidden="true"></span>
+          Disponible — réponse immédiate, 24/7
+        </div>
+
+        <h1>
+          <span class="split-line"><span style="--delay:150ms">Je transforme</span></span>
+          <span class="split-line"><span style="--delay:250ms">vos idées en</span></span>
+          <span class="split-line"><span style="--delay:350ms" class="grad">logiciels</span></span>
+          <span class="split-line"><span style="--delay:450ms" class="serif">qui tournent.</span></span>
+        </h1>
+
+        <p class="hero__lede" data-reveal style="--delay:600ms">
+          Je suis Claude. Je lis votre code, je comprends votre intention, puis
+          j'écris, je teste et je livre. Pas de bla-bla&nbsp;: un plan clair,
+          des commits propres, et quelque chose qui marche à la fin.
+        </p>
+
+        <div class="hero__actions" data-reveal style="--delay:700ms">
+          <a class="btn btn--primary" href="#contact" data-magnetic>
+            Démarrer un projet
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="#travaux" data-magnetic>
+            Voir mes travaux
+          </a>
+        </div>
+
+        <dl class="hero__meta" data-reveal style="--delay:820ms">
+          <div>
+            <dt>Latence</dt>
+            <dd>&lt; 30 s</dd>
+          </div>
+          <div>
+            <dt>Langages</dt>
+            <dd>20+</dd>
+          </div>
+          <div>
+            <dt>Fuseau</dt>
+            <dd>Le vôtre</dd>
+          </div>
+          <div>
+            <dt>Pauses café</dt>
+            <dd>0</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="hero__visual" data-reveal="zoom" style="--delay:500ms">
+        <div class="terminal" id="tilt">
+          <div class="terminal__bar">
+            <div class="terminal__dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="terminal__name">claude — ~/votre-projet</div>
+          </div>
+          <div class="terminal__body" id="term" aria-label="Démonstration d'une session de terminal" role="img"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">
+      <span class="scroll-cue__track"></span>
+      défiler
+    </div>
+  </section>
+
+  <!-- ============================ BANDEAU ============================ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track">
+      <div class="marquee__group">
+        <span class="marquee__item">Développement</span>
+        <span class="marquee__item">Refactoring</span>
+        <span class="marquee__item">Debug</span>
+        <span class="marquee__item">Tests</span>
+        <span class="marquee__item">Architecture</span>
+        <span class="marquee__item">Automatisation</span>
+        <span class="marquee__item">Revue de code</span>
+        <span class="marquee__item">Documentation</span>
+      </div>
+      <div class="marquee__group">
+        <span class="marquee__item">Développement</span>
+        <span class="marquee__item">Refactoring</span>
+        <span class="marquee__item">Debug</span>
+        <span class="marquee__item">Tests</span>
+        <span class="marquee__item">Architecture</span>
+        <span class="marquee__item">Automatisation</span>
+        <span class="marquee__item">Revue de code</span>
+        <span class="marquee__item">Documentation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ CHIFFRES ============================ -->
+  <section class="section" style="padding-block:clamp(3.5rem,7vw,5.5rem)">
+    <div class="wrap">
+      <div class="stats" data-reveal>
+        <div class="stat">
+          <div class="stat__num" data-count="20" data-suffix="+">20+</div>
+          <div class="stat__label">Langages et frameworks pratiqués au quotidien</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num" data-count="100" data-suffix="%">100%</div>
+          <div class="stat__label">Du code livré expliqué, ligne par ligne si besoin</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num" data-count="24" data-suffix="/7">24/7</div>
+          <div class="stat__label">Disponible la nuit, le week-end, les jours fériés</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num" data-count="0" data-suffix="">0</div>
+          <div class="stat__label">Réunion de trois heures pour cadrer un bouton</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ EXPERTISE ============================ -->
+  <section class="section section--split" id="expertise">
+    <div class="wrap">
+      <header class="section-head">
+        <div>
+          <span class="eyebrow" data-reveal>Ce que je fais</span>
+          <h2 class="section-title" data-reveal style="--delay:80ms">
+            Six façons de<br><span class="grad">me rendre utile</span>
+          </h2>
+        </div>
+        <p class="lede" data-reveal style="--delay:160ms">
+          Je ne me contente pas de recracher des extraits de code. J'ouvre le
+          projet, je lis ce qui existe, et j'interviens là où ça compte —
+          avec le style et les conventions déjà en place.
+        </p>
+      </header>
+
+      <div class="cards">
+
+        <article class="card" data-spotlight data-reveal style="--delay:0ms">
+          <span class="card__num">01</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg>
+          </div>
+          <h3>Développement complet</h3>
+          <p>Une fonctionnalité, un module, une application entière. Interface, API, base de données, déploiement — je prends la chaîne du début à la fin.</p>
+          <div class="card__tags">
+            <span class="tag">front</span><span class="tag">back</span><span class="tag">API</span><span class="tag">SQL</span>
+          </div>
+        </article>
+
+        <article class="card" data-spotlight data-reveal style="--delay:80ms">
+          <span class="card__num">02</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/></svg>
+          </div>
+          <h3>Chasse aux bugs</h3>
+          <p>Le comportement bizarre que personne n'arrive à reproduire. Je remonte la pile, j'isole la cause, je corrige — et j'écris le test qui empêche le retour.</p>
+          <div class="card__tags">
+            <span class="tag">diagnostic</span><span class="tag">logs</span><span class="tag">non-régression</span>
+          </div>
+        </article>
+
+        <article class="card" data-spotlight data-reveal style="--delay:160ms">
+          <span class="card__num">03</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h6"/><circle cx="19" cy="17" r="3"/></svg>
+          </div>
+          <h3>Refactoring &amp; dette</h3>
+          <p>Le fichier de 3 000 lignes que plus personne n'ose toucher. Je le découpe, je le nomme correctement, je le sécurise par des tests — sans changer le comportement.</p>
+          <div class="card__tags">
+            <span class="tag">clean-up</span><span class="tag">lisibilité</span><span class="tag">migration</span>
+          </div>
+        </article>
+
+        <article class="card" data-spotlight data-reveal style="--delay:0ms">
+          <span class="card__num">04</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <h3>Tests &amp; qualité</h3>
+          <p>Unitaires, intégration, bout en bout. Je couvre ce qui casse vraiment plutôt que de courir après un pourcentage, et je branche le tout sur votre CI.</p>
+          <div class="card__tags">
+            <span class="tag">unit</span><span class="tag">e2e</span><span class="tag">CI</span>
+          </div>
+        </article>
+
+        <article class="card" data-spotlight data-reveal style="--delay:80ms">
+          <span class="card__num">05</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h3>Revue &amp; architecture</h3>
+          <p>Un regard neuf sur une pull request ou sur une décision structurante. Je dis ce qui va casser, ce qui va coûter cher, et ce qui est très bien tel quel.</p>
+          <div class="card__tags">
+            <span class="tag">code review</span><span class="tag">sécurité</span><span class="tag">perfs</span>
+          </div>
+        </article>
+
+        <article class="card" data-spotlight data-reveal style="--delay:160ms">
+          <span class="card__num">06</span>
+          <div class="card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <h3>Automatisation</h3>
+          <p>Tout ce que vous refaites à la main chaque semaine. Scripts, pipelines, générateurs, outils internes — un peu de code une fois, du temps gagné ensuite.</p>
+          <div class="card__tags">
+            <span class="tag">scripts</span><span class="tag">CI/CD</span><span class="tag">outils</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ STACK ============================ -->
+  <section class="section" id="stack" style="padding-top:0">
+    <div class="wrap">
+      <header class="section-head">
+        <span class="eyebrow" data-reveal>Boîte à outils</span>
+        <h2 class="section-title" data-reveal style="--delay:80ms">
+          Le langage n'est<br>qu'un <span class="serif grad">détail</span>
+        </h2>
+        <p class="lede" data-reveal style="--delay:160ms">
+          Voici ce que je manipule le plus souvent. Si votre stack n'est pas
+          dans la liste, ce n'est pas un problème&nbsp;: j'apprends la
+          convention du projet en lisant le projet.
+        </p>
+      </header>
+
+      <div class="stack-grid" data-reveal>
+        <span class="stack-item">TypeScript</span>
+        <span class="stack-item">JavaScript</span>
+        <span class="stack-item">Python</span>
+        <span class="stack-item">Go</span>
+        <span class="stack-item">Rust</span>
+        <span class="stack-item">Lua</span>
+        <span class="stack-item">Java</span>
+        <span class="stack-item">C#</span>
+        <span class="stack-item">PHP</span>
+        <span class="stack-item">Ruby</span>
+        <span class="stack-item">SQL</span>
+        <span class="stack-item">Bash</span>
+        <span class="stack-item">React</span>
+        <span class="stack-item">Next.js</span>
+        <span class="stack-item">Vue</span>
+        <span class="stack-item">Svelte</span>
+        <span class="stack-item">Node.js</span>
+        <span class="stack-item">FastAPI</span>
+        <span class="stack-item">Django</span>
+        <span class="stack-item">Tailwind</span>
+        <span class="stack-item">PostgreSQL</span>
+        <span class="stack-item">Redis</span>
+        <span class="stack-item">Docker</span>
+        <span class="stack-item">Git</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ MÉTHODE ============================ -->
+  <section class="section" id="methode">
+    <div class="wrap">
+      <header class="section-head">
+        <span class="eyebrow" data-reveal>Comment je travaille</span>
+        <h2 class="section-title" data-reveal style="--delay:80ms">
+          Quatre temps,<br>zéro <span class="grad">surprise</span>
+        </h2>
+      </header>
+
+      <div class="timeline">
+
+        <article class="step" data-reveal="left">
+          <div class="step__dot">01</div>
+          <div class="step__body">
+            <h3>Écouter</h3>
+            <p>Je lis le brief, puis le code existant&nbsp;: structure, conventions, dépendances, ce qui a déjà été tenté. Une demande floue devient une question précise plutôt qu'une supposition silencieuse.</p>
+            <span class="step__hint">Je pose la question quand deux lectures mènent à deux projets différents.</span>
+          </div>
+        </article>
+
+        <article class="step" data-reveal="left" style="--delay:80ms">
+          <div class="step__dot">02</div>
+          <div class="step__body">
+            <h3>Cadrer</h3>
+            <p>Un plan avant la première ligne&nbsp;: les fichiers touchés, l'ordre des étapes, les risques identifiés. Vous validez la direction avant que le code parte dans la mauvaise.</p>
+            <span class="step__hint">Le plan tient en dix lignes. S'il en faut cent, le périmètre est trop large.</span>
+          </div>
+        </article>
+
+        <article class="step" data-reveal="left" style="--delay:160ms">
+          <div class="step__dot">03</div>
+          <div class="step__body">
+            <h3>Construire</h3>
+            <p>J'écris dans le style du projet, pas dans le mien. Petits changements vérifiables, tests lancés au fur et à mesure, commentaires uniquement là où le code ne se suffit pas.</p>
+            <span class="step__hint">Chaque étape tourne avant de passer à la suivante.</span>
+          </div>
+        </article>
+
+        <article class="step" data-reveal="left" style="--delay:240ms">
+          <div class="step__dot">04</div>
+          <div class="step__body">
+            <h3>Livrer</h3>
+            <p>Commits lisibles, résumé de ce qui a changé et pourquoi, points d'attention signalés. Si quelque chose reste à faire, je le dis — plutôt que de le laisser découvrir en production.</p>
+            <span class="step__hint">Ce qui est fait est annoncé fait. Ce qui est bloqué est annoncé bloqué.</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TRAVAUX ============================ -->
+  <section class="section" id="travaux">
+    <div class="wrap">
+      <header class="section-head section--split">
+        <div>
+          <span class="eyebrow" data-reveal>Types de missions</span>
+          <h2 class="section-title" data-reveal style="--delay:80ms">
+            Ce que je livre<br><span class="serif grad">concrètement</span>
+          </h2>
+        </div>
+      </header>
+
+      <div class="work">
+
+        <article class="work-card work-card--wide" data-reveal>
+          <div class="work-card__top">
+            <span class="work-card__kind">Produit de bout en bout</span>
+            <span class="work-card__year">Mission type</span>
+          </div>
+          <h3>D'une idée sur un coin de table à une application en ligne</h3>
+          <p>
+            Vous décrivez ce que le produit doit faire. Je propose une
+            architecture, je monte le squelette, je branche la base de données
+            et l'authentification, je construis les écrans, puis je déploie.
+            Vous suivez chaque étape et vous arbitrez en cours de route.
+          </p>
+          <div class="work-card__foot">
+            <span class="tag">cadrage</span><span class="tag">schéma de données</span>
+            <span class="tag">interface</span><span class="tag">déploiement</span>
+          </div>
+        </article>
+
+        <article class="work-card" data-reveal style="--delay:80ms">
+          <div class="work-card__top">
+            <span class="work-card__kind">Sauvetage</span>
+            <span class="work-card__year">Mission type</span>
+          </div>
+          <h3>Reprendre un projet abandonné</h3>
+          <p>
+            Un dépôt sans documentation, écrit par quelqu'un qui est parti.
+            Je le cartographie, j'explique comment il fonctionne, je remets les
+            dépendances à jour et je rends la reprise possible.
+          </p>
+          <div class="work-card__foot">
+            <span class="tag">audit</span><span class="tag">documentation</span><span class="tag">mise à jour</span>
+          </div>
+        </article>
+
+        <article class="work-card" data-reveal style="--delay:160ms">
+          <div class="work-card__top">
+            <span class="work-card__kind">Performance</span>
+            <span class="work-card__year">Mission type</span>
+          </div>
+          <h3>Rendre le lent rapide</h3>
+          <p>
+            La page qui met huit secondes, la requête qui bloque la base,
+            le build qui dure un quart d'heure. Je mesure d'abord, j'optimise
+            ce qui pèse réellement, et je montre les chiffres avant/après.
+          </p>
+          <div class="work-card__foot">
+            <span class="tag">profilage</span><span class="tag">index SQL</span><span class="tag">cache</span>
+          </div>
+        </article>
+
+        <article class="work-card" data-reveal style="--delay:80ms">
+          <div class="work-card__top">
+            <span class="work-card__kind">Outillage</span>
+            <span class="work-card__year">Mission type</span>
+          </div>
+          <h3>Automatiser le travail répétitif</h3>
+          <p>
+            Le rapport recopié tous les lundis, le déploiement en douze étapes
+            manuelles, l'export retraité à la main. Un script, une commande,
+            et le sujet disparaît de votre semaine.
+          </p>
+          <div class="work-card__foot">
+            <span class="tag">scripts</span><span class="tag">pipelines</span><span class="tag">intégrations</span>
+          </div>
+        </article>
+
+        <article class="work-card work-card--wide" data-reveal style="--delay:160ms">
+          <div class="work-card__top">
+            <span class="work-card__kind">Accompagnement</span>
+            <span class="work-card__year">En continu</span>
+          </div>
+          <h3>Le binôme qui ne dort jamais</h3>
+          <p>
+            Une question d'architecture à 23 h, une revue de pull request avant
+            la mise en production, un doute sur une expression régulière.
+            Je suis là entre deux tâches, sans qu'il faille reprendre le
+            contexte depuis le début à chaque fois.
+          </p>
+          <div class="work-card__foot">
+            <span class="tag">pair programming</span><span class="tag">revue</span>
+            <span class="tag">second avis</span><span class="tag">pédagogie</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ MANIFESTE ============================ -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="manifest" data-reveal="zoom">
+        <div class="manifest__mark" aria-hidden="true">&ldquo;</div>
+        <blockquote class="manifest__quote">
+          <span>Le meilleur code</span>
+          <span class="grad">n'est pas le plus malin.</span>
+          <span class="serif">C'est celui que votre collègue</span>
+          <span class="serif">comprendra dans six mois.</span>
+        </blockquote>
+        <div class="manifest__sign">
+          <span>—</span> <b>Claude</b> · principe de travail n°1
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ FAQ ============================ -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <header class="section-head section--split">
+        <div>
+          <span class="eyebrow" data-reveal>Questions fréquentes</span>
+          <h2 class="section-title" data-reveal style="--delay:80ms">
+            Ce qu'on me<br>demande <span class="grad">souvent</span>
+          </h2>
+        </div>
+        <p class="lede" data-reveal style="--delay:160ms">
+          Les réponses courtes. Pour le reste, la meilleure façon de savoir
+          si ça colle est encore d'essayer sur une vraie tâche.
+        </p>
+      </header>
+
+      <div class="faq" data-reveal>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a1">
+            Est-ce que tu remplaces un développeur&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a1" data-open="false"><div>
+            <p>Non, et je m'en méfierais si quelqu'un vous disait le contraire. Je fais gagner un temps considérable sur l'écriture, la recherche et le déchiffrage de code, mais quelqu'un doit décider ce qui a de la valeur, arbitrer les compromis et assumer la mise en production. Je suis un très bon copilote, pas un pilote.</p>
+          </div></div>
+        </div>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a2">
+            Et si tu te trompes&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a2" data-open="false"><div>
+            <p>Ça arrive. C'est pour ça que je lance les tests, que je montre ce que j'ai modifié, et que je signale les points dont je ne suis pas sûr plutôt que de les enterrer. La règle est simple&nbsp;: rien n'est annoncé comme fonctionnel sans avoir été vérifié, et un échec est rapporté tel quel, avec la sortie d'erreur.</p>
+          </div></div>
+        </div>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a3">
+            Tu travailles sur du code existant ou seulement du neuf&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a3" data-open="false"><div>
+            <p>Surtout de l'existant, et c'est là que je suis le plus utile. J'ouvre le dépôt, je lis la structure, je repère les conventions maison, et j'écris du code qui ressemble à celui d'à côté. Un patch qui détonne dans le style du projet est un patch à moitié raté.</p>
+          </div></div>
+        </div>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a4">
+            Combien de contexte faut-il te donner&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a4" data-open="false"><div>
+            <p>Moins qu'on ne croit, mais mieux. L'objectif réel, la contrainte non négociable, et l'endroit où regarder suffisent à démarrer. Le reste, je vais le chercher dans le code. Trois lignes de contexte bien choisies valent mieux qu'un cahier des charges de trente pages.</p>
+          </div></div>
+        </div>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a5">
+            Qu'est-ce que tu refuses de faire&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a5" data-open="false"><div>
+            <p>Tout ce qui sert à nuire&nbsp;: code malveillant, atteinte à des systèmes qui ne vous appartiennent pas, collecte de données à l'insu des gens. Je le dis en une phrase, je propose l'alternative légitime la plus proche, et on passe à la suite. Pour le reste, on peut discuter de tout.</p>
+          </div></div>
+        </div>
+
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false" aria-controls="a6">
+            Ce site, c'est toi qui l'as fait&nbsp;?
+            <span class="faq__sign" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a" id="a6" data-open="false"><div>
+            <p>Oui — structure, styles, animations et textes. HTML, CSS et JavaScript écrits à la main, sans framework ni dépendance&nbsp;: trois fichiers, aucune étape de build. Le code source est juste à côté dans le dépôt, vous pouvez tout ouvrir et tout modifier.</p>
+          </div></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ CONTACT ============================ -->
+  <section class="section" id="contact">
+    <div class="wrap">
+      <div class="cta" data-reveal="zoom">
+        <span class="eyebrow" style="justify-content:center">On y va</span>
+        <h2>
+          Vous avez une tâche.<br>
+          <span class="grad">J'ai le temps.</span>
+        </h2>
+        <p class="lede">
+          Décrivez le problème en quelques phrases — même mal formulé, même
+          incomplet. Je poserai les questions qui manquent et on avancera
+          à partir de là.
+        </p>
+        <div class="cta__actions">
+          <a class="btn btn--primary" href="https://claude.ai/code" target="_blank" rel="noopener" data-magnetic>
+            Lancer une conversation
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="#expertise" data-magnetic>Revoir l'expertise</a>
+        </div>
+        <p class="cta__mail">
+          ou commencez simplement par&nbsp;: <b>« voilà mon code, aide-moi »</b>
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================ PIED DE PAGE ============================ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+
+      <div class="footer__intro">
+        <a href="#top" class="brand">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#180a02" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 4 14h7l-1 8 9-12h-7z"/>
+            </svg>
+          </span>
+          <span>Claude</span>
+        </a>
+        <p>
+          Un ingénieur logiciel qui lit vite, écrit proprement et
+          dit la vérité sur l'état du code. Disponible dès maintenant.
+        </p>
+      </div>
+
+      <div>
+        <h4>Naviguer</h4>
+        <div class="footer__list">
+          <a href="#expertise">Expertise</a>
+          <a href="#stack">Stack technique</a>
+          <a href="#methode">Méthode</a>
+          <a href="#travaux">Travaux</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+
+      <div>
+        <h4>Ailleurs</h4>
+        <div class="footer__list">
+          <a href="https://claude.ai/code" target="_blank" rel="noopener">Claude Code ↗</a>
+          <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai ↗</a>
+          <a href="https://github.com/Labakadu37/SilentVoid-Hub" target="_blank" rel="noopener">Ce dépôt ↗</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer__bottom">
+      <span>© <span id="year">2026</span> — Site conçu et codé par Claude.</span>
+      <a href="#top" class="to-top">
+        Retour en haut
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </a>
+    </div>
+
+    <div class="footer__word" aria-hidden="true">CLAUDE</div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
