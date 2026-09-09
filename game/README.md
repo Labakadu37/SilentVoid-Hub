@@ -145,15 +145,27 @@ maillages) sont geres. C'est la porte d'entree pour un modele sculpte dans
 Blender le jour ou tu en auras un : les primitives ci-dessous plafonnent, elles
 ne remplaceront jamais un vrai modeleur.
 
-### Construction en code
+### Construction en code : modelage booleen
 
-Deux regles, apprises en corrigeant une premiere version ratee :
+Trois regles, chacune apprise en corrigeant une version ratee :
 
-1. **C'est un humain.** Nuque, oreilles, nez, cheveux coiffes, membres en deux
+1. **On FUSIONNE, on n'empile pas.** Les morceaux d'une meme zone de couleur
+   vivent dans un `CSGCombiner3D` qui les reunit en un seul volume continu. Une
+   veste devient une veste, au lieu d'un tronc plus deux boules d'epaule posees
+   dessus. Le contour cartoon suit alors la silhouette entiere, au lieu de
+   cerner chaque bout separement — c'est ce qui separait le plus notre rendu
+   d'un vrai personnage.
+   La frontiere entre deux groupes (peau / tenue / pantalon / bottes / cheveux)
+   devient naturellement un trait noir, exactement la ou un dessinateur en
+   mettrait un.
+2. **C'est un humain.** Nuque, oreilles, nez, cheveux coiffes, membres en deux
    segments avec coude et genou. Sans anatomie on obtient une mascotte informe.
-2. **Les mains tiennent l'arme.** On place d'abord l'arme et ses points de
-   prise, puis les bras vont chercher ces points (`_bone()` tend une capsule
-   entre deux articulations). Jamais l'inverse, sinon l'arme flotte a cote.
+3. **Les mains tiennent l'arme.** On place d'abord l'arme et ses points de
+   prise, puis les bras vont chercher ces points (`_limb()` tend un cylindre
+   ferme entre deux articulations). Jamais l'inverse, sinon l'arme flotte a cote.
+
+Le visage, lui, reste en pieces separees posees par-dessus : yeux, pupilles,
+sourcils, nez, bouche doivent justement se detacher du volume.
 
 Le buste, les bras et l'arme sont tous enfants d'un meme pivot : quand le
 brawler respire ou se balance, les mains ne quittent jamais la poignee.
