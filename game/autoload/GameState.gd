@@ -9,7 +9,11 @@ signal mode_selected(index: int)
 signal match_requested(mode: Dictionary)   # le joueur a appuye sur JOUER
 signal match_started(mode: Dictionary)     # le matchmaking est termine
 
-const SAVE_PATH := "user://silentvoid_profile.json"
+const SAVE_PATH := "user://battlebrink_profile.json"
+
+## Nom du jeu. Change ces deux lignes et tout suit (ecran de chargement inclus).
+const TITLE_TOP := "BATTLE"
+const TITLE_MAIN := "BRINK"
 
 var player_name := "SilentVoid"
 var player_level := 37

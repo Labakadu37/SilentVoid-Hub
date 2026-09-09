@@ -105,10 +105,10 @@ func _draw() -> void:
 	Icons.draw(self, "shard", Rect2(c - Vector2(r, r) * 0.72, Vector2(r, r) * 1.44), UiSkin.CYAN)
 
 	# titre
-	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.14), Vector2(size.x, 56)),
-			"SILENT VOID", 46, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 8)
-	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.22), Vector2(size.x, 30)),
-			"B R A W L", 20, UiSkin.CYAN, HORIZONTAL_ALIGNMENT_CENTER, 5)
+	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.135), Vector2(size.x, 34)),
+			GameState.TITLE_TOP, 26, UiSkin.CYAN, HORIZONTAL_ALIGNMENT_CENTER, 6)
+	Painter.text(self, f, Rect2(Vector2(0, c.y + size.y * 0.185), Vector2(size.x, 70)),
+			GameState.TITLE_MAIN, 60, UiSkin.TEXT, HORIZONTAL_ALIGNMENT_CENTER, 9, UiSkin.OUTLINE, 4.0)
 
 	# barre de progression
 	var bw := minf(size.x * 0.46, 520.0)

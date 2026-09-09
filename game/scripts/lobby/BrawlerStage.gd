@@ -9,7 +9,7 @@ signal brawler_pressed
 
 const FLOOR_RATIO := 0.76      # hauteur du tapis, calee sur le decor
 
-var _char: CharacterView
+var _char: BrawlerView3D
 var _left: ChunkyButton
 var _right: ChunkyButton
 var _slots: Array[ChunkyButton] = []
@@ -29,7 +29,7 @@ func _ready() -> void:
 	_hit.pressed.connect(func(): brawler_pressed.emit())
 	add_child(_hit)
 
-	_char = CharacterView.new()
+	_char = BrawlerView3D.new()
 	add_child(_char)
 
 	for i in 2:

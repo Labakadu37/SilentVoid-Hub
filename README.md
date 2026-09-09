@@ -1,9 +1,10 @@
 # SilentVoid-Hub
 
-## 🎮 `game/` — SilentVoid Brawl (Godot 4)
+## 🎮 `game/` — Battle Brink (Godot 4)
 
-Le jeu. Lobby complet dans l'esprit Brawl Stars / Stumble Guys, multijoueur
-fonctionnel (vrais joueurs + bots en renfort) et export **APK Android**.
+Le jeu. Le Vide devore l'arene : on ne gagne pas en tuant, on gagne en gardant
+du terrain. Lobby complet, brawlers en 3D, multijoueur fonctionnel (vrais
+joueurs + bots en renfort) et export **APK Android**.
 
 👉 [`game/README.md`](game/README.md)
 

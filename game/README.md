@@ -1,8 +1,9 @@
-# SilentVoid Brawl — Lobby
+# Battle Brink
 
-Jeu mobile facon **Brawl Stars / Stumble Guys**, en **Godot 4**.
-Le lobby est termine et jouable, le multijoueur fonctionne, et le jeu
-s'exporte en **APK Android**.
+Jeu d'arene mobile en **Godot 4**. Le lobby est termine et jouable, les brawlers
+sont en **3D**, le multijoueur fonctionne, et le jeu s'exporte en **APK Android**.
+
+Le nom se change a un seul endroit : `GameState.TITLE_TOP` / `TITLE_MAIN`.
 
 ![lobby](docs/lobby.png)
 
@@ -120,6 +121,26 @@ godot --headless --path game res://scenes/dev/NetSmokeTest.tscn -- --join 127.0.
 godot --headless --path game res://scenes/dev/NetSmokeTest.tscn -- --join 127.0.0.1 --as Bob
 # [Alice] PARTIE TROUVEE : 2 humains + 4 bots -> Alice, Bob, Kyro53(bot), ...
 ```
+
+## Les brawlers sont en 3D
+
+![brawlers](docs/brawlers.png)
+
+Ils sont assembles a partir de formes primitives (spheres, capsules, boites)
+par `scripts/brawler/BrawlerModel3D.gd` — aucun fichier de modele a fournir, et
+un nouveau brawler ne demande qu'une entree de plus dans `GameState`.
+
+Le rendu "cartoon" tient a une astuce : chaque piece porte une seconde passe de
+materiau en **coque inversee** (`cull_front` + `grow`) peinte en noir. Ca dessine
+un contour epais autour de toutes les silhouettes, exactement comme chez
+Supercell. Trois lumieres completent le tableau : une principale chaude, une
+d'appoint froide, et un contre-jour qui detache le brawler du decor.
+
+Le tout est rendu dans un `SubViewport` a fond transparent (`BrawlerView3D`), pose
+au milieu du lobby 2D : seul le brawler est en volume, le decor reste dessine.
+
+Coiffes disponibles : `cap`, `helmet`, `hood`, `crown`, `hair` (queue de cheval).
+Armes : `gun`, `hammer`, `bow`, `staff`, `fist`.
 
 ## Le premier brawler : VOID
 

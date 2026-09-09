@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Construit SilentVoid Brawl : APK Android, build web, binaire Linux.
+# Construit Battle Brink : APK Android, build web, binaire Linux.
 #
-#   ./build.sh apk     -> build/SilentVoidBrawl.apk
+#   ./build.sh apk     -> build/BattleBrink.apk
 #   ./build.sh web     -> build/web/index.html
-#   ./build.sh linux   -> build/SilentVoidBrawl.x86_64
+#   ./build.sh linux   -> build/BattleBrink.x86_64
 #   ./build.sh all
 #
 # Le script installe ce qui manque dans .tools/ (Godot, templates d'export,
@@ -103,8 +103,8 @@ case "$target" in
 	apk|android|all)
 		setup_android
 		say "Export APK"
-		"$GODOT_BIN" --headless --path "$HERE" --export-debug "Android" "$OUT/SilentVoidBrawl.apk"
-		ls -lh "$OUT/SilentVoidBrawl.apk"
+		"$GODOT_BIN" --headless --path "$HERE" --export-debug "Android" "$OUT/BattleBrink.apk"
+		ls -lh "$OUT/BattleBrink.apk"
 		;;&
 	web|all)
 		say "Export web"
@@ -113,7 +113,7 @@ case "$target" in
 		;;&
 	linux|all)
 		say "Export Linux"
-		"$GODOT_BIN" --headless --path "$HERE" --export-debug "Linux" "$OUT/SilentVoidBrawl.x86_64"
+		"$GODOT_BIN" --headless --path "$HERE" --export-debug "Linux" "$OUT/BattleBrink.x86_64"
 		;;&
 	apk|android|web|linux|all) say "Termine. Resultats dans $OUT" ;;
 	*) echo "usage: $0 [apk|web|linux|all]"; exit 1 ;;

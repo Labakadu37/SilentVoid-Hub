@@ -5,8 +5,8 @@ config_version=5
 
 [application]
 
-config/name="SilentVoid Brawl"
-config/description="Lobby style Brawl Stars / Stumble Guys"
+config/name="Battle Brink"
+config/description="Arene mobile : le Vide devore le terrain, tiens ta ligne."
 config/version="0.1.0"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
