@@ -93,6 +93,19 @@
     const/16 v5, -0x2
     invoke-direct {v3, v4, v5}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
 
+    # ── Feature native : prouve que libJZS.so tourne ──
+    :try_start_jzs
+    invoke-static {}, Lcom/jzsbrawl/Native;->nGetBuild()I
+    move-result v9
+    const-string v10, "native: OK"
+    invoke-static {v0, v1, v10, v7, v8}, Lcom/jzsbrawl/JZSOverlay;->addLine(Landroid/app/Activity;Landroid/widget/LinearLayout;Ljava/lang/String;II)V
+    :try_end_jzs
+    .catch Ljava/lang/Throwable; {:try_start_jzs .. :try_end_jzs} :catch_jzs
+    goto :after_jzs
+    :catch_jzs
+    move-exception v9
+    :after_jzs
+
     # activity.addContentView(layout, params) — pas besoin de permission
     invoke-virtual {v0, v1, v3}, Landroid/app/Activity;->addContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
