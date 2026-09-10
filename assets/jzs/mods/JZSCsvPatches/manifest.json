@@ -1,0 +1,7 @@
+[
+    "csv_client/bp_purchase_popup.csv",
+    "csv_client/music.csv",
+    "csv_logic/location_themes.csv",
+    "csv_logic/skin_confs.csv",
+    "csv_logic/themes.csv"
+]

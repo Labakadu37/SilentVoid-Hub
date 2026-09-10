@@ -1,0 +1,2 @@
+Add your credit to the "credits.json" file to be displayed in lobby and "About Mod" screen.
+Add names of files to the "doNotPatch.json" file so they won't break the mod functionality after a server maintenance/content update.
