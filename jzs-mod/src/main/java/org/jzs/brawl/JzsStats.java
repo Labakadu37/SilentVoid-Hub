@@ -15,7 +15,7 @@ import java.net.URL;
  * Le ping est un vrai aller-retour TCP vers l'hôte mesuré ; il n'est jamais
  * simulé, sinon la valeur affichée ne veut rien dire.
  */
-public final class JzsStats {
+public final class JzsStats implements Runnable {
 
     public interface Listener {
         void onStats(int pingMs, String region, int online);
@@ -37,7 +37,7 @@ public final class JzsStats {
     public void start() {
         if (running) return;
         running = true;
-        worker = new Thread(this::loop, "jzs-stats");
+        worker = new Thread(this, "jzs-stats");
         worker.setDaemon(true);
         worker.start();
     }
@@ -47,7 +47,8 @@ public final class JzsStats {
         if (worker != null) worker.interrupt();
     }
 
-    private void loop() {
+    @Override
+    public void run() {
         while (running) {
             int ping = -1;
             String region = "";

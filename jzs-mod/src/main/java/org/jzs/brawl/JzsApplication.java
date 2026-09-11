@@ -3,7 +3,6 @@ package org.jzs.brawl;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
-import android.view.FrameLayout;
 import android.view.ViewGroup;
 import android.widget.FrameLayout.LayoutParams;
 
@@ -14,7 +13,8 @@ import android.widget.FrameLayout.LayoutParams;
  * Toute la logique est sous try/catch : si le mod échoue, le jeu doit continuer
  * à tourner normalement plutôt que planter.
  */
-public final class JzsApplication extends Application {
+public final class JzsApplication extends Application
+        implements Application.ActivityLifecycleCallbacks, JzsStats.Listener {
 
     private JzsConfig cfg;
     private JzsStats stats;
@@ -25,9 +25,15 @@ public final class JzsApplication extends Application {
         super.onCreate();
         try {
             cfg = JzsConfig.load(this);
-            registerActivityLifecycleCallbacks(new Callbacks());
+            registerActivityLifecycleCallbacks(this);
         } catch (Throwable ignored) {
         }
+    }
+
+    @Override
+    public void onStats(int pingMs, String region, int online) {
+        JzsOverlay v = overlay;
+        if (v != null) v.updateStats(pingMs, region, online);
     }
 
     private void attach(Activity activity) {
@@ -36,14 +42,12 @@ public final class JzsApplication extends Application {
         ViewGroup root = activity.findViewById(android.R.id.content);
         if (root == null) return;
 
-        overlay = new JzsOverlay(activity, cfg);
-        root.addView(overlay, new LayoutParams(
-                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-        overlay.bringToFront();
+        JzsOverlay v = new JzsOverlay(activity, cfg);
+        root.addView(v, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        v.bringToFront();
+        overlay = v;
 
-        stats = new JzsStats(cfg, (ping, region, online) -> {
-            if (overlay != null) overlay.updateStats(ping, region, online);
-        });
+        stats = new JzsStats(cfg, this);
         stats.start();
     }
 
@@ -52,33 +56,32 @@ public final class JzsApplication extends Application {
             stats.stop();
             stats = null;
         }
-        if (overlay != null && overlay.getParent() instanceof ViewGroup) {
-            ((ViewGroup) overlay.getParent()).removeView(overlay);
-        }
+        JzsOverlay v = overlay;
         overlay = null;
+        if (v != null && v.getParent() instanceof ViewGroup) {
+            ((ViewGroup) v.getParent()).removeView(v);
+        }
     }
 
-    private final class Callbacks implements ActivityLifecycleCallbacks {
-        @Override
-        public void onActivityResumed(Activity activity) {
-            try {
-                attach(activity);
-            } catch (Throwable ignored) {
-            }
+    @Override
+    public void onActivityResumed(Activity activity) {
+        try {
+            attach(activity);
+        } catch (Throwable ignored) {
         }
-
-        @Override
-        public void onActivityPaused(Activity activity) {
-            try {
-                detach();
-            } catch (Throwable ignored) {
-            }
-        }
-
-        @Override public void onActivityCreated(Activity a, Bundle b) { }
-        @Override public void onActivityStarted(Activity a) { }
-        @Override public void onActivityStopped(Activity a) { }
-        @Override public void onActivitySaveInstanceState(Activity a, Bundle b) { }
-        @Override public void onActivityDestroyed(Activity a) { }
     }
+
+    @Override
+    public void onActivityPaused(Activity activity) {
+        try {
+            detach();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @Override public void onActivityCreated(Activity a, Bundle b) { }
+    @Override public void onActivityStarted(Activity a) { }
+    @Override public void onActivityStopped(Activity a) { }
+    @Override public void onActivitySaveInstanceState(Activity a, Bundle b) { }
+    @Override public void onActivityDestroyed(Activity a) { }
 }

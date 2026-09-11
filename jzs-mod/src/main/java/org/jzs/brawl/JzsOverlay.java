@@ -10,74 +10,59 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowInsets;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /** Le bandeau doré en haut à gauche du lobby. */
 @SuppressLint("ViewConstructor")
 public final class JzsOverlay extends View {
 
     private final JzsConfig cfg;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final List<String> lines = new ArrayList<>();
 
     private final float margin;
     private final float lineGap;
+    private final float textSize;
     private float insetTop;
     private float insetLeft;
 
-    private int pingMs = -1;
-    private String region = "";
-    private int online = -1;
+    /* Écrits depuis le thread des stats, lus depuis onDraw : volatile suffit,
+     * les lignes sont recomposées à chaque dessin plutôt que partagées. */
+    private volatile int pingMs = -1;
+    private volatile String region = "";
+    private volatile int online = -1;
 
     public JzsOverlay(Context ctx, JzsConfig cfg) {
         super(ctx);
         this.cfg = cfg;
-        setBackgroundColor(0x00000000);
+
+        textSize = sp(cfg.textSizeSp);
+        margin = dp(cfg.marginDp);
+        lineGap = textSize * 1.35f;
 
         paint.setColor(cfg.textColor);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        paint.setTextSize(sp(cfg.textSizeSp));
+        paint.setTextSize(textSize);
         paint.setShadowLayer(sp(2f), 0f, sp(1f), cfg.shadowColor);
         setLayerType(LAYER_TYPE_SOFTWARE, paint);
-
-        margin = dp(cfg.marginDp);
-        lineGap = sp(cfg.textSizeSp) * 1.35f;
-        rebuild();
     }
 
-    /** Appelé depuis le thread des stats. */
+    /** Appelable depuis n'importe quel thread. */
     public void updateStats(int pingMs, String region, int online) {
         this.pingMs = pingMs;
         this.region = region == null ? "" : region;
         this.online = online;
-        post(() -> {
-            rebuild();
-            invalidate();
-        });
+        postInvalidate();
     }
 
-    private void rebuild() {
-        lines.clear();
-        lines.add(cfg.modName + " " + cfg.version + " (" + cfg.channel + ")");
-        lines.add("Telegram: " + cfg.socials);
-
-        if (pingMs >= 0) {
-            lines.add(region.isEmpty()
-                    ? "Ping: " + pingMs + " ms"
-                    : "Ping: " + pingMs + " ms (" + region + ")");
-        } else {
-            lines.add("Ping: --");
-        }
-
-        lines.add(online >= 0 ? "Online: " + online : "Online: --");
+    private String pingLine() {
+        if (pingMs < 0) return "Ping: --";
+        String r = region;
+        return r.isEmpty() ? "Ping: " + pingMs + " ms" : "Ping: " + pingMs + " ms (" + r + ")";
     }
 
     @Override
     public WindowInsets onApplyWindowInsets(WindowInsets insets) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            android.graphics.Insets bars =
-                    insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+            android.graphics.Insets bars = insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             insetTop = bars.top;
             insetLeft = bars.left;
         } else {
@@ -91,11 +76,15 @@ public final class JzsOverlay extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         float x = insetLeft + margin;
-        float y = insetTop + margin + sp(cfg.textSizeSp);
-        for (String line : lines) {
-            canvas.drawText(line, x, y, paint);
-            y += lineGap;
-        }
+        float y = insetTop + margin + textSize;
+
+        canvas.drawText(cfg.modName + " " + cfg.version + " (" + cfg.channel + ")", x, y, paint);
+        y += lineGap;
+        canvas.drawText("Telegram: " + cfg.socials, x, y, paint);
+        y += lineGap;
+        canvas.drawText(pingLine(), x, y, paint);
+        y += lineGap;
+        canvas.drawText(online >= 0 ? "Online: " + online : "Online: --", x, y, paint);
     }
 
     private float sp(float v) {
