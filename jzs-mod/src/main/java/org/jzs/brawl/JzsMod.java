@@ -7,25 +7,27 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout.LayoutParams;
 
 /**
- * Point d'entrée du mod : on remplace android:name de <application> dans le
- * manifeste par cette classe, ce qui nous fait démarrer avec le jeu.
+ * Installe et pilote l'overlay.
  *
- * Toute la logique est sous try/catch : si le mod échoue, le jeu doit continuer
- * à tourner normalement plutôt que planter.
+ * La logique vit ici plutôt que dans une classe Application, parce que le point
+ * d'entrée diffère selon la cible : dans le jeu il faut hériter de
+ * TitanApplication, dans la démo d'Application. Les deux appellent install().
+ *
+ * Tous les points d'entrée sont sous try/catch : si le mod échoue, l'hôte doit
+ * continuer à tourner normalement plutôt que planter.
  */
-public final class JzsApplication extends Application
+public final class JzsMod
         implements Application.ActivityLifecycleCallbacks, JzsStats.Listener {
 
     private JzsConfig cfg;
     private JzsStats stats;
     private JzsOverlay overlay;
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    public static void install(Application app) {
         try {
-            cfg = JzsConfig.load(this);
-            registerActivityLifecycleCallbacks(this);
+            JzsMod mod = new JzsMod();
+            mod.cfg = JzsConfig.load(app);
+            app.registerActivityLifecycleCallbacks(mod);
         } catch (Throwable ignored) {
         }
     }

@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:name="org.jzs.brawl.JzsApplication"
+        android:name="org.jzs.brawl.demo.JzsDemoApplication"
         android:label="JZS Overlay Test"
         android:hardwareAccelerated="true">
 
