@@ -12,7 +12,7 @@ index et le même nombre de chaînes, rien d'autre ne bouge : il suffit de
 recalculer les offsets et les tailles de chunk.
 
 Usage:
-    axml_patch.py <in.xml> <out.xml> <ancienne_chaine> <nouvelle_chaine>
+    axml_patch.py <in.xml> <out.xml> <ancienne> <nouvelle> [<ancienne> <nouvelle> ...]
 """
 import struct
 import sys
@@ -140,17 +140,21 @@ def patch(data, old, new):
 
 
 def main():
-    if len(sys.argv) != 5:
+    if len(sys.argv) < 5 or len(sys.argv) % 2 != 1:
         print(__doc__)
         return 1
 
-    src, dst, old, new = sys.argv[1:5]
-    data = open(src, 'rb').read()
-    out, idx = patch(data, old, new)
-    open(dst, 'wb').write(out)
+    src, dst = sys.argv[1:3]
+    pairs = list(zip(sys.argv[3::2], sys.argv[4::2]))
 
-    print('index %d : %r -> %r' % (idx, old, new))
-    print('taille %d -> %d octets' % (len(data), len(out)))
+    data = open(src, 'rb').read()
+    original_size = len(data)
+    for old, new in pairs:
+        data, idx = patch(data, old, new)
+        print('index %d : %r -> %r' % (idx, old, new))
+
+    open(dst, 'wb').write(data)
+    print('taille %d -> %d octets' % (original_size, len(data)))
     return 0
 
 
