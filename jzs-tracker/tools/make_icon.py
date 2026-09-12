@@ -1,60 +1,49 @@
-import math, struct, zlib, sys
+"""Generates the BrawlBee launcher icons from the source logo.
 
-SIZE = 192
-BG = (11, 15, 20)
-ACCENT = (0, 229, 160)
+Emits one square PNG per mipmap density plus a small drawable for the
+in-app header. The logo already sits on black, matching the app ground.
+"""
+import os
+import sys
 
+from PIL import Image
 
-def rounded_rect(x, y, w, h, r, px, py):
-    if px < x or py < y or px >= x + w or py >= y + h:
-        return False
-    cx = min(max(px, x + r), x + w - r)
-    cy = min(max(py, y + r), y + h - r)
-    return (px - cx) ** 2 + (py - cy) ** 2 <= r * r
-
-
-STEM_L, STEM_R = 110, 138
-HOOK_CX, HOOK_CY = 96, 116
-HOOK_IN, HOOK_OUT = 14, 42
-
-
-def in_j(px, py):
-    """Stem plus the bottom hook of a capital J.
-
-    The hook is the lower half of an annulus whose thickness equals the stem
-    width, centred so its rightmost span lines up with the stem exactly.
-    """
-    if STEM_L <= px <= STEM_R and 34 <= py <= HOOK_CY:
-        return True
-    dx, dy = px - HOOK_CX, py - HOOK_CY
-    return dy >= 0 and HOOK_IN <= math.hypot(dx, dy) <= HOOK_OUT
+DENSITIES = {
+    "mdpi": 48,
+    "hdpi": 72,
+    "xhdpi": 96,
+    "xxhdpi": 144,
+    "xxxhdpi": 192,
+}
+BLACK = (0, 0, 0, 255)
 
 
-rows = []
-for y in range(SIZE):
-    row = bytearray([0])
-    for x in range(SIZE):
-        if in_j(x, y):
-            row += bytes(ACCENT)
-        elif rounded_rect(16, 16, SIZE - 32, SIZE - 32, 42, x, y):
-            row += bytes(BG)
-        else:
-            row += bytes(BG)
-    rows.append(bytes(row))
-
-raw = b"".join(rows)
+def square(img):
+    """Pads to a square so no density crops the wings."""
+    if img.width == img.height:
+        return img
+    side = max(img.width, img.height)
+    canvas = Image.new("RGBA", (side, side), BLACK)
+    canvas.paste(img, ((side - img.width) // 2, (side - img.height) // 2), img)
+    return canvas
 
 
-def chunk(tag, data):
-    return (struct.pack(">I", len(data)) + tag + data
-            + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF))
+def main(source, res_dir):
+    img = square(Image.open(source).convert("RGBA"))
+
+    for name, size in DENSITIES.items():
+        out_dir = os.path.join(res_dir, "mipmap-" + name)
+        os.makedirs(out_dir, exist_ok=True)
+        path = os.path.join(out_dir, "ic_launcher.png")
+        img.resize((size, size), Image.LANCZOS).save(path, optimize=True)
+        print(f"  mipmap-{name:8s} {size}x{size}")
+
+    header_dir = os.path.join(res_dir, "drawable-xxhdpi")
+    os.makedirs(header_dir, exist_ok=True)
+    header = os.path.join(header_dir, "logo.png")
+    img.resize((96, 96), Image.LANCZOS).save(header, optimize=True)
+    print("  drawable logo  96x96")
 
 
-png = (b"\x89PNG\r\n\x1a\n"
-       + chunk(b"IHDR", struct.pack(">IIBBBBB", SIZE, SIZE, 8, 2, 0, 0, 0))
-       + chunk(b"IDAT", zlib.compress(raw, 9))
-       + chunk(b"IEND", b""))
-
-with open(sys.argv[1], "wb") as f:
-    f.write(png)
-print("wrote", sys.argv[1], len(png), "bytes")
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])

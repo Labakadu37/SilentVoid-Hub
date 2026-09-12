@@ -101,14 +101,19 @@ public class MainActivity extends Activity {
         LinearLayout bar = Ui.row(this);
         bar.setPadding(Ui.dp(this, 16), Ui.dp(this, 26), Ui.dp(this, 16), Ui.dp(this, 8));
 
-        TextView logo = Ui.heavy(this, "JZS BRAWL", 22, Ui.LIME);
-        logo.setLetterSpacing(0.04f);
+        ImageView mark = new ImageView(this);
+        mark.setImageResource(R.drawable.logo);
+        mark.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(
+                Ui.dp(this, 30), Ui.dp(this, 30));
+        ml.rightMargin = Ui.dp(this, 9);
+        mark.setLayoutParams(ml);
+        bar.addView(mark);
+
+        TextView logo = Ui.heavy(this, getString(R.string.brand), 23, Ui.LIME);
+        logo.setLetterSpacing(0.02f);
         bar.addView(logo, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        TextView version = Ui.text(this, "V69.230", 11, Ui.MUTED);
-        version.setPadding(0, Ui.dp(this, 8), Ui.dp(this, 10), 0);
-        bar.addView(version);
 
         TextView key = Ui.badge(this, "CLE", Ui.MUTED, Ui.CARD);
         key.setOnClickListener(new View.OnClickListener() {

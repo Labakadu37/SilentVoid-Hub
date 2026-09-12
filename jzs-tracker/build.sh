@@ -16,7 +16,15 @@ MIN_SDK=24
 HERE="$(cd "$(dirname "$0")" && pwd)"
 APP="$HERE/app"
 OUT="$HERE/build"
-NAME="JZS-Brawl-Tracker"
+NAME="BrawlBee"
+
+# A build meant for public distribution must not carry a token, since anyone
+# who downloads the APK can read it back out.
+WITH_TOKEN=1
+if [ "${1:-}" = "--no-token" ]; then
+    WITH_TOKEN=0
+    NAME="BrawlBee-setup"
+fi
 
 for required in "$BT/aapt2" "$BT/d8" "$BT/zipalign" "$BT/apksigner" "$PLATFORM"; do
     [ -e "$required" ] || { echo "missing: $required"; exit 1; }
@@ -43,7 +51,7 @@ echo "[3/6] compiling java"
 # living in a tracked file. token.txt is gitignored; without it the app
 # ships tokenless and each user enters their own.
 cp -r "$APP/java" "$OUT/src"
-if [ -s "$HERE/token.txt" ]; then
+if [ "$WITH_TOKEN" = "1" ] && [ -s "$HERE/token.txt" ]; then
     TOKEN="$(tr -d '[:space:]' < "$HERE/token.txt")"
     CONFIG="$OUT/src/com/jzs/brawltracker/Config.java"
     sed -i "s|DEFAULT_TOKEN = \"\"|DEFAULT_TOKEN = \"$TOKEN\"|" "$CONFIG"
