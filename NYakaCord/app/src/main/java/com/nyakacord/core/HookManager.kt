@@ -2,7 +2,10 @@ package com.nyakacord.core
 
 import android.content.Context
 import android.util.Log
+import com.nyakacord.patches.CustomStatusPatch
+import com.nyakacord.patches.NoTrackingPatch
 import com.nyakacord.patches.Patch
+import com.nyakacord.patches.SettingsInjectionPatch
 import java.util.concurrent.CopyOnWriteArrayList
 
 object HookManager {
@@ -35,7 +38,9 @@ object HookManager {
     fun getPatches(): List<Patch> = patches.toList()
 
     private fun registerDefaultPatches() {
-        // Default patches are registered here
+        registerPatch(SettingsInjectionPatch())
+        registerPatch(NoTrackingPatch())
+        registerPatch(CustomStatusPatch())
     }
 
     private fun applyPatches() {

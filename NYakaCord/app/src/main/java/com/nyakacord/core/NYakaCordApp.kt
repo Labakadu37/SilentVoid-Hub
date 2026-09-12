@@ -15,7 +15,7 @@ class NYakaCordApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        Log.i(TAG, "NYakaCord v${BuildConfig.VERSION_NAME} starting...")
+        Log.i(TAG, "NYakaCord v1.0.0 starting...")
 
         pluginManager = PluginManager(this)
         themeManager = ThemeManager(this)

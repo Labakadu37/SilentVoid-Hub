@@ -25,5 +25,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.NYakaCordSettingsActivity"
+            android:exported="false"
+            android:label="NYakaCord"
+            android:theme="@style/Theme.NYakaCord" />
+
     </application>
 </manifest>
