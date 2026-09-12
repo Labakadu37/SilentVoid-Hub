@@ -39,7 +39,18 @@ echo "[2/6] linking resources"
     "$OUT/res/resources.zip"
 
 echo "[3/6] compiling java"
-find "$APP/java" "$OUT/gen" -name '*.java' > "$OUT/sources.txt"
+# Sources are staged so a token can be baked in without the secret ever
+# living in a tracked file. token.txt is gitignored; without it the app
+# ships tokenless and each user enters their own.
+cp -r "$APP/java" "$OUT/src"
+if [ -s "$HERE/token.txt" ]; then
+    TOKEN="$(tr -d '[:space:]' < "$HERE/token.txt")"
+    CONFIG="$OUT/src/com/jzs/brawltracker/Config.java"
+    sed -i "s|DEFAULT_TOKEN = \"\"|DEFAULT_TOKEN = \"$TOKEN\"|" "$CONFIG"
+    grep -q "DEFAULT_TOKEN = \"ey" "$CONFIG" || { echo "token injection failed"; exit 1; }
+    echo "      token baked in"
+fi
+find "$OUT/src" "$OUT/gen" -name '*.java' > "$OUT/sources.txt"
 javac -nowarn -source 8 -target 8 -bootclasspath "$PLATFORM" \
     -classpath "$PLATFORM" -d "$OUT/classes" @"$OUT/sources.txt" 2>&1 \
     | grep -v 'bootstrap class path' || true
