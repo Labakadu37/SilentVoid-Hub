@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0B0F14</color>
+    <color name="surface">#FF141A21</color>
+    <color name="accent">#FF00E5A0</color>
+    <color name="text">#FFECF1F5</color>
+    <color name="muted">#FF8A97A5</color>
+
+    <style name="JzsTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorHint">@color/muted</item>
+    </style>
+</resources>
