@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NYakaCord</string>
+    <string name="settings_title">NYakaCord Settings</string>
+    <string name="plugins_section">Plugins</string>
+    <string name="themes_section">Themes</string>
+    <string name="general_section">General</string>
+    <string name="about_section">About</string>
+    <string name="enable_plugins">Enable Plugins</string>
+    <string name="enable_themes">Enable Themes</string>
+    <string name="debug_mode">Debug Mode</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.NYakaCord" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/nyakacord_primary</item>
+        <item name="colorPrimaryVariant">@color/discord_blurple</item>
+        <item name="android:windowBackground">@color/discord_darkest</item>
+        <item name="android:statusBarColor">@color/discord_darkest</item>
+        <item name="android:navigationBarColor">@color/discord_darkest</item>
+    </style>
+</resources>
