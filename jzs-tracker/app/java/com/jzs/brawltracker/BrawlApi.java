@@ -62,6 +62,10 @@ public final class BrawlApi {
         get("/clubs/" + encodeTag(tag), cb);
     }
 
+    public void globalPlayers(Callback cb) {
+        get("/rankings/global/players?limit=50", cb);
+    }
+
     private static String encodeTag(String tag) {
         try {
             return URLEncoder.encode("#" + normalizeTag(tag), "UTF-8");
