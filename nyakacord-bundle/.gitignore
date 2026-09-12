@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+yarn.lock
+.DS_Store
+lib-dist/
+/packages/types
+
+# The built bundle is committed so it can be served over HTTPS from this
+# repository and loaded by the client's "Load from custom URL" setting.
+dist/*
+!dist/nyakacord.js
