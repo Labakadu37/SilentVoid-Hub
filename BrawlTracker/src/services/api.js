@@ -1,41 +1,33 @@
-const BASE_URL = 'https://api.brawlstars.com/v1';
-const API_KEY = 'YOUR_API_KEY_HERE';
+// Change this URL to your deployed server (Render, Railway, etc.)
+const SERVER_URL = 'https://your-server-url.onrender.com';
 
-const headers = {
-  Authorization: `Bearer ${API_KEY}`,
-  Accept: 'application/json',
-};
-
-function formatTag(tag) {
-  let clean = tag.replace(/\s/g, '').toUpperCase();
-  if (!clean.startsWith('#')) clean = '#' + clean;
-  return encodeURIComponent(clean);
+function cleanTag(tag) {
+  return tag.replace(/\s/g, '').replace('#', '').toUpperCase();
 }
 
 export async function getPlayer(tag) {
-  const res = await fetch(`${BASE_URL}/players/${formatTag(tag)}`, { headers });
+  const res = await fetch(`${SERVER_URL}/api/players/${cleanTag(tag)}`);
   if (!res.ok) {
     if (res.status === 404) throw new Error('Joueur introuvable');
-    if (res.status === 403) throw new Error('Cle API invalide');
     throw new Error('Erreur serveur');
   }
   return res.json();
 }
 
 export async function getPlayerBattleLog(tag) {
-  const res = await fetch(`${BASE_URL}/players/${formatTag(tag)}/battlelog`, { headers });
+  const res = await fetch(`${SERVER_URL}/api/players/${cleanTag(tag)}/battlelog`);
   if (!res.ok) throw new Error('Impossible de charger le battlelog');
   return res.json();
 }
 
 export async function getClub(tag) {
-  const res = await fetch(`${BASE_URL}/clubs/${formatTag(tag)}`, { headers });
+  const res = await fetch(`${SERVER_URL}/api/clubs/${cleanTag(tag)}`);
   if (!res.ok) throw new Error('Club introuvable');
   return res.json();
 }
 
 export async function getBrawlers() {
-  const res = await fetch(`${BASE_URL}/brawlers`, { headers });
+  const res = await fetch(`${SERVER_URL}/api/brawlers`);
   if (!res.ok) throw new Error('Erreur chargement brawlers');
   return res.json();
 }
