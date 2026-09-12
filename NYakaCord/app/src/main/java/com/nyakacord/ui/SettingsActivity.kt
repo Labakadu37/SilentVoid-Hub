@@ -25,7 +25,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         layout.addView(createHeader("NYakaCord Settings"))
-        layout.addView(createSubHeader("v${packageManager.getPackageInfo(packageName, 0).versionName}"))
+        layout.addView(createSubHeader("v1.0.0"))
 
         layout.addView(createSectionTitle("General"))
         layout.addView(createToggle("Enable Plugins", Settings.pluginsEnabled) { Settings.pluginsEnabled = it })

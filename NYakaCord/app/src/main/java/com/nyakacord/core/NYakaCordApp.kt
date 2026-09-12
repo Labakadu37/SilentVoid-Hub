@@ -17,10 +17,14 @@ class NYakaCordApp : Application() {
         instance = this
         Log.i(TAG, "NYakaCord v1.0.0 starting...")
 
-        pluginManager = PluginManager(this)
-        themeManager = ThemeManager(this)
-
-        initializeCore()
+        try {
+            Settings.initialize(this)
+            pluginManager = PluginManager(this)
+            themeManager = ThemeManager(this)
+            initializeCore()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize NYakaCord", e)
+        }
     }
 
     private fun initializeCore() {
