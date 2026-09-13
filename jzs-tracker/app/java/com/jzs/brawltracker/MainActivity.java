@@ -85,11 +85,27 @@ public class MainActivity extends Activity {
     private boolean loadingEvents;
     private boolean loadingClub;
 
+    // Negative until the server answers, so the banner can tell "none yet"
+    // apart from a genuine zero.
+    private int memberOnline = -1;
+    private int memberTotal = -1;
+
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         setContentView(buildRoot());
+
+        Members.fetch(prefs, new Members.Callback() {
+            @Override
+            public void onCounts(int online, int total) {
+                memberOnline = online;
+                memberTotal = total;
+                if (player == null && tab == TAB_HOME) {
+                    render();
+                }
+            }
+        });
 
         String last = prefs.getString(KEY_LAST_TAG, "");
         if (!last.isEmpty()) {
@@ -611,7 +627,57 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Gold banner: the build, and how many people are on it. */
+    private View memberBanner() {
+        LinearLayout card = Ui.card(this);
+
+        ShimmerText title = new ShimmerText(this);
+        title.setText("BrawlBee V1.0");
+        title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 30);
+        title.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
+        title.setTextColor(Ui.GOLD);
+        title.setLetterSpacing(-0.01f);
+        card.addView(title);
+        card.addView(Ui.spacer(this, 12));
+
+        String online = memberOnline < 0 ? "—" : Ui.num(memberOnline);
+        String total = memberTotal < 0 ? "—" : Ui.num(memberTotal);
+
+        card.addView(memberLine("Member Only", online, "en ligne maintenant", Ui.LIME));
+        card.addView(Ui.spacer(this, 8));
+        card.addView(memberLine("Member", total, "ont installe l'app", Ui.GOLD));
+
+        if (!Members.configured()) {
+            card.addView(Ui.spacer(this, 12));
+            card.addView(Ui.text(this,
+                    "Compteurs en attente du serveur.", 11, Ui.MUTED));
+        }
+        return card;
+    }
+
+    private View memberLine(String label, String value, String detail, int colour) {
+        LinearLayout row = Ui.row(this);
+
+        View pip = new View(this);
+        pip.setBackground(Ui.round(colour, Ui.dp(this, 2)));
+        LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(
+                Ui.dp(this, 7), Ui.dp(this, 7));
+        pl.rightMargin = Ui.dp(this, 9);
+        pip.setLayoutParams(pl);
+        row.addView(pip);
+
+        LinearLayout words = Ui.column(this);
+        words.addView(Ui.bold(this, label, 14, Ui.WHITE));
+        words.addView(Ui.text(this, detail, 11, Ui.MUTED));
+        row.addView(Ui.weighted(words, 1f));
+
+        row.addView(Ui.heavy(this, value, 20, colour));
+        return row;
+    }
+
     private void renderWelcome() {
+        content.addView(memberBanner());
+
         LinearLayout hero = Ui.row(this);
         hero.setPadding(0, Ui.dp(this, 6), 0, 0);
 

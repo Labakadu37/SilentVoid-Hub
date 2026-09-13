@@ -12,6 +12,13 @@ final class Config {
 
     static final String DEFAULT_TOKEN = "";
 
+    /**
+     * Endpoint returning {"online":N,"total":M} for the member banner, called
+     * with an ?id= per install. Empty means the banner shows no counts, since
+     * nothing else can know them.
+     */
+    static final String MEMBERS_URL = "";
+
     private Config() {
     }
 }
