@@ -177,23 +177,23 @@ public final class BrawlApi {
     private static String reasonFor(int code, String body) {
         switch (code) {
             case 400:
-                return "Tag invalide. Verifie les caracteres.";
+                return "Invalid tag. Check the characters.";
             case 403:
                 // Only the build's own key can cause this, so there is nothing
                 // for the person holding the phone to fix.
-                return "Service momentanement indisponible.";
+                return "Service temporarily unavailable.";
             case 404:
-                return "Joueur introuvable. Ce tag n'existe pas.";
+                return "Player not found. This tag does not exist.";
             case 429:
-                return "Trop de requetes. Reessaie dans quelques secondes.";
+                return "Too many requests. Try again in a few seconds.";
             case 503:
-                return "L'API Brawl Stars est en maintenance.";
+                return "The Brawl Stars API is under maintenance.";
             default:
                 String detail = body == null ? "" : body;
                 if (detail.length() > 140) {
                     detail = detail.substring(0, 140);
                 }
-                return "Erreur " + code + (detail.isEmpty() ? "" : " - " + detail);
+                return "Error " + code + (detail.isEmpty() ? "" : " - " + detail);
         }
     }
 
@@ -201,7 +201,7 @@ public final class BrawlApi {
         if (e instanceof ApiException) {
             return e.getMessage();
         }
-        return "Pas de connexion. Verifie ton reseau.";
+        return "No connection. Check your network.";
     }
 
     public static final class ApiException extends Exception {

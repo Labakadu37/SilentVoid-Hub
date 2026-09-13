@@ -2,101 +2,119 @@ package com.jzs.brawltracker;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.DashPathEffect;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Shader;
 import android.view.View;
 
 /**
- * Trophy movement across the recent battle log: a bar per battle showing what
- * it gained or cost, and a line tracing the running total over them.
+ * The running trophy total over the recent battle log, as one filled curve.
  *
- * The battle log is the only history the API exposes, so the horizontal axis
- * is battles rather than days.
+ * A single story: where the total sat after each battle, relative to where it
+ * started. The area under the line is filled with a fading gradient, a dashed
+ * rule marks the starting level, and the last point carries a dot. The line is
+ * green when the session ended up, red when it ended down.
+ *
+ * The battle log is the only history the API exposes, so the axis is battles,
+ * not days.
  */
 final class TrendChart extends View {
 
-    private final Paint bar = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint baseline = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path path = new Path();
+    private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint zero = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path linePath = new Path();
+    private final Path fillPath = new Path();
 
-    /** Per-battle trophy deltas, oldest first. */
-    private int[] deltas = new int[0];
     private int[] running = new int[0];
-    private int runMin;
-    private int runMax;
-    private int peakDelta = 1;
+    private int lo;
+    private int hi;
 
     TrendChart(Context context) {
         super(context);
         line.setStyle(Paint.Style.STROKE);
-        line.setStrokeWidth(Ui.dp(context, 2));
+        line.setStrokeWidth(Ui.dp(context, 2.5f));
         line.setStrokeCap(Paint.Cap.ROUND);
         line.setStrokeJoin(Paint.Join.ROUND);
-        line.setColor(Ui.LIME);
 
-        baseline.setStrokeWidth(Math.max(1, Ui.dp(context, 1) / 2));
-        baseline.setColor(Ui.STROKE);
+        zero.setStyle(Paint.Style.STROKE);
+        zero.setStrokeWidth(Math.max(1, Ui.dp(context, 1)));
+        zero.setColor(Ui.STROKE);
+        zero.setPathEffect(new DashPathEffect(
+                new float[]{Ui.dp(context, 4), Ui.dp(context, 4)}, 0));
+
+        dot.setStyle(Paint.Style.FILL);
     }
 
-    void setDeltas(int[] values) {
-        deltas = values == null ? new int[0] : values;
-        running = new int[deltas.length];
-
+    /** Per-battle deltas oldest first; the chart plots their running sum. */
+    void setDeltas(int[] deltas) {
+        int n = deltas == null ? 0 : deltas.length;
+        running = new int[n];
         int total = 0;
-        runMin = 0;
-        runMax = 0;
-        peakDelta = 1;
-        for (int i = 0; i < deltas.length; i++) {
+        lo = 0;
+        hi = 0;
+        for (int i = 0; i < n; i++) {
             total += deltas[i];
             running[i] = total;
-            runMin = Math.min(runMin, total);
-            runMax = Math.max(runMax, total);
-            peakDelta = Math.max(peakDelta, Math.abs(deltas[i]));
+            lo = Math.min(lo, total);
+            hi = Math.max(hi, total);
         }
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (deltas.length == 0) {
+        int n = running.length;
+        if (n < 2) {
             return;
         }
-        float w = getWidth();
-        float h = getHeight();
-        float barZone = h * 0.42f;
-        float lineZone = h - barZone - Ui.dp(getContext(), 8);
+        float padX = Ui.dp(getContext(), 2);
+        float padY = Ui.dp(getContext(), 10);
+        float w = getWidth() - padX * 2;
+        float h = getHeight() - padY * 2;
 
-        // Bars: each battle's gain or loss, mirrored around a centre line.
-        float slot = w / deltas.length;
-        float barW = Math.max(Ui.dp(getContext(), 2), slot * 0.55f);
-        float mid = lineZone + Ui.dp(getContext(), 8) + barZone / 2f;
-        canvas.drawLine(0, mid, w, mid, baseline);
+        // Include zero in the range so the starting level is always on screen.
+        int span = Math.max(1, hi - lo);
+        boolean up = running[n - 1] >= 0;
+        int colour = up ? Ui.WIN : Ui.LOSS;
 
-        for (int i = 0; i < deltas.length; i++) {
-            if (deltas[i] == 0) {
-                continue;
-            }
-            float cx = slot * (i + 0.5f);
-            float height = (barZone / 2f) * Math.abs(deltas[i]) / peakDelta;
-            bar.setColor(deltas[i] > 0 ? Ui.WIN : Ui.LOSS);
-            float top = deltas[i] > 0 ? mid - height : mid;
-            canvas.drawRect(cx - barW / 2f, top, cx + barW / 2f, top + height, bar);
+        float[] xs = new float[n];
+        float[] ys = new float[n];
+        for (int i = 0; i < n; i++) {
+            xs[i] = padX + w * i / (n - 1f);
+            ys[i] = padY + h - h * (running[i] - lo) / span;
         }
+        float zeroY = padY + h - h * (0 - lo) / span;
 
-        // Line: the running total, scaled to whatever range it covered.
-        int span = Math.max(1, runMax - runMin);
-        path.reset();
-        for (int i = 0; i < running.length; i++) {
-            float x = running.length == 1 ? w / 2f : w * i / (running.length - 1f);
-            float y = lineZone - lineZone * (running[i] - runMin) / (float) span;
-            if (i == 0) {
-                path.moveTo(x, y);
-            } else {
-                path.lineTo(x, y);
-            }
+        // Filled area under the line, fading down from the line colour.
+        fillPath.reset();
+        fillPath.moveTo(xs[0], getHeight() - padY);
+        for (int i = 0; i < n; i++) {
+            fillPath.lineTo(xs[i], ys[i]);
         }
-        line.setColor(running[running.length - 1] >= 0 ? Ui.WIN : Ui.LOSS);
-        canvas.drawPath(path, line);
+        fillPath.lineTo(xs[n - 1], getHeight() - padY);
+        fillPath.close();
+        fill.setShader(new LinearGradient(0, padY, 0, getHeight() - padY,
+                (colour & 0x00FFFFFF) | 0x55000000, (colour & 0x00FFFFFF),
+                Shader.TileMode.CLAMP));
+        canvas.drawPath(fillPath, fill);
+
+        canvas.drawLine(padX, zeroY, padX + w, zeroY, zero);
+
+        linePath.reset();
+        linePath.moveTo(xs[0], ys[0]);
+        for (int i = 1; i < n; i++) {
+            linePath.lineTo(xs[i], ys[i]);
+        }
+        line.setColor(colour);
+        canvas.drawPath(linePath, line);
+
+        dot.setColor(colour);
+        canvas.drawCircle(xs[n - 1], ys[n - 1], Ui.dp(getContext(), 4), dot);
+        dot.setColor(Ui.BG);
+        canvas.drawCircle(xs[n - 1], ys[n - 1], Ui.dp(getContext(), 1.6f), dot);
     }
 }

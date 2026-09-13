@@ -9,6 +9,7 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -50,7 +51,7 @@ public class MainActivity extends Activity {
     private static final int SORT_RANK = 1;
     private static final int SORT_POWER = 2;
     private static final int SORT_NAME = 3;
-    private static final String[] SORT_NAMES = {"Trophees", "Rang", "Puissance", "Nom"};
+    private static final String[] SORT_NAMES = {"Trophies", "Rank", "Power", "Name"};
 
     private SharedPreferences prefs;
     private EditText tagInput;
@@ -96,18 +97,35 @@ public class MainActivity extends Activity {
         }
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        setContentView(buildRoot());
 
         Members.fetch(prefs, new Members.Callback() {
             @Override
             public void onCounts(int online, int total) {
                 memberOnline = online;
                 memberTotal = total;
-                if (player == null && tab == TAB_HOME) {
+                if (content != null && player == null && tab == TAB_HOME) {
                     render();
                 }
             }
         });
+
+        // Cold start plays the intro; a rotation (saved != null) skips it.
+        if (saved == null) {
+            setContentView(splashScreen(new Runnable() {
+                @Override
+                public void run() {
+                    enterApp();
+                }
+            }));
+        } else {
+            enterApp();
+        }
+    }
+
+    private void enterApp() {
+        View root = buildRoot();
+        setContentView(root);
+        Ui.enter(root);
 
         String last = prefs.getString(KEY_LAST_TAG, "");
         if (!last.isEmpty()) {
@@ -116,6 +134,67 @@ public class MainActivity extends Activity {
         } else {
             render();
         }
+    }
+
+    /**
+     * Brief intro: the bee springs in over the wordmark, then the whole thing
+     * lifts away. onDone fires once, whether the animation completed or the
+     * view was torn down first.
+     */
+    private View splashScreen(final Runnable onDone) {
+        final LinearLayout screen = Ui.column(this);
+        screen.setBackgroundColor(Ui.BG);
+        screen.setGravity(Gravity.CENTER);
+
+        final ImageView bee = new ImageView(this);
+        bee.setImageResource(R.drawable.logo);
+        bee.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        bee.setLayoutParams(new LinearLayout.LayoutParams(
+                Ui.dp(this, 108), Ui.dp(this, 108)));
+        screen.addView(bee);
+
+        screen.addView(Ui.spacer(this, 16));
+
+        ShimmerText word = new ShimmerText(this);
+        word.setText("BrawlBee");
+        word.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 30);
+        word.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
+        word.setTextColor(Ui.GOLD);
+        word.setGravity(Gravity.CENTER);
+        screen.addView(word);
+
+        bee.setScaleX(0.5f);
+        bee.setScaleY(0.5f);
+        bee.setAlpha(0f);
+        bee.setRotation(-14f);
+        bee.animate().alpha(1f).scaleX(1f).scaleY(1f).rotation(0f)
+                .setInterpolator(new OvershootInterpolator(2.2f))
+                .setDuration(560).start();
+
+        word.setAlpha(0f);
+        word.setTranslationY(Ui.dp(this, 12));
+        word.animate().alpha(1f).translationY(0f)
+                .setStartDelay(240).setDuration(420).start();
+
+        final boolean[] done = {false};
+        final Runnable finish = new Runnable() {
+            @Override
+            public void run() {
+                if (done[0]) {
+                    return;
+                }
+                done[0] = true;
+                onDone.run();
+            }
+        };
+        screen.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                screen.animate().alpha(0f).translationY(-Ui.dp(MainActivity.this, 24))
+                        .setDuration(260).withEndAction(finish).start();
+            }
+        }, 1150);
+        return screen;
     }
 
     @Override
@@ -228,7 +307,7 @@ public class MainActivity extends Activity {
         LinearLayout row = Ui.row(this);
         row.setPadding(Ui.dp(this, 14), Ui.dp(this, 4), Ui.dp(this, 14), Ui.dp(this, 2));
         modeTabs = new TextView[]{
-                modeTab("JOUEURS", MODE_PLAYER), modeTab("CLUBS", MODE_CLUB)};
+                modeTab("PLAYERS", MODE_PLAYER), modeTab("CLUBS", MODE_CLUB)};
         for (TextView t : modeTabs) {
             row.addView(t);
         }
@@ -352,13 +431,13 @@ public class MainActivity extends Activity {
 
         screen.addView(Ui.icon(this, R.drawable.skull, 72, 0));
         screen.addView(Ui.spacer(this, 18));
-        TextView title = Ui.heavy(this, "FICHIER MODIFIE", 22, Ui.LOSS);
+        TextView title = Ui.heavy(this, "FILE MODIFIED", 22, Ui.LOSS);
         title.setGravity(Gravity.CENTER);
         screen.addView(title);
         screen.addView(Ui.spacer(this, 10));
         TextView body = Ui.text(this,
-                "Cette copie de BrawlBee a ete alteree et ne peut pas demarrer. "
-                        + "Telecharge la version officielle.", 14, Ui.MUTED);
+                "This copy of BrawlBee has been altered and cannot start. "
+                        + "Download the official version.", 14, Ui.MUTED);
         body.setGravity(Gravity.CENTER);
         screen.addView(body);
         return screen;
@@ -401,11 +480,11 @@ public class MainActivity extends Activity {
     private void search() {
         String wanted = BrawlApi.normalizeTag(tagInput.getText().toString());
         if (wanted.isEmpty()) {
-            setStatus("Entre un tag.", Ui.LOSS);
+            setStatus("Enter a tag.", Ui.LOSS);
             return;
         }
         if (token().isEmpty()) {
-            setStatus("Service indisponible.", Ui.LOSS);
+            setStatus("Service unavailable.", Ui.LOSS);
             return;
         }
         hideKeyboard();
@@ -430,7 +509,7 @@ public class MainActivity extends Activity {
         detail = null;
         tab = landOn;
         content.removeAllViews();
-        setStatus("Chargement...", Ui.MUTED);
+        setStatus("Loading...", Ui.MUTED);
 
         final BrawlApi api = new BrawlApi(token());
         api.player(wanted, new BrawlApi.Callback() {
@@ -467,7 +546,7 @@ public class MainActivity extends Activity {
         detail = null;
         tab = TAB_CLUB;
         content.removeAllViews();
-        setStatus("Chargement...", Ui.MUTED);
+        setStatus("Loading...", Ui.MUTED);
 
         new BrawlApi(token()).club(clubTag, new BrawlApi.Callback() {
             @Override
@@ -634,14 +713,14 @@ public class MainActivity extends Activity {
         String online = memberOnline < 0 ? "—" : Ui.num(memberOnline);
         String total = memberTotal < 0 ? "—" : Ui.num(memberTotal);
 
-        card.addView(memberLine("Member Only", online, "en ligne maintenant", Ui.LIME));
+        card.addView(memberLine("Member Only", online, "online now", Ui.LIME));
         card.addView(Ui.spacer(this, 8));
-        card.addView(memberLine("Member", total, "ont installe l'app", Ui.GOLD));
+        card.addView(memberLine("Member", total, "installed the app", Ui.GOLD));
 
         if (!Members.configured()) {
             card.addView(Ui.spacer(this, 12));
             card.addView(Ui.text(this,
-                    "Compteurs en attente du serveur.", 11, Ui.MUTED));
+                    "Counters waiting on the server.", 11, Ui.MUTED));
         }
         return card;
     }
@@ -673,20 +752,20 @@ public class MainActivity extends Activity {
         hero.setPadding(0, Ui.dp(this, 6), 0, 0);
 
         LinearLayout words = Ui.column(this);
-        words.addView(Ui.display(this, "Suis ta\npartie", 34, Ui.WHITE));
+        words.addView(Ui.display(this, "Track your\ngame", 34, Ui.WHITE));
         hero.addView(Ui.weighted(words, 1f));
         hero.addView(Ui.icon(this, R.drawable.brawl, 96, 0));
         content.addView(hero);
         content.addView(Ui.spacer(this, 12));
 
         TextView pitch = Ui.text(this,
-                "Stats en direct, events du moment et suivi complet "
-                        + "pour chaque joueur et chaque club.", 15, Ui.MUTED);
+                "Live stats, current events and full tracking "
+                        + "for every player and every club.", 15, Ui.MUTED);
         pitch.setLineSpacing(0f, 1.25f);
         content.addView(pitch);
         content.addView(Ui.spacer(this, 18));
 
-        TextView cta = Ui.action(this, "Voir mes stats  →");
+        TextView cta = Ui.action(this, "View my stats  →");
         cta.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -701,20 +780,20 @@ public class MainActivity extends Activity {
         content.addView(cta);
 
         LinearLayout legend = Ui.card(this);
-        legend.addView(Ui.heading(this, "Ce que tu suis", null));
+        legend.addView(Ui.heading(this, "What you track", null));
         legend.addView(Ui.spacer(this, 4));
         legend.addView(Ui.legendItem(this, R.drawable.trophy,
-                "Trophees et classements", "Progression, records, top mondial et FR"));
+                "Trophies & rankings", "Progress, records, global & country top"));
         legend.addView(Ui.legendItem(this, R.drawable.brawl,
-                "Stats brawlers", "Rang, puissance, star powers, gadgets, gears"));
+                "Brawler stats", "Rank, power, star powers, gadgets, gears"));
         legend.addView(Ui.legendItem(this, R.drawable.skull,
-                "Battle log", "Win rate par mode, series, star player"));
+                "Battle log", "Win rate per mode, streaks, star player"));
         content.addView(legend);
 
         List<String> recent = recentTags();
         if (!recent.isEmpty()) {
             LinearLayout card = Ui.card(this);
-            card.addView(Ui.heading(this, "Recents",
+            card.addView(Ui.heading(this, "Recent",
                     Ui.chip(this, String.valueOf(recent.size()), Ui.BG, Ui.LIME)));
             card.addView(Ui.spacer(this, 4));
             for (final String t : recent) {
@@ -749,11 +828,11 @@ public class MainActivity extends Activity {
         LinearLayout hero = Ui.row(this);
         hero.addView(Ui.icon(this, R.drawable.brawl, 72, 14));
         LinearLayout words = Ui.column(this);
-        words.addView(Ui.heavy(this, "AUCUN PROFIL", 19, Ui.WHITE));
+        words.addView(Ui.heavy(this, "NO PROFILE", 19, Ui.WHITE));
         words.addView(Ui.spacer(this, 6));
         words.addView(Ui.text(this,
-                "Entre un tag de joueur ci-dessus pour voir ses brawlers, "
-                        + "leur rang, leur puissance et leurs deblocages.",
+                "Enter a player tag above to see their brawlers, "
+                        + "rank, power and unlocks.",
                 13, Ui.MUTED));
         hero.addView(Ui.weighted(words, 1f));
         card.addView(hero);
@@ -761,7 +840,7 @@ public class MainActivity extends Activity {
         List<String> recent = recentTags();
         if (!recent.isEmpty()) {
             card.addView(Ui.divider(this));
-            card.addView(Ui.label(this, "Reprendre", Ui.MUTED));
+            card.addView(Ui.label(this, "Resume", Ui.MUTED));
             for (final String t : recent) {
                 LinearLayout row = Ui.row(this);
                 row.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
@@ -870,8 +949,8 @@ public class MainActivity extends Activity {
         // Ranked play reports no trophy change at all, so those players get a
         // win-loss curve rather than a flat line at zero.
         int[] series = anyTrophies ? deltas : form;
-        String title = anyTrophies ? "Tendance trophees" : "Forme recente";
-        String unit = anyTrophies ? "" : " combats";
+        String title = anyTrophies ? "Trophy trend" : "Recent form";
+        String unit = anyTrophies ? "" : " battles";
 
         int total = 0;
         int high = 0;
@@ -889,7 +968,7 @@ public class MainActivity extends Activity {
 
         if (high == 0 && low == 0) {
             card.addView(Ui.spacer(this, 10));
-            card.addView(Ui.text(this, "Pas assez de combats pour tracer une courbe.",
+            card.addView(Ui.text(this, "Not enough battles to draw a curve.",
                     13, Ui.MUTED));
             return card;
         }
@@ -904,9 +983,9 @@ public class MainActivity extends Activity {
         card.addView(Ui.spacer(this, 12));
         LinearLayout foot = Ui.row(this);
         foot.addView(Ui.weighted(Ui.wrap(this,
-                Ui.text(this, n + " combats", 12, Ui.MUTED)), 1f));
-        foot.addView(Ui.bold(this, "haut " + Ui.signed(high), 12, Ui.WIN));
-        foot.addView(Ui.bold(this, "   bas " + Ui.signed(low), 12, Ui.LOSS));
+                Ui.text(this, n + " battles", 12, Ui.MUTED)), 1f));
+        foot.addView(Ui.bold(this, "high " + Ui.signed(high), 12, Ui.WIN));
+        foot.addView(Ui.bold(this, "   low " + Ui.signed(low), 12, Ui.LOSS));
         card.addView(foot);
         return card;
     }
@@ -931,7 +1010,7 @@ public class MainActivity extends Activity {
     private View trackingCard(Stats s) {
         LinearLayout card = Ui.card(this);
         card.addView(Ui.heading(this, R.drawable.trophy, "Tracking",
-                Ui.chip(this, s.battles + " COMBATS", Ui.MUTED, Ui.CARD_SOFT)));
+                Ui.chip(this, s.battles + " BATTLES", Ui.MUTED, Ui.CARD_SOFT)));
 
         card.addView(Ui.spacer(this, 12));
         LinearLayout rateRow = Ui.row(this);
@@ -944,17 +1023,17 @@ public class MainActivity extends Activity {
                 s.winRate() >= 50 ? Ui.WIN : Ui.LOSS));
 
         card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Victoires", String.valueOf(s.wins), Ui.WIN),
-                Ui.tile(this, "Defaites", String.valueOf(s.losses), Ui.LOSS),
-                Ui.tile(this, "Nuls", String.valueOf(s.draws), Ui.MUTED)));
+                Ui.tile(this, "Wins", String.valueOf(s.wins), Ui.WIN),
+                Ui.tile(this, "Losses", String.valueOf(s.losses), Ui.LOSS),
+                Ui.tile(this, "Draws", String.valueOf(s.draws), Ui.MUTED)));
         card.addView(Ui.tileRow(this,
                 Ui.tile(this, "Star player", String.valueOf(s.starPlayer), Ui.GOLD),
                 Ui.tile(this, "Brawlers", String.valueOf(s.brawlersUsed.size()), Ui.WHITE),
-                Ui.tile(this, "Serie", s.streak + "V", Ui.LIME)));
+                Ui.tile(this, "Streak", s.streak + "W", Ui.LIME)));
         card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Gagnes", Ui.signed(s.trophiesWon), Ui.WIN),
-                Ui.tile(this, "Perdus", "-" + Ui.num(s.trophiesLost), Ui.LOSS),
-                Ui.tile(this, "Bilan", Ui.signed(s.trophyNet()),
+                Ui.tile(this, "Gained", Ui.signed(s.trophiesWon), Ui.WIN),
+                Ui.tile(this, "Lost", "-" + Ui.num(s.trophiesLost), Ui.LOSS),
+                Ui.tile(this, "Net", Ui.signed(s.trophyNet()),
                         s.trophyNet() >= 0 ? Ui.WIN : Ui.LOSS)));
         return card;
     }
@@ -962,11 +1041,11 @@ public class MainActivity extends Activity {
     /** Win rate split per game mode, which the raw battle list does not show. */
     private View modesCard(Stats s) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, R.drawable.skull, "Par mode", null));
+        card.addView(Ui.heading(this, R.drawable.skull, "Per mode", null));
         card.addView(Ui.spacer(this, 6));
 
         if (s.byMode.isEmpty()) {
-            card.addView(Ui.text(this, "Aucun combat classe.", 13, Ui.MUTED));
+            card.addView(Ui.text(this, "No ranked battles.", 13, Ui.MUTED));
             return card;
         }
         List<Map.Entry<String, int[]>> modes = new ArrayList<>(s.byMode.entrySet());
@@ -996,7 +1075,7 @@ public class MainActivity extends Activity {
 
             line.addView(Ui.weighted(Ui.wrap(this,
                     Ui.bold(this, pretty(e.getKey()), 14, Ui.WHITE)), 1f));
-            line.addView(Ui.bold(this, rec[0] + "V " + rec[1] + "D", 12, Ui.MUTED));
+            line.addView(Ui.bold(this, rec[0] + "W " + rec[1] + "L", 12, Ui.MUTED));
             TextView pct = Ui.heavy(this, "  " + rate + "%", 14,
                     rate >= 50 ? Ui.WIN : Ui.LOSS);
             line.addView(pct);
@@ -1009,7 +1088,7 @@ public class MainActivity extends Activity {
 
     private View heroBrawlerCard(final JSONObject b) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, R.drawable.brawl, "Meilleur brawler",
+        card.addView(Ui.heading(this, R.drawable.brawl, "Best brawler",
                 Ui.chip(this, "DETAIL", Ui.BG, Ui.LIME)));
         card.addView(Ui.spacer(this, 12));
         card.addView(brawlerHeader(b, 58));
@@ -1116,7 +1195,7 @@ public class MainActivity extends Activity {
             sub.addView(Ui.bold(this, pretty(skinName), 11, Ui.LIME));
             sub.addView(Ui.text(this, "  •  ", 11, Ui.MUTED));
         }
-        sub.addView(Ui.text(this, "Rang " + b.optInt("rank"), 11, Ui.MUTED));
+        sub.addView(Ui.text(this, "Rank " + b.optInt("rank"), 11, Ui.MUTED));
         info.addView(sub);
         row.addView(Ui.weighted(info, 1f));
 
@@ -1138,7 +1217,7 @@ public class MainActivity extends Activity {
         LinearLayout back = Ui.card(this);
         back.setPadding(Ui.dp(this, 12), Ui.dp(this, 11),
                 Ui.dp(this, 12), Ui.dp(this, 11));
-        back.addView(Ui.bold(this, "< Retour aux brawlers", 14, Ui.LIME));
+        back.addView(Ui.bold(this, "< Back to brawlers", 14, Ui.LIME));
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1151,8 +1230,8 @@ public class MainActivity extends Activity {
         LinearLayout card = Ui.card(this);
         card.addView(brawlerHeader(b, 66));
         card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Rang", String.valueOf(b.optInt("rank")), Ui.WHITE),
-                Ui.tile(this, "Puissance", String.valueOf(b.optInt("power")), Ui.LIME),
+                Ui.tile(this, "Rank", String.valueOf(b.optInt("rank")), Ui.WHITE),
+                Ui.tile(this, "Power", String.valueOf(b.optInt("power")), Ui.LIME),
                 Ui.tile(this, "Prestige", String.valueOf(b.optInt("prestigeLevel")), Ui.WHITE)));
 
         int current = b.optInt("currentWinStreak");
@@ -1160,7 +1239,7 @@ public class MainActivity extends Activity {
         card.addView(Ui.spacer(this, 14));
         LinearLayout streakRow = Ui.row(this);
         streakRow.addView(Ui.weighted(Ui.wrap(this,
-                Ui.label(this, "Serie en cours", Ui.MUTED)), 1f));
+                Ui.label(this, "Current streak", Ui.MUTED)), 1f));
         streakRow.addView(Ui.heavy(this, current + " / " + best, 15, Ui.GOLD));
         card.addView(streakRow);
         card.addView(Ui.meter(this, current / (float) best, Ui.GOLD));
@@ -1186,7 +1265,7 @@ public class MainActivity extends Activity {
 
         if (owned == 0) {
             card.addView(Ui.spacer(this, 10));
-            card.addView(Ui.text(this, "Aucun debloque.", 13, Ui.MUTED));
+            card.addView(Ui.text(this, "None unlocked.", 13, Ui.MUTED));
             return card;
         }
         card.addView(Ui.spacer(this, 4));
@@ -1217,7 +1296,7 @@ public class MainActivity extends Activity {
             row.addView(Ui.weighted(Ui.wrap(this,
                     Ui.bold(this, pretty(it.optString("name", "?")), 14, Ui.WHITE)), 1f));
             if (it.has("level")) {
-                row.addView(Ui.chip(this, "NIV " + it.optInt("level"), color, Ui.CARD_SOFT));
+                row.addView(Ui.chip(this, "LVL " + it.optInt("level"), color, Ui.CARD_SOFT));
             }
             card.addView(row);
         }
@@ -1233,7 +1312,7 @@ public class MainActivity extends Activity {
         LinearLayout counts = Ui.row(this);
         counts.addView(Ui.heavy(this, s.wins + "V", 14, Ui.WIN));
         counts.addView(Ui.heavy(this, "  " + s.losses + "D", 14, Ui.LOSS));
-        card.addView(Ui.heading(this, R.drawable.skull, "Combats", counts));
+        card.addView(Ui.heading(this, R.drawable.skull, "Battles", counts));
         card.addView(Ui.spacer(this, 4));
 
         int limit = Math.min(battles.length(), 25);
@@ -1261,18 +1340,18 @@ public class MainActivity extends Activity {
             if (battle.has("result")) {
                 String r = battle.optString("result");
                 if ("victory".equals(r)) {
-                    outcome = "Victoire";
+                    outcome = "Win";
                     outcomeColor = Ui.WIN;
                 } else if ("defeat".equals(r)) {
-                    outcome = "Defaite";
+                    outcome = "Loss";
                     outcomeColor = Ui.LOSS;
                 } else {
-                    outcome = "Nul";
+                    outcome = "Draw";
                     outcomeColor = Ui.DRAW;
                 }
             } else if (battle.has("rank")) {
                 int rank = battle.optInt("rank");
-                outcome = "Rang " + rank;
+                outcome = "Rank " + rank;
                 outcomeColor = rank <= 4 ? Ui.WIN : Ui.LOSS;
             }
         }
@@ -1319,7 +1398,7 @@ public class MainActivity extends Activity {
             return;
         }
         LinearLayout header = Ui.card(this);
-        header.addView(Ui.heading(this, "Events en cours",
+        header.addView(Ui.heading(this, "Live events",
                 Ui.chip(this, String.valueOf(events.length()), Ui.BG, Ui.LIME)));
         content.addView(header);
 
@@ -1371,8 +1450,8 @@ public class MainActivity extends Activity {
         String left = remaining(slot.optString("endTime", ""));
         LinearLayout right = Ui.column(this);
         right.setGravity(Gravity.END);
-        right.addView(Ui.label(this, "Reste", Ui.MUTED));
-        TextView time = Ui.heavy(this, left, 15, left.equals("termine") ? Ui.MUTED : Ui.LIME);
+        right.addView(Ui.label(this, "Left", Ui.MUTED));
+        TextView time = Ui.heavy(this, left, 15, left.equals("ended") ? Ui.MUTED : Ui.LIME);
         time.setGravity(Gravity.END);
         right.addView(time);
         row.addView(right);
@@ -1384,12 +1463,12 @@ public class MainActivity extends Activity {
     /** A live taste of the rotation, so the landing screen carries real data. */
     private View eventsPreviewCard() {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, "Events en cours",
-                Ui.chip(this, "TOUT VOIR", Ui.BG, Ui.LIME)));
+        card.addView(Ui.heading(this, "Live events",
+                Ui.chip(this, "VIEW ALL", Ui.BG, Ui.LIME)));
         card.addView(Ui.spacer(this, 4));
 
         if (events == null) {
-            card.addView(Ui.text(this, "Chargement...", 13, Ui.MUTED));
+            card.addView(Ui.text(this, "Loading...", 13, Ui.MUTED));
             loadEvents();
         } else if (events.length() == 0) {
             card.addView(Ui.text(this, "Rotation indisponible.", 13, Ui.MUTED));
@@ -1455,7 +1534,7 @@ public class MainActivity extends Activity {
 
             long ms = cal.getTimeInMillis() - System.currentTimeMillis();
             if (ms <= 0) {
-                return "termine";
+                return "ended";
             }
             long minutes = ms / 60000;
             long hours = minutes / 60;
@@ -1479,9 +1558,9 @@ public class MainActivity extends Activity {
                 card.addView(Ui.heading(this, "Club", null));
                 card.addView(Ui.spacer(this, 10));
                 card.addView(Ui.text(this, player == null
-                        ? "Choisis CLUBS en haut et entre un tag de club, "
-                        + "ou cherche d'abord un joueur."
-                        : "Ce joueur n'est dans aucun club.", 14, Ui.MUTED));
+                        ? "Pick CLUBS above and enter a club tag, "
+                        + "or search a player first."
+                        : "This player is in no club.", 14, Ui.MUTED));
                 content.addView(card);
                 return;
             }
@@ -1516,9 +1595,9 @@ public class MainActivity extends Activity {
         }
         JSONArray members = club.optJSONArray("members");
         card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Trophees", Ui.num(club.optLong("trophies")), Ui.GOLD),
-                Ui.tile(this, "Requis", Ui.num(club.optLong("requiredTrophies")), Ui.WHITE),
-                Ui.tile(this, "Membres",
+                Ui.tile(this, "Trophies", Ui.num(club.optLong("trophies")), Ui.GOLD),
+                Ui.tile(this, "Required", Ui.num(club.optLong("requiredTrophies")), Ui.WHITE),
+                Ui.tile(this, "Members",
                         (members == null ? 0 : members.length()) + "/30", Ui.WHITE)));
         content.addView(card);
 
@@ -1526,7 +1605,7 @@ public class MainActivity extends Activity {
             return;
         }
         LinearLayout list = Ui.card(this);
-        list.addView(Ui.heading(this, "Membres", null));
+        list.addView(Ui.heading(this, "Members", null));
         list.addView(Ui.spacer(this, 4));
         for (int i = 0; i < members.length(); i++) {
             JSONObject m = members.optJSONObject(i);
@@ -1555,11 +1634,11 @@ public class MainActivity extends Activity {
 
     private void renderRankingsTab() {
         LinearLayout header = Ui.card(this);
-        header.addView(Ui.heading(this, R.drawable.trophy, "Classement", null));
+        header.addView(Ui.heading(this, R.drawable.trophy, "Rankings", null));
         header.addView(Ui.spacer(this, 10));
 
         LinearLayout controls = Ui.row(this);
-        controls.addView(rankChip("JOUEURS", rankKind == MODE_PLAYER, new Runnable() {
+        controls.addView(rankChip("PLAYERS", rankKind == MODE_PLAYER, new Runnable() {
             @Override
             public void run() {
                 rankKind = MODE_PLAYER;
@@ -1573,7 +1652,7 @@ public class MainActivity extends Activity {
                 rankings = null;
             }
         }));
-        controls.addView(rankChip("MONDE", "global".equals(region), new Runnable() {
+        controls.addView(rankChip("WORLD", "global".equals(region), new Runnable() {
             @Override
             public void run() {
                 region = "global";
@@ -1591,7 +1670,7 @@ public class MainActivity extends Activity {
         content.addView(header);
 
         if (rankings == null) {
-            content.addView(loadingCard("Chargement"));
+            content.addView(loadingCard("Loading"));
             loadRankings();
             return;
         }
@@ -1629,7 +1708,7 @@ public class MainActivity extends Activity {
             info.addView(Ui.bold(this, p.optString("name", "?"), 14, Ui.WHITE));
             String sub;
             if (rankKind == MODE_CLUB) {
-                sub = p.optInt("memberCount") + " membres";
+                sub = p.optInt("memberCount") + " members";
             } else {
                 JSONObject pc = p.optJSONObject("club");
                 String cn = pc == null ? "" : pc.optString("name", "");
@@ -1667,7 +1746,7 @@ public class MainActivity extends Activity {
         LinearLayout card = Ui.card(this);
         card.addView(Ui.heading(this, title, null));
         card.addView(Ui.spacer(this, 10));
-        card.addView(Ui.text(this, "Chargement...", 14, Ui.MUTED));
+        card.addView(Ui.text(this, "Loading...", 14, Ui.MUTED));
         return card;
     }
 

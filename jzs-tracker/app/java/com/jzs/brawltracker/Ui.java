@@ -40,6 +40,10 @@ final class Ui {
     }
 
     static int dp(Context c, int value) {
+        return dp(c, (float) value);
+    }
+
+    static int dp(Context c, float value) {
         return Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, value, c.getResources().getDisplayMetrics()));
     }
