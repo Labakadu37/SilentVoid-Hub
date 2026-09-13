@@ -174,6 +174,21 @@ final class Ui {
         return r;
     }
 
+    /** A trophy icon followed by its count, the pairing used all over the app. */
+    static LinearLayout trophy(Context c, long value, int sp, int color) {
+        LinearLayout r = row(c);
+        android.widget.ImageView icon = new android.widget.ImageView(c);
+        icon.setImageResource(R.drawable.trophy);
+        icon.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        int side = dp(c, sp - 1);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(side, side);
+        lp.rightMargin = dp(c, 5);
+        icon.setLayoutParams(lp);
+        r.addView(icon);
+        r.addView(heavy(c, num(value), sp, color));
+        return r;
+    }
+
     /** Filled track used for the win-streak meter. */
     static View meter(Context c, float fraction, int color) {
         LinearLayout track = new LinearLayout(c);

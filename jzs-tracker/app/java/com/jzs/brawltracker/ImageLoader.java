@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
 /** Loads brawler portraits, caching them in memory and on disk. */
 final class ImageLoader {
 
-    private static final String CDN = "https://cdn.brawlify.com/brawlers/borderless/";
+    private static final String CDN = "https://cdn.brawlify.com/";
 
     private static final LruCache<String, Bitmap> MEMORY =
             new LruCache<String, Bitmap>(6 * 1024 * 1024) {
@@ -35,8 +35,30 @@ final class ImageLoader {
     private ImageLoader() {
     }
 
-    static void brawler(ImageView view, int brawlerId) {
-        String key = String.valueOf(brawlerId);
+    static void brawler(ImageView view, int id) {
+        load(view, "brawlers/borderless", id);
+    }
+
+    static void profileIcon(ImageView view, int id) {
+        load(view, "profile-icons/regular", id);
+    }
+
+    static void clubBadge(ImageView view, int id) {
+        load(view, "club-badges/regular", id);
+    }
+
+    /** Battle events are keyed by map id, which doubles as the map artwork. */
+    static void map(ImageView view, int eventId) {
+        load(view, "maps/regular", eventId);
+    }
+
+    private static void load(ImageView view, String category, int id) {
+        if (id <= 0) {
+            view.setImageBitmap(null);
+            view.setTag(null);
+            return;
+        }
+        String key = category + "/" + id;
         view.setTag(key);
 
         Bitmap cached = MEMORY.get(key);
@@ -45,7 +67,7 @@ final class ImageLoader {
             return;
         }
         view.setImageBitmap(null);
-        IO.execute(new Load(view, key, CDN + brawlerId + ".png"));
+        IO.execute(new Load(view, key, CDN + key + ".png"));
     }
 
     private static final class Load implements Runnable {
@@ -74,7 +96,7 @@ final class ImageLoader {
 
         private File cacheFile() {
             Context c = view.getContext();
-            return new File(c.getCacheDir(), "brawler_" + key + ".png");
+            return new File(c.getCacheDir(), key.replace('/', '_') + ".png");
         }
 
         private Bitmap fromDisk() {

@@ -39,12 +39,17 @@ public class MainActivity extends Activity {
     private static final int TAB_RANKINGS = 3;
     private static final String[] TAB_NAMES = {"Home", "Brawlers", "Club", "Rankings"};
 
+    private static final int MODE_PLAYER = 0;
+    private static final int MODE_CLUB = 1;
+
     private SharedPreferences prefs;
     private EditText tagInput;
     private TextView status;
     private LinearLayout content;
     private LinearLayout navBar;
+    private TextView[] modeTabs;
 
+    private int searchMode = MODE_PLAYER;
     private int tab = TAB_HOME;
     private String tag = "";
     private JSONObject player;
@@ -75,6 +80,7 @@ public class MainActivity extends Activity {
 
         root.addView(buildTopBar());
         root.addView(buildSearchRow());
+        root.addView(buildModeRow());
 
         status = Ui.text(this, "", 13, Ui.MUTED);
         status.setPadding(Ui.dp(this, 16), Ui.dp(this, 10), Ui.dp(this, 16), 0);
@@ -124,6 +130,47 @@ public class MainActivity extends Activity {
         });
         bar.addView(key);
         return bar;
+    }
+
+    /** Players / Clubs selector, so a club tag can be looked up on its own. */
+    private View buildModeRow() {
+        LinearLayout row = Ui.row(this);
+        row.setPadding(Ui.dp(this, 16), Ui.dp(this, 6), Ui.dp(this, 16), Ui.dp(this, 2));
+        modeTabs = new TextView[]{
+                modeTab("JOUEURS", MODE_PLAYER), modeTab("CLUBS", MODE_CLUB)};
+        for (TextView t : modeTabs) {
+            row.addView(t);
+        }
+        refreshModeTabs();
+        return row;
+    }
+
+    private TextView modeTab(String title, final int mode) {
+        TextView t = Ui.bold(this, title, 12, Ui.MUTED);
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(0, Ui.dp(this, 9), 0, Ui.dp(this, 9));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        lp.rightMargin = Ui.dp(this, 8);
+        t.setLayoutParams(lp);
+        t.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                searchMode = mode;
+                refreshModeTabs();
+                tagInput.setHint(mode == MODE_CLUB ? "#2LRGVQC0" : "#2Y0VLQR9");
+            }
+        });
+        return t;
+    }
+
+    private void refreshModeTabs() {
+        for (int i = 0; i < modeTabs.length; i++) {
+            boolean active = i == searchMode;
+            modeTabs[i].setTextColor(active ? Ui.BG : Ui.MUTED);
+            modeTabs[i].setBackground(Ui.round(
+                    active ? Ui.LIME : Ui.CARD, Ui.dp(this, 10)));
+        }
     }
 
     private View buildSearchRow() {
@@ -245,6 +292,10 @@ public class MainActivity extends Activity {
         }
 
         hideKeyboard();
+        if (searchMode == MODE_CLUB) {
+            searchClub(wanted);
+            return;
+        }
         prefs.edit().putString(KEY_LAST_TAG, wanted).apply();
         tag = wanted;
         player = null;
@@ -273,6 +324,29 @@ public class MainActivity extends Activity {
                         render();
                     }
                 });
+            }
+
+            @Override
+            public void onError(String message) {
+                content.removeAllViews();
+                setStatus(message, Ui.LOSS);
+            }
+        });
+    }
+
+    private void searchClub(String clubTag) {
+        club = null;
+        content.removeAllViews();
+        setStatus("Chargement...", Ui.MUTED);
+        tab = TAB_CLUB;
+        refreshNav();
+
+        new BrawlApi(token()).club(clubTag, new BrawlApi.Callback() {
+            @Override
+            public void onSuccess(JSONObject body) {
+                club = body;
+                setStatus("", Ui.MUTED);
+                render();
             }
 
             @Override
@@ -324,27 +398,47 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- render
 
+    /**
+     * Rankings are global and the club tab can show a directly searched club,
+     * so neither waits on a player being loaded first.
+     */
     private void render() {
         content.removeAllViews();
         refreshNav();
 
-        if (player == null) {
-            showWelcome();
-            return;
-        }
         switch (tab) {
-            case TAB_BRAWLERS:
-                renderBrawlersTab();
-                break;
-            case TAB_CLUB:
-                renderClubTab();
-                break;
             case TAB_RANKINGS:
                 renderRankingsTab();
-                break;
+                return;
+            case TAB_CLUB:
+                renderClubTab();
+                return;
+            case TAB_BRAWLERS:
+                if (player == null) {
+                    content.addView(needPlayerCard("Brawlers"));
+                    return;
+                }
+                renderBrawlersTab();
+                return;
             default:
+                if (player == null) {
+                    showWelcome();
+                    return;
+                }
                 renderHomeTab();
         }
+    }
+
+    private View needPlayerCard(String section) {
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.label(this, section, Ui.LIME));
+        card.addView(Ui.spacer(this, 10));
+        card.addView(Ui.heavy(this, "Cherche un joueur", 20, Ui.WHITE));
+        card.addView(Ui.spacer(this, 8));
+        card.addView(Ui.text(this,
+                "Cette section a besoin d'un profil. Entre un tag en haut avec "
+                        + "JOUEURS selectionne, puis appuie sur GO.", 14, Ui.MUTED));
+        return card;
     }
 
     private void showWelcome() {
@@ -380,14 +474,25 @@ public class MainActivity extends Activity {
         LinearLayout card = Ui.card(this);
 
         LinearLayout head = Ui.row(this);
+
+        ImageView avatar = new ImageView(this);
+        avatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(
+                Ui.dp(this, 52), Ui.dp(this, 52));
+        al.rightMargin = Ui.dp(this, 12);
+        avatar.setLayoutParams(al);
+        JSONObject icon = player.optJSONObject("icon");
+        ImageLoader.profileIcon(avatar, icon == null ? 0 : icon.optInt("id"));
+        head.addView(avatar);
+
         LinearLayout names = Ui.column(this);
-        names.addView(Ui.heavy(this, player.optString("name", "?").toUpperCase(), 26, Ui.WHITE));
+        names.addView(Ui.heavy(this, player.optString("name", "?").toUpperCase(), 23, Ui.WHITE));
         names.addView(Ui.text(this, player.optString("tag", ""), 13, Ui.MUTED));
         head.addView(Ui.weighted(names, 1f));
 
         LinearLayout trophyBox = Ui.column(this);
         trophyBox.setGravity(Gravity.END);
-        trophyBox.addView(Ui.heavy(this, Ui.num(player.optLong("trophies")), 26, Ui.GOLD));
+        trophyBox.addView(Ui.trophy(this, player.optLong("trophies"), 22, Ui.GOLD));
         TextView max = Ui.text(this, "max " + Ui.num(player.optLong("highestTrophies")),
                 11, Ui.MUTED);
         max.setGravity(Gravity.END);
@@ -551,8 +656,8 @@ public class MainActivity extends Activity {
 
         LinearLayout right = Ui.column(this);
         right.setGravity(Gravity.END);
-        right.addView(Ui.heavy(this, Ui.num(b.optLong("trophies")),
-                portraitDp >= 64 ? 22 : 18, Ui.GOLD));
+        right.addView(Ui.trophy(this, b.optLong("trophies"),
+                portraitDp >= 64 ? 19 : 16, Ui.GOLD));
         TextView max = Ui.text(this, "max " + Ui.num(b.optLong("highestTrophies")),
                 11, Ui.MUTED);
         max.setGravity(Gravity.END);
@@ -618,6 +723,17 @@ public class MainActivity extends Activity {
         LinearLayout row = Ui.row(this);
         row.setPadding(0, Ui.dp(this, 9), 0, Ui.dp(this, 9));
 
+        ImageView thumb = new ImageView(this);
+        thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(
+                Ui.dp(this, 42), Ui.dp(this, 32));
+        tl.rightMargin = Ui.dp(this, 11);
+        thumb.setLayoutParams(tl);
+        thumb.setBackground(Ui.round(Ui.CARD_SOFT, Ui.dp(this, 7)));
+        thumb.setClipToOutline(true);
+        ImageLoader.map(thumb, event == null ? 0 : event.optInt("id"));
+        row.addView(thumb);
+
         LinearLayout left = Ui.column(this);
         left.addView(Ui.bold(this, mode, 15, Ui.WHITE));
         if (!map.isEmpty()) {
@@ -660,13 +776,17 @@ public class MainActivity extends Activity {
     }
 
     private void renderClubTab() {
-        JSONObject c = player.optJSONObject("club");
-        String clubTag = c == null ? "" : c.optString("tag", "");
-        if (clubTag.isEmpty()) {
-            content.addView(emptyCard("Aucun club", "Ce joueur n'est dans aucun club."));
-            return;
-        }
         if (club == null) {
+            JSONObject c = player == null ? null : player.optJSONObject("club");
+            String clubTag = c == null ? "" : c.optString("tag", "");
+            if (clubTag.isEmpty()) {
+                content.addView(emptyCard("Club",
+                        player == null
+                                ? "Choisis CLUBS en haut et entre un tag de club, "
+                                + "ou cherche d'abord un joueur."
+                                : "Ce joueur n'est dans aucun club."));
+                return;
+            }
             content.addView(emptyCard(c.optString("name", "Club"), "Chargement..."));
             loadClub();
             return;
@@ -674,9 +794,24 @@ public class MainActivity extends Activity {
 
         LinearLayout card = Ui.card(this);
         card.addView(Ui.label(this, "Club", Ui.LIME));
-        card.addView(Ui.spacer(this, 10));
-        card.addView(Ui.heavy(this, club.optString("name", "?").toUpperCase(), 24, Ui.WHITE));
-        card.addView(Ui.text(this, club.optString("tag", ""), 13, Ui.MUTED));
+        card.addView(Ui.spacer(this, 12));
+
+        LinearLayout head = Ui.row(this);
+        ImageView badge = new ImageView(this);
+        badge.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams bl = new LinearLayout.LayoutParams(
+                Ui.dp(this, 52), Ui.dp(this, 52));
+        bl.rightMargin = Ui.dp(this, 12);
+        badge.setLayoutParams(bl);
+        ImageLoader.clubBadge(badge, club.optInt("badgeId"));
+        head.addView(badge);
+
+        LinearLayout titles = Ui.column(this);
+        titles.addView(Ui.heavy(this,
+                club.optString("name", "?").toUpperCase(), 22, Ui.WHITE));
+        titles.addView(Ui.text(this, club.optString("tag", ""), 13, Ui.MUTED));
+        head.addView(Ui.weighted(titles, 1f));
+        card.addView(head);
 
         String desc = club.optString("description", "");
         if (!desc.isEmpty()) {
@@ -713,7 +848,7 @@ public class MainActivity extends Activity {
             info.addView(Ui.bold(this, m.optString("name", "?"), 15, Ui.WHITE));
             info.addView(Ui.text(this, pretty(m.optString("role", "")), 11, Ui.MUTED));
             row.addView(Ui.weighted(info, 1f));
-            row.addView(Ui.heavy(this, Ui.num(m.optLong("trophies")), 15, Ui.GOLD));
+            row.addView(Ui.trophy(this, m.optLong("trophies"), 14, Ui.GOLD));
             list.addView(row);
         }
         content.addView(list);
@@ -751,7 +886,7 @@ public class MainActivity extends Activity {
                     11, Ui.MUTED));
             row.addView(Ui.weighted(info, 1f));
 
-            row.addView(Ui.heavy(this, Ui.num(p.optLong("trophies")), 15, Ui.GOLD));
+            row.addView(Ui.trophy(this, p.optLong("trophies"), 14, Ui.GOLD));
             card.addView(row);
         }
         content.addView(card);
