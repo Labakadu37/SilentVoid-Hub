@@ -89,6 +89,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
+
+        if (!Guard.intact(this)) {
+            setContentView(tamperScreen());
+            return;
+        }
+
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         setContentView(buildRoot());
 
@@ -331,9 +337,31 @@ public class MainActivity extends Activity {
 
     // ----------------------------------------------------------------- token
 
-    /** The key ships with the build, so nobody is asked to supply one. */
+    /** Decrypted from the packed secrets; nobody is asked to supply a key. */
     private String token() {
-        return Config.DEFAULT_TOKEN.trim();
+        return Secrets.token().trim();
+    }
+
+    /** Shown instead of the app when the signing certificate does not match. */
+    private View tamperScreen() {
+        LinearLayout screen = Ui.column(this);
+        screen.setBackgroundColor(Ui.BG);
+        screen.setGravity(Gravity.CENTER);
+        int p = Ui.dp(this, 32);
+        screen.setPadding(p, p, p, p);
+
+        screen.addView(Ui.icon(this, R.drawable.skull, 72, 0));
+        screen.addView(Ui.spacer(this, 18));
+        TextView title = Ui.heavy(this, "FICHIER MODIFIE", 22, Ui.LOSS);
+        title.setGravity(Gravity.CENTER);
+        screen.addView(title);
+        screen.addView(Ui.spacer(this, 10));
+        TextView body = Ui.text(this,
+                "Cette copie de BrawlBee a ete alteree et ne peut pas demarrer. "
+                        + "Telecharge la version officielle.", 14, Ui.MUTED);
+        body.setGravity(Gravity.CENTER);
+        screen.addView(body);
+        return screen;
     }
 
     // -------------------------------------------------------- recent profiles

@@ -3,14 +3,11 @@ package com.jzs.brawltracker;
 /**
  * Build-time configuration.
  *
- * DEFAULT_TOKEN is the key every copy of the app uses; build.sh fills it in
- * from the gitignored token.txt. The app offers no way to enter a key, so a
- * build without one cannot reach the API. A baked-in key is readable by
- * anyone who unpacks the APK, so only ship one you are willing to rotate.
+ * The API token no longer lives here: it is encrypted into Secrets at build
+ * time from the gitignored token.txt, and the app has no way to enter one, so
+ * a build without it cannot reach the API.
  */
 final class Config {
-
-    static final String DEFAULT_TOKEN = "";
 
     /**
      * Endpoint returning {"online":N,"total":M} for the member banner, called
