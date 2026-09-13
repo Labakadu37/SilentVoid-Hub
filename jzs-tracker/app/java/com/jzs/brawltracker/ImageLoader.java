@@ -63,6 +63,18 @@ final class ImageLoader {
 
     private static final int GAME_MODE_BASE = 48000000;
 
+    static void starPower(ImageView view, int id) {
+        load(view, "star-powers/regular", id);
+    }
+
+    static void gadget(ImageView view, int id) {
+        load(view, "gadgets/regular", id);
+    }
+
+    static void gear(ImageView view, int id) {
+        load(view, "gears/regular", id);
+    }
+
     /**
      * Shows a dimmed mark straight away so a slot never reads as a hole while
      * the artwork is in flight, or if it never arrives.

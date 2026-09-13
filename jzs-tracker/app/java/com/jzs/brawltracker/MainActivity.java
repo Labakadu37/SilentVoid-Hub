@@ -730,6 +730,7 @@ public class MainActivity extends Activity {
         content.addView(profileCard());
         if (battles != null) {
             Stats s = Stats.from(battles, tag);
+            content.addView(trendCard());
             content.addView(trackingCard(s));
             content.addView(modesCard(s));
         }
@@ -789,6 +790,85 @@ public class MainActivity extends Activity {
                 Ui.tile(this, "Duo", Ui.num(player.optLong("duoVictories")), Ui.WIN),
                 Ui.tile(this, "Record", Ui.num(player.optLong("highestTrophies")), Ui.GOLD)));
         return card;
+    }
+
+    /**
+     * Trophy movement over the battle log. Battles arrive newest first, so the
+     * deltas are reversed to read left to right as time passes.
+     */
+    private View trendCard() {
+        int n = battles.length();
+        int[] deltas = new int[n];
+        int[] form = new int[n];
+        boolean anyTrophies = false;
+
+        for (int i = 0; i < n; i++) {
+            JSONObject entry = battles.optJSONObject(n - 1 - i);
+            JSONObject battle = entry == null ? null : entry.optJSONObject("battle");
+            deltas[i] = battle == null ? 0 : battle.optInt("trophyChange");
+            anyTrophies |= deltas[i] != 0;
+            form[i] = outcomeSign(battle);
+        }
+
+        // Ranked play reports no trophy change at all, so those players get a
+        // win-loss curve rather than a flat line at zero.
+        int[] series = anyTrophies ? deltas : form;
+        String title = anyTrophies ? "Tendance trophees" : "Forme recente";
+        String unit = anyTrophies ? "" : " combats";
+
+        int total = 0;
+        int high = 0;
+        int low = 0;
+        for (int v : series) {
+            total += v;
+            high = Math.max(high, total);
+            low = Math.min(low, total);
+        }
+
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.heading(this, R.drawable.trophy, title,
+                Ui.chip(this, Ui.signed(total) + unit, Ui.BG,
+                        total >= 0 ? Ui.WIN : Ui.LOSS)));
+
+        if (high == 0 && low == 0) {
+            card.addView(Ui.spacer(this, 10));
+            card.addView(Ui.text(this, "Pas assez de combats pour tracer une courbe.",
+                    13, Ui.MUTED));
+            return card;
+        }
+
+        card.addView(Ui.spacer(this, 14));
+        TrendChart chart = new TrendChart(this);
+        chart.setDeltas(series);
+        chart.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 110)));
+        card.addView(chart);
+
+        card.addView(Ui.spacer(this, 12));
+        LinearLayout foot = Ui.row(this);
+        foot.addView(Ui.weighted(Ui.wrap(this,
+                Ui.text(this, n + " combats", 12, Ui.MUTED)), 1f));
+        foot.addView(Ui.bold(this, "haut " + Ui.signed(high), 12, Ui.WIN));
+        foot.addView(Ui.bold(this, "   bas " + Ui.signed(low), 12, Ui.LOSS));
+        card.addView(foot);
+        return card;
+    }
+
+    /** +1 for a win, -1 for a loss, 0 for a draw or an unreadable battle. */
+    private static int outcomeSign(JSONObject battle) {
+        if (battle == null) {
+            return 0;
+        }
+        if (battle.has("result")) {
+            String r = battle.optString("result");
+            return "victory".equals(r) ? 1 : "defeat".equals(r) ? -1 : 0;
+        }
+        if (battle.has("rank")) {
+            JSONArray players = battle.optJSONArray("players");
+            int cut = players != null && players.length() > 6 ? 4 : 2;
+            return battle.optInt("rank") <= cut ? 1 : -1;
+        }
+        return 0;
     }
 
     private View trackingCard(Stats s) {
@@ -877,10 +957,14 @@ public class MainActivity extends Activity {
         card.addView(Ui.spacer(this, 12));
         card.addView(brawlerHeader(b, 58));
 
-        card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Star powers", count(b.optJSONArray("starPowers")) + "/2", Ui.GOLD),
-                Ui.tile(this, "Gadgets", count(b.optJSONArray("gadgets")) + "/2", Ui.WIN),
-                Ui.tile(this, "Gears", count(b.optJSONArray("gears")) + "/6", Ui.WHITE)));
+        card.addView(Ui.spacer(this, 14));
+        LinearLayout slots = Ui.row(this);
+        slots.addView(slotStrip(b.optJSONArray("starPowers"), 2, KIND_STAR_POWER));
+        slots.addView(Ui.spacer(this, 1));
+        slots.addView(slotStrip(b.optJSONArray("gadgets"), 2, KIND_GADGET));
+        slots.addView(Ui.spacer(this, 1));
+        slots.addView(slotStrip(b.optJSONArray("gears"), 6, KIND_GEAR));
+        card.addView(slots);
 
         card.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1025,24 +1109,30 @@ public class MainActivity extends Activity {
         card.addView(Ui.meter(this, current / (float) best, Ui.GOLD));
         content.addView(card);
 
-        content.addView(unlockCard("Star powers", b.optJSONArray("starPowers"), 2, Ui.GOLD));
-        content.addView(unlockCard("Gadgets", b.optJSONArray("gadgets"), 2, Ui.WIN));
-        content.addView(unlockCard("Gears", b.optJSONArray("gears"), 6, Ui.LIME));
+        content.addView(unlockCard("Star powers", b.optJSONArray("starPowers"),
+                2, Ui.GOLD, KIND_STAR_POWER));
+        content.addView(unlockCard("Gadgets", b.optJSONArray("gadgets"),
+                2, Ui.WIN, KIND_GADGET));
+        content.addView(unlockCard("Gears", b.optJSONArray("gears"),
+                6, Ui.LIME, KIND_GEAR));
     }
 
     /** Lists owned unlocks by name, then how many slots are still empty. */
-    private View unlockCard(String title, JSONArray items, int total, int color) {
+    private View unlockCard(String title, JSONArray items, int total, int color, int kind) {
         LinearLayout card = Ui.card(this);
         int owned = count(items);
         card.addView(Ui.heading(this, title,
                 Ui.chip(this, owned + "/" + total, owned > 0 ? Ui.BG : Ui.MUTED,
                         owned > 0 ? color : Ui.CARD_SOFT)));
-        card.addView(Ui.spacer(this, 6));
+        card.addView(Ui.spacer(this, 10));
+        card.addView(slotStrip(items, total, kind));
 
         if (owned == 0) {
+            card.addView(Ui.spacer(this, 10));
             card.addView(Ui.text(this, "Aucun debloque.", 13, Ui.MUTED));
             return card;
         }
+        card.addView(Ui.spacer(this, 4));
         for (int i = 0; i < items.length(); i++) {
             JSONObject it = items.optJSONObject(i);
             if (it == null) {
@@ -1051,13 +1141,21 @@ public class MainActivity extends Activity {
             LinearLayout row = Ui.row(this);
             row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
 
-            View dot = new View(this);
-            dot.setBackground(Ui.round(color, Ui.dp(this, 4)));
-            LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(
-                    Ui.dp(this, 8), Ui.dp(this, 8));
-            dl.rightMargin = Ui.dp(this, 10);
-            dot.setLayoutParams(dl);
-            row.addView(dot);
+            ImageView art = new ImageView(this);
+            art.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(
+                    Ui.dp(this, 26), Ui.dp(this, 26));
+            al.rightMargin = Ui.dp(this, 10);
+            art.setLayoutParams(al);
+            int id = it.optInt("id");
+            if (kind == KIND_STAR_POWER) {
+                ImageLoader.starPower(art, id);
+            } else if (kind == KIND_GADGET) {
+                ImageLoader.gadget(art, id);
+            } else {
+                ImageLoader.gear(art, id);
+            }
+            row.addView(art);
 
             row.addView(Ui.weighted(Ui.wrap(this,
                     Ui.bold(this, pretty(it.optString("name", "?")), 14, Ui.WHITE)), 1f));
@@ -1518,6 +1616,49 @@ public class MainActivity extends Activity {
 
     private static int count(JSONArray a) {
         return a == null ? 0 : a.length();
+    }
+
+    private static final int KIND_STAR_POWER = 0;
+    private static final int KIND_GADGET = 1;
+    private static final int KIND_GEAR = 2;
+
+    /**
+     * One slot per possible unlock: owned ones show the game's own artwork,
+     * the rest a dimmed padlock, so what is missing is visible at a glance.
+     */
+    private View slotStrip(JSONArray items, int total, int kind) {
+        LinearLayout strip = Ui.row(this);
+        int owned = count(items);
+
+        for (int i = 0; i < total; i++) {
+            ImageView slot = new ImageView(this);
+            slot.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    Ui.dp(this, 29), Ui.dp(this, 29));
+            lp.rightMargin = Ui.dp(this, 4);
+            slot.setLayoutParams(lp);
+
+            if (i < owned) {
+                JSONObject it = items.optJSONObject(i);
+                int id = it == null ? 0 : it.optInt("id");
+                if (kind == KIND_STAR_POWER) {
+                    ImageLoader.starPower(slot, id);
+                } else if (kind == KIND_GADGET) {
+                    ImageLoader.gadget(slot, id);
+                } else {
+                    ImageLoader.gear(slot, id);
+                }
+            } else {
+                int pad = Ui.dp(this, 6);
+                slot.setPadding(pad, pad, pad, pad);
+                slot.setImageResource(R.drawable.ic_lock);
+                slot.setColorFilter(Ui.MUTED);
+                slot.setAlpha(0.5f);
+                slot.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
+            }
+            strip.addView(slot);
+        }
+        return strip;
     }
 
     private List<JSONObject> brawlerList() {
