@@ -8,28 +8,33 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /** Dark palette and the building blocks every screen is assembled from. */
 final class Ui {
 
-    static final int BG = Color.parseColor("#000000");
-    static final int CARD = Color.parseColor("#16181C");
-    static final int CARD_SOFT = Color.parseColor("#1F2329");
-    static final int DIVIDER = Color.parseColor("#24282E");
+    static final int BG = Color.parseColor("#07090B");
+    static final int CARD = Color.parseColor("#12151A");
+    static final int CARD_SOFT = Color.parseColor("#1B2027");
+    static final int STROKE = Color.parseColor("#232A33");
 
     static final int LIME = Color.parseColor("#C3F53C");
-    static final int GOLD = Color.parseColor("#FFC61A");
+    static final int GOLD = Color.parseColor("#FFB020");
     static final int WIN = Color.parseColor("#4ADE80");
-    static final int LOSS = Color.parseColor("#FF6B6B");
+    static final int LOSS = Color.parseColor("#FF5F5F");
     static final int DRAW = Color.parseColor("#5AB0FF");
     static final int ORANGE = Color.parseColor("#FF9F40");
     static final int PURPLE = Color.parseColor("#B47CFF");
     static final int CYAN = Color.parseColor("#4DD9E8");
 
-    static final int WHITE = Color.parseColor("#FFFFFF");
-    static final int MUTED = Color.parseColor("#8E959E");
+    static final int WHITE = Color.parseColor("#F2F5F8");
+    static final int MUTED = Color.parseColor("#7D8793");
+
+    /** Corner radii are small on purpose — the layout reads squarer that way. */
+    private static final int CARD_RADIUS = 12;
+    private static final int CHIP_RADIUS = 6;
 
     private Ui() {
     }
@@ -50,7 +55,6 @@ final class Ui {
         return t;
     }
 
-    /** Heavy condensed face — the look the stat numbers and names lean on. */
     static TextView heavy(Context c, String value, int sp, int color) {
         TextView t = text(c, value, sp, color);
         t.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
@@ -63,11 +67,10 @@ final class Ui {
         return t;
     }
 
-    /** Small tracking-wide uppercase label, as used above each section. */
     static TextView label(Context c, String value, int color) {
-        TextView t = text(c, value.toUpperCase(), 12, color);
+        TextView t = text(c, value.toUpperCase(), 11, color);
         t.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        t.setLetterSpacing(0.14f);
+        t.setLetterSpacing(0.16f);
         return t;
     }
 
@@ -86,23 +89,32 @@ final class Ui {
         return l;
     }
 
-    static LinearLayout card(Context c) {
-        LinearLayout l = column(c);
-        l.setBackground(round(CARD, dp(c, 18)));
-        int p = dp(c, 18);
-        l.setPadding(p, p, p, p);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = dp(c, 14);
-        l.setLayoutParams(lp);
-        return l;
-    }
-
     static GradientDrawable round(int color, int radiusPx) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
         d.setCornerRadius(radiusPx);
         return d;
+    }
+
+    /** Filled panel with a hairline edge, which is what gives cards their shape. */
+    static GradientDrawable panel(Context c, int fill, int strokeColor, int radiusDp) {
+        GradientDrawable d = new GradientDrawable();
+        d.setColor(fill);
+        d.setCornerRadius(dp(c, radiusDp));
+        d.setStroke(Math.max(1, dp(c, 1) / 2), strokeColor);
+        return d;
+    }
+
+    static LinearLayout card(Context c) {
+        LinearLayout l = column(c);
+        l.setBackground(panel(c, CARD, STROKE, CARD_RADIUS));
+        int p = dp(c, 15);
+        l.setPadding(p, p, p, p);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(c, 11);
+        l.setLayoutParams(lp);
+        return l;
     }
 
     static View spacer(Context c, int heightDp) {
@@ -114,11 +126,11 @@ final class Ui {
 
     static View divider(Context c) {
         View v = new View(c);
-        v.setBackgroundColor(DIVIDER);
+        v.setBackgroundColor(STROKE);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, dp(c, 1) / 2));
-        lp.topMargin = dp(c, 14);
-        lp.bottomMargin = dp(c, 14);
+        lp.topMargin = dp(c, 12);
+        lp.bottomMargin = dp(c, 12);
         v.setLayoutParams(lp);
         return v;
     }
@@ -131,84 +143,114 @@ final class Ui {
 
     // ------------------------------------------------------------ components
 
-    /** Rounded colour chip, e.g. the "P11" power badge. */
-    static TextView badge(Context c, String value, int fg, int bg) {
-        TextView t = bold(c, value, 12, fg);
-        t.setBackground(round(bg, dp(c, 7)));
-        t.setPadding(dp(c, 8), dp(c, 4), dp(c, 8), dp(c, 4));
-        return t;
+    static ImageView icon(Context c, int drawableRes, int sizeDp, int rightMarginDp) {
+        ImageView v = new ImageView(c);
+        v.setImageResource(drawableRes);
+        v.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                dp(c, sizeDp), dp(c, sizeDp));
+        lp.rightMargin = dp(c, rightMarginDp);
+        v.setLayoutParams(lp);
+        return v;
     }
 
     /**
-     * One "Label ....... Value" line. Two of these side by side make the
-     * two-column grid the tracking panel uses.
+     * Section heading: a lime rule, the title, and an optional trailing view.
+     * The rule is what keeps sections distinguishable once cards stack up.
      */
-    static LinearLayout statLine(Context c, String label, String value, int valueColor) {
+    static LinearLayout heading(Context c, String title, View trailing) {
         LinearLayout r = row(c);
-        r.setPadding(0, dp(c, 6), 0, dp(c, 6));
 
-        TextView l = text(c, label, 14, MUTED);
-        r.addView(l, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        View rule = new View(c);
+        rule.setBackground(round(LIME, dp(c, 2)));
+        LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(
+                dp(c, 3), dp(c, 13));
+        rl.rightMargin = dp(c, 8);
+        rule.setLayoutParams(rl);
+        r.addView(rule);
 
-        TextView v = heavy(c, value, 16, valueColor);
-        r.addView(v);
+        r.addView(weighted(wrap(c, label(c, title, WHITE)), 1f));
+        if (trailing != null) {
+            r.addView(trailing);
+        }
         return r;
     }
 
-    /** Two stat lines sharing a row, each taking half the width. */
-    static LinearLayout statPair(Context c, String l1, String v1, int c1,
-                                 String l2, String v2, int c2) {
-        LinearLayout r = row(c);
-        LinearLayout left = column(c);
-        left.addView(statLine(c, l1, v1, c1));
-        r.addView(weighted(left, 1f));
+    static LinearLayout wrap(Context c, View v) {
+        LinearLayout l = column(c);
+        l.addView(v);
+        return l;
+    }
 
-        LinearLayout gap = column(c);
-        gap.setLayoutParams(new LinearLayout.LayoutParams(dp(c, 18), 1));
-        r.addView(gap);
-
-        LinearLayout right = column(c);
-        right.addView(statLine(c, l2, v2, c2));
-        r.addView(weighted(right, 1f));
-        return r;
+    static TextView chip(Context c, String value, int fg, int bg) {
+        TextView t = bold(c, value, 11, fg);
+        t.setBackground(round(bg, dp(c, CHIP_RADIUS)));
+        t.setPadding(dp(c, 7), dp(c, 4), dp(c, 7), dp(c, 4));
+        return t;
     }
 
     /** A trophy icon followed by its count, the pairing used all over the app. */
     static LinearLayout trophy(Context c, long value, int sp, int color) {
         LinearLayout r = row(c);
-        android.widget.ImageView icon = new android.widget.ImageView(c);
-        icon.setImageResource(R.drawable.trophy);
-        icon.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-        int side = dp(c, sp - 1);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(side, side);
-        lp.rightMargin = dp(c, 5);
-        icon.setLayoutParams(lp);
-        r.addView(icon);
+        r.addView(icon(c, R.drawable.trophy, sp + 3, 4));
         r.addView(heavy(c, num(value), sp, color));
         return r;
     }
 
-    /** Filled track used for the win-streak meter. */
+    /**
+     * A labelled figure sized to share its row with siblings. Stacking the
+     * label over the value keeps long French labels from colliding.
+     */
+    static LinearLayout tile(Context c, String label, String value, int valueColor) {
+        LinearLayout col = column(c);
+        col.setBackground(panel(c, CARD_SOFT, STROKE, 9));
+        int p = dp(c, 10);
+        col.setPadding(p, dp(c, 9), p, dp(c, 9));
+        col.addView(label(c, label, MUTED));
+        col.addView(spacer(c, 5));
+        col.addView(heavy(c, value, 17, valueColor));
+        return col;
+    }
+
+    /** Lays tiles out in a row with even gaps. */
+    static LinearLayout tileRow(Context c, View... tiles) {
+        LinearLayout r = row(c);
+        for (int i = 0; i < tiles.length; i++) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            if (i > 0) {
+                lp.leftMargin = dp(c, 8);
+            }
+            tiles[i].setLayoutParams(lp);
+            r.addView(tiles[i]);
+        }
+        LinearLayout.LayoutParams outer = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        outer.topMargin = dp(c, 8);
+        r.setLayoutParams(outer);
+        return r;
+    }
+
+    /** Filled track used for meters such as win rate and streaks. */
     static View meter(Context c, float fraction, int color) {
         LinearLayout track = new LinearLayout(c);
-        track.setBackground(round(CARD_SOFT, dp(c, 5)));
+        track.setBackground(round(CARD_SOFT, dp(c, 3)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 9));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 7));
         lp.topMargin = dp(c, 8);
         track.setLayoutParams(lp);
 
-        View fill = new View(c);
-        fill.setBackground(round(color, dp(c, 5)));
         float f = Math.max(0f, Math.min(1f, fraction));
-        fill.setLayoutParams(new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.MATCH_PARENT, f));
+        View fill = new View(c);
+        fill.setBackground(round(color, dp(c, 3)));
+        fill.setLayoutParams(new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, f));
         track.addView(fill);
 
         if (f < 1f) {
             View rest = new View(c);
-            rest.setLayoutParams(new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.MATCH_PARENT, 1f - f));
+            rest.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.MATCH_PARENT, 1f - f));
             track.addView(rest);
         }
         return track;

@@ -4,6 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,9 +26,17 @@ final class Stats {
     int streak;
     final Set<String> brawlersUsed = new HashSet<>();
 
+    /** Mode name to {wins, losses}, in the order the modes were first seen. */
+    final Map<String, int[]> byMode = new LinkedHashMap<>();
+
     int winRate() {
         int decided = wins + losses;
         return decided == 0 ? 0 : Math.round(wins * 100f / decided);
+    }
+
+    static int rateOf(int[] record) {
+        int decided = record[0] + record[1];
+        return decided == 0 ? 0 : Math.round(record[0] * 100f / decided);
     }
 
     long trophyNet() {
@@ -85,6 +95,19 @@ final class Stats {
                 } else {
                     streakOpen = false;
                 }
+            }
+
+            if (decided) {
+                JSONObject event = entry.optJSONObject("event");
+                String mode = event != null && !event.optString("mode").isEmpty()
+                        ? event.optString("mode")
+                        : battle.optString("mode", "?");
+                int[] record = s.byMode.get(mode);
+                if (record == null) {
+                    record = new int[2];
+                    s.byMode.put(mode, record);
+                }
+                record[won ? 0 : 1]++;
             }
 
             int change = battle.optInt("trophyChange");

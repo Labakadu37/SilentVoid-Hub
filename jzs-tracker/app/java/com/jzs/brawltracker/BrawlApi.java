@@ -3,6 +3,7 @@ package com.jzs.brawltracker;
 import android.os.Handler;
 import android.os.Looper;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -62,8 +63,18 @@ public final class BrawlApi {
         get("/clubs/" + encodeTag(tag), cb);
     }
 
-    public void globalPlayers(Callback cb) {
-        get("/rankings/global/players?limit=50", cb);
+    /** region is "global" or a two-letter country code. */
+    public void rankedPlayers(String region, Callback cb) {
+        get("/rankings/" + region + "/players?limit=50", cb);
+    }
+
+    public void rankedClubs(String region, Callback cb) {
+        get("/rankings/" + region + "/clubs?limit=50", cb);
+    }
+
+    /** The rotation returns a bare array, so it is wrapped under "items". */
+    public void events(Callback cb) {
+        get("/events/rotation", cb);
     }
 
     private static String encodeTag(String tag) {
@@ -136,7 +147,13 @@ public final class BrawlApi {
             if (code >= 400) {
                 throw new ApiException(code, reasonFor(code, text));
             }
-            return new JSONObject(text);
+            // Some endpoints answer with a bare array; wrap it so callers can
+            // read every response the same way.
+            String body = text.trim();
+            if (body.startsWith("[")) {
+                return new JSONObject().put("items", new JSONArray(body));
+            }
+            return new JSONObject(body);
         } finally {
             c.disconnect();
         }
