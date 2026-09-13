@@ -43,6 +43,9 @@ public class MainActivity extends Activity {
     private static final int TAB_CLUB = 3;
     private static final int TAB_RANKINGS = 4;
     private static final String[] TAB_NAMES = {"Home", "Brawlers", "Events", "Club", "Top"};
+    private static final int[] TAB_ICONS = {
+            R.drawable.ic_home, R.drawable.ic_brawlers, R.drawable.ic_events,
+            R.drawable.ic_club, R.drawable.ic_top};
 
     private static final int MODE_PLAYER = 0;
     private static final int MODE_CLUB = 1;
@@ -265,26 +268,41 @@ public class MainActivity extends Activity {
     }
 
     private View navItem(final int index) {
-        TextView t = Ui.bold(this, TAB_NAMES[index], 12, Ui.MUTED);
-        t.setGravity(Gravity.CENTER);
-        t.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
-        t.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout item = Ui.column(this);
+        item.setGravity(Gravity.CENTER);
+        item.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 7));
+        item.setLayoutParams(new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        t.setOnClickListener(new View.OnClickListener() {
+
+        ImageView glyph = new ImageView(this);
+        glyph.setImageResource(TAB_ICONS[index]);
+        glyph.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        glyph.setLayoutParams(new LinearLayout.LayoutParams(
+                Ui.dp(this, 21), Ui.dp(this, 21)));
+        item.addView(glyph);
+
+        TextView caption = Ui.bold(this, TAB_NAMES[index], 10, Ui.MUTED);
+        caption.setGravity(Gravity.CENTER);
+        caption.setPadding(0, Ui.dp(this, 4), 0, 0);
+        item.addView(caption);
+
+        item.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectTab(index);
             }
         });
-        return t;
+        return item;
     }
 
     private void refreshNav() {
         for (int i = 0; i < navBar.getChildCount(); i++) {
-            TextView t = (TextView) navBar.getChildAt(i);
+            LinearLayout item = (LinearLayout) navBar.getChildAt(i);
             boolean active = i == tab;
-            t.setTextColor(active ? Ui.LIME : Ui.MUTED);
-            t.setBackground(active ? Ui.round(Ui.CARD_SOFT, Ui.dp(this, 9)) : null);
+            int colour = active ? Ui.LIME : Ui.MUTED;
+            ((ImageView) item.getChildAt(0)).setColorFilter(colour);
+            ((TextView) item.getChildAt(1)).setTextColor(colour);
+            item.setBackground(active ? Ui.round(Ui.CARD_SOFT, Ui.dp(this, 10)) : null);
         }
     }
 
@@ -518,9 +536,9 @@ public class MainActivity extends Activity {
                 loadingEvents = false;
                 JSONArray items = body.optJSONArray("items");
                 events = items == null ? new JSONArray() : items;
-                if (tab == TAB_EVENTS) {
-                    render();
-                }
+                // The landing screen previews the rotation too, so redraw
+                // whichever screen is showing rather than only the events tab.
+                render();
             }
 
             @Override
@@ -528,6 +546,7 @@ public class MainActivity extends Activity {
                 loadingEvents = false;
                 events = new JSONArray();
                 setStatus(message, Ui.LOSS);
+                render();
             }
         });
     }
@@ -569,25 +588,61 @@ public class MainActivity extends Activity {
     }
 
     private void renderWelcome() {
-        LinearLayout card = Ui.card(this);
-        LinearLayout head = Ui.row(this);
-        head.addView(Ui.icon(this, R.drawable.brawl, 44, 12));
-        LinearLayout titles = Ui.column(this);
-        titles.addView(Ui.heavy(this, "CHERCHE UN JOUEUR", 19, Ui.WHITE));
-        titles.addView(Ui.text(this,
-                "Entre un tag et appuie sur GO.", 13, Ui.MUTED));
-        head.addView(Ui.weighted(titles, 1f));
-        card.addView(head);
-        content.addView(card);
+        content.addView(Ui.spacer(this, 6));
+        content.addView(Ui.display(this, "Suis ta partie\nBrawl Stars", 34, Ui.WHITE));
+        content.addView(Ui.spacer(this, 12));
+
+        TextView pitch = Ui.text(this,
+                "Stats en direct, events du moment et suivi complet "
+                        + "pour chaque joueur et chaque club.", 15, Ui.MUTED);
+        pitch.setLineSpacing(0f, 1.25f);
+        content.addView(pitch);
+        content.addView(Ui.spacer(this, 18));
+
+        TextView cta = Ui.action(this, "Voir mes stats  →");
+        cta.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tagInput.requestFocus();
+                InputMethodManager imm = (InputMethodManager)
+                        getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(tagInput, InputMethodManager.SHOW_IMPLICIT);
+                }
+            }
+        });
+        content.addView(cta);
+
+        LinearLayout legend = Ui.card(this);
+        legend.addView(Ui.heading(this, "Ce que tu suis", null));
+        legend.addView(Ui.spacer(this, 6));
+        LinearLayout r1 = Ui.row(this);
+        r1.addView(Ui.legendItem(this, "Trophees", Ui.GOLD));
+        r1.addView(Ui.legendItem(this, "Win rate", Ui.WIN));
+        legend.addView(r1);
+        LinearLayout r2 = Ui.row(this);
+        r2.addView(Ui.legendItem(this, "Battle log", Ui.DRAW));
+        r2.addView(Ui.legendItem(this, "Stats brawlers", Ui.PURPLE));
+        legend.addView(r2);
+        LinearLayout r3 = Ui.row(this);
+        r3.addView(Ui.legendItem(this, "Events live", Ui.LIME));
+        r3.addView(Ui.legendItem(this, "Classements", Ui.CYAN));
+        legend.addView(r3);
+        content.addView(legend);
 
         List<String> recent = recentTags();
         if (!recent.isEmpty()) {
-            LinearLayout card2 = Ui.card(this);
-            card2.addView(Ui.heading(this, "Recents", null));
-            card2.addView(Ui.spacer(this, 10));
+            LinearLayout card = Ui.card(this);
+            card.addView(Ui.heading(this, "Recents",
+                    Ui.chip(this, String.valueOf(recent.size()), Ui.BG, Ui.LIME)));
+            card.addView(Ui.spacer(this, 4));
             for (final String t : recent) {
-                TextView row = Ui.bold(this, "#" + t, 15, Ui.WHITE);
+                LinearLayout row = Ui.row(this);
                 row.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
+                row.addView(Ui.icon(this, R.drawable.brawl, 24, 10));
+                row.addView(Ui.weighted(Ui.wrap(this,
+                        Ui.bold(this, "#" + t, 15, Ui.WHITE)), 1f));
+                row.addView(Ui.bold(this, "›", 20, Ui.MUTED));
                 row.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -597,9 +652,9 @@ public class MainActivity extends Activity {
                         searchPlayer(t);
                     }
                 });
-                card2.addView(row);
+                card.addView(row);
             }
-            content.addView(card2);
+            content.addView(card);
         }
 
         content.addView(eventsPreviewCard());
@@ -1100,14 +1155,52 @@ public class MainActivity extends Activity {
         return card;
     }
 
+    /** A live taste of the rotation, so the landing screen carries real data. */
     private View eventsPreviewCard() {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, "Events",
-                Ui.chip(this, "VOIR", Ui.BG, Ui.LIME)));
-        card.addView(Ui.spacer(this, 8));
-        card.addView(Ui.text(this,
-                "La rotation des modes en cours, sans avoir besoin d'un profil.",
-                13, Ui.MUTED));
+        card.addView(Ui.heading(this, "Events en cours",
+                Ui.chip(this, "TOUT VOIR", Ui.BG, Ui.LIME)));
+        card.addView(Ui.spacer(this, 4));
+
+        if (events == null) {
+            card.addView(Ui.text(this, "Chargement...", 13, Ui.MUTED));
+            loadEvents();
+        } else if (events.length() == 0) {
+            card.addView(Ui.text(this, "Rotation indisponible.", 13, Ui.MUTED));
+        } else {
+            int limit = Math.min(events.length(), 3);
+            for (int i = 0; i < limit; i++) {
+                JSONObject slot = events.optJSONObject(i);
+                JSONObject event = slot == null ? null : slot.optJSONObject("event");
+                if (event == null) {
+                    continue;
+                }
+                LinearLayout row = Ui.row(this);
+                row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
+
+                ImageView art = new ImageView(this);
+                art.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(
+                        Ui.dp(this, 46), Ui.dp(this, 34));
+                al.rightMargin = Ui.dp(this, 10);
+                art.setLayoutParams(al);
+                art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 7));
+                art.setClipToOutline(true);
+                ImageLoader.map(art, event.optInt("id"));
+                row.addView(art);
+
+                LinearLayout info = Ui.column(this);
+                info.addView(Ui.bold(this, pretty(event.optString("mode", "?")),
+                        14, Ui.WHITE));
+                info.addView(Ui.text(this, event.optString("map", ""), 11, Ui.MUTED));
+                row.addView(Ui.weighted(info, 1f));
+
+                row.addView(Ui.bold(this, remaining(slot.optString("endTime", "")),
+                        12, Ui.LIME));
+                card.addView(row);
+            }
+        }
+
         card.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

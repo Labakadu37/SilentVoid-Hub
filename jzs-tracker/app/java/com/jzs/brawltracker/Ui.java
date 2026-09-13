@@ -61,6 +61,44 @@ final class Ui {
         return t;
     }
 
+    /** Oversized condensed headline. The scale jump is the point. */
+    static TextView display(Context c, String value, int sp, int color) {
+        TextView t = text(c, value.toUpperCase(), sp, color);
+        t.setTypeface(Typeface.create("sans-serif-black", Typeface.NORMAL));
+        t.setLetterSpacing(-0.02f);
+        t.setLineSpacing(0f, 0.92f);
+        return t;
+    }
+
+    /** Colour swatch beside a word, as used for the feature legend. */
+    static LinearLayout legendItem(Context c, String title, int color) {
+        LinearLayout r = row(c);
+        r.setPadding(0, dp(c, 6), dp(c, 14), dp(c, 6));
+
+        View dot = new View(c);
+        dot.setBackground(round(color, dp(c, 2)));
+        LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(
+                dp(c, 9), dp(c, 9));
+        dl.rightMargin = dp(c, 7);
+        dot.setLayoutParams(dl);
+        r.addView(dot);
+        r.addView(text(c, title, 13, MUTED));
+        return r;
+    }
+
+    /** Full-width lime action button. */
+    static TextView action(Context c, String title) {
+        TextView t = heavy(c, title, 16, BG);
+        t.setGravity(Gravity.CENTER);
+        t.setBackground(round(LIME, dp(c, 10)));
+        t.setPadding(dp(c, 16), dp(c, 15), dp(c, 16), dp(c, 15));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(c, 11);
+        t.setLayoutParams(lp);
+        return t;
+    }
+
     static TextView bold(Context c, String value, int sp, int color) {
         TextView t = text(c, value, sp, color);
         t.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));

@@ -52,10 +52,19 @@ final class ImageLoader {
         load(view, "maps/regular", eventId);
     }
 
+    /**
+     * Shows a dimmed mark straight away so a slot never reads as a hole while
+     * the artwork is in flight, or if it never arrives.
+     */
+    private static void placeholder(ImageView view) {
+        view.setImageResource(R.drawable.logo);
+        view.setAlpha(0.16f);
+    }
+
     private static void load(ImageView view, String category, int id) {
         if (id <= 0) {
-            view.setImageBitmap(null);
             view.setTag(null);
+            placeholder(view);
             return;
         }
         String key = category + "/" + id;
@@ -63,10 +72,11 @@ final class ImageLoader {
 
         Bitmap cached = MEMORY.get(key);
         if (cached != null) {
+            view.setAlpha(1f);
             view.setImageBitmap(cached);
             return;
         }
-        view.setImageBitmap(null);
+        placeholder(view);
         IO.execute(new Load(view, key, CDN + key + ".png"));
     }
 
@@ -147,6 +157,7 @@ final class ImageLoader {
         @Override
         public void run() {
             if (key.equals(view.getTag())) {
+                view.setAlpha(1f);
                 view.setImageBitmap(bmp);
             }
         }
