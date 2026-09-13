@@ -32,9 +32,9 @@ final class Ui {
     static final int WHITE = Color.parseColor("#F2F5F8");
     static final int MUTED = Color.parseColor("#7D8793");
 
-    /** Corner radii are small on purpose — the layout reads squarer that way. */
-    private static final int CARD_RADIUS = 12;
-    private static final int CHIP_RADIUS = 6;
+    /** Near-square corners: enough to avoid a hard pixel edge, nothing more. */
+    private static final int CARD_RADIUS = 3;
+    private static final int CHIP_RADIUS = 2;
 
     private Ui() {
     }
@@ -70,19 +70,16 @@ final class Ui {
         return t;
     }
 
-    /** Colour swatch beside a word, as used for the feature legend. */
-    static LinearLayout legendItem(Context c, String title, int color) {
+    /** Game artwork beside a title and a line of detail. */
+    static LinearLayout legendItem(Context c, int drawableRes, String title, String detail) {
         LinearLayout r = row(c);
-        r.setPadding(0, dp(c, 6), dp(c, 14), dp(c, 6));
+        r.setPadding(0, dp(c, 9), 0, dp(c, 9));
+        r.addView(icon(c, drawableRes, 30, 12));
 
-        View dot = new View(c);
-        dot.setBackground(round(color, dp(c, 2)));
-        LinearLayout.LayoutParams dl = new LinearLayout.LayoutParams(
-                dp(c, 9), dp(c, 9));
-        dl.rightMargin = dp(c, 7);
-        dot.setLayoutParams(dl);
-        r.addView(dot);
-        r.addView(text(c, title, 13, MUTED));
+        LinearLayout col = column(c);
+        col.addView(bold(c, title, 14, WHITE));
+        col.addView(text(c, detail, 12, MUTED));
+        r.addView(weighted(col, 1f));
         return r;
     }
 
@@ -90,13 +87,20 @@ final class Ui {
     static TextView action(Context c, String title) {
         TextView t = heavy(c, title, 16, BG);
         t.setGravity(Gravity.CENTER);
-        t.setBackground(round(LIME, dp(c, 10)));
-        t.setPadding(dp(c, 16), dp(c, 15), dp(c, 16), dp(c, 15));
+        t.setBackground(round(LIME, dp(c, CARD_RADIUS)));
+        t.setPadding(dp(c, 16), dp(c, 16), dp(c, 16), dp(c, 16));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.bottomMargin = dp(c, 11);
         t.setLayoutParams(lp);
         return t;
+    }
+
+    /** Fades and lifts a container into place, so a redraw reads as a change. */
+    static void enter(View v) {
+        v.setAlpha(0f);
+        v.setTranslationY(dp(v.getContext(), 14));
+        v.animate().alpha(1f).translationY(0f).setDuration(190).start();
     }
 
     static TextView bold(Context c, String value, int sp, int color) {
@@ -197,15 +201,24 @@ final class Ui {
      * The rule is what keeps sections distinguishable once cards stack up.
      */
     static LinearLayout heading(Context c, String title, View trailing) {
+        return heading(c, 0, title, trailing);
+    }
+
+    /** Passing a drawable swaps the lime rule for that piece of game artwork. */
+    static LinearLayout heading(Context c, int iconRes, String title, View trailing) {
         LinearLayout r = row(c);
 
-        View rule = new View(c);
-        rule.setBackground(round(LIME, dp(c, 2)));
-        LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(
-                dp(c, 3), dp(c, 13));
-        rl.rightMargin = dp(c, 8);
-        rule.setLayoutParams(rl);
-        r.addView(rule);
+        if (iconRes != 0) {
+            r.addView(icon(c, iconRes, 20, 8));
+        } else {
+            View rule = new View(c);
+            rule.setBackground(round(LIME, dp(c, 1)));
+            LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(
+                    dp(c, 3), dp(c, 13));
+            rl.rightMargin = dp(c, 8);
+            rule.setLayoutParams(rl);
+            r.addView(rule);
+        }
 
         r.addView(weighted(wrap(c, label(c, title, WHITE)), 1f));
         if (trailing != null) {
@@ -241,7 +254,7 @@ final class Ui {
      */
     static LinearLayout tile(Context c, String label, String value, int valueColor) {
         LinearLayout col = column(c);
-        col.setBackground(panel(c, CARD_SOFT, STROKE, 9));
+        col.setBackground(panel(c, CARD_SOFT, STROKE, 3));
         int p = dp(c, 10);
         col.setPadding(p, dp(c, 9), p, dp(c, 9));
         col.addView(label(c, label, MUTED));

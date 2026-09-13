@@ -62,6 +62,8 @@ public class MainActivity extends Activity {
     private LinearLayout content;
     private LinearLayout navBar;
     private TextView[] modeTabs;
+    private View searchRow;
+    private View modeRow;
 
     private int searchMode = MODE_PLAYER;
     private int tab = TAB_HOME;
@@ -119,8 +121,10 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(Ui.BG);
 
         root.addView(buildTopBar());
-        root.addView(buildSearchRow());
-        root.addView(buildModeRow());
+        searchRow = buildSearchRow();
+        root.addView(searchRow);
+        modeRow = buildModeRow();
+        root.addView(modeRow);
 
         status = Ui.text(this, "", 13, Ui.MUTED);
         status.setPadding(Ui.dp(this, 14), Ui.dp(this, 9), Ui.dp(this, 14), 0);
@@ -190,14 +194,14 @@ public class MainActivity extends Activity {
         tagInput.setTextSize(15);
         tagInput.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         tagInput.setInputType(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
-        tagInput.setBackground(Ui.panel(this, Ui.CARD, Ui.STROKE, 10));
+        tagInput.setBackground(Ui.panel(this, Ui.CARD, Ui.STROKE, 3));
         int p = Ui.dp(this, 12);
         tagInput.setPadding(p, p, p, p);
         row.addView(tagInput, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView go = Ui.heavy(this, "GO", 15, Ui.BG);
-        go.setBackground(Ui.round(Ui.LIME, Ui.dp(this, 10)));
+        go.setBackground(Ui.round(Ui.LIME, Ui.dp(this, 3)));
         go.setPadding(Ui.dp(this, 18), p, Ui.dp(this, 18), p);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -251,8 +255,8 @@ public class MainActivity extends Activity {
             boolean active = i == searchMode;
             modeTabs[i].setTextColor(active ? Ui.BG : Ui.MUTED);
             modeTabs[i].setBackground(active
-                    ? Ui.round(Ui.LIME, Ui.dp(this, 8))
-                    : Ui.panel(this, Ui.CARD, Ui.STROKE, 8));
+                    ? Ui.round(Ui.LIME, Ui.dp(this, 3))
+                    : Ui.panel(this, Ui.CARD, Ui.STROKE, 3));
         }
     }
 
@@ -302,7 +306,7 @@ public class MainActivity extends Activity {
             int colour = active ? Ui.LIME : Ui.MUTED;
             ((ImageView) item.getChildAt(0)).setColorFilter(colour);
             ((TextView) item.getChildAt(1)).setTextColor(colour);
-            item.setBackground(active ? Ui.round(Ui.CARD_SOFT, Ui.dp(this, 10)) : null);
+            item.setBackground(active ? Ui.round(Ui.CARD_SOFT, Ui.dp(this, 3)) : null);
         }
     }
 
@@ -310,6 +314,19 @@ public class MainActivity extends Activity {
         tab = index;
         detail = null;
         render();
+    }
+
+    /**
+     * Events and rankings take no tag, and only the home and club screens act
+     * on the players/clubs choice, so neither control is shown where it would
+     * do nothing.
+     */
+    private void refreshChrome() {
+        boolean wantsSearch = detail == null
+                && (tab == TAB_HOME || tab == TAB_BRAWLERS || tab == TAB_CLUB);
+        boolean wantsMode = wantsSearch && tab != TAB_BRAWLERS;
+        searchRow.setVisibility(wantsSearch ? View.VISIBLE : View.GONE);
+        modeRow.setVisibility(wantsMode ? View.VISIBLE : View.GONE);
     }
 
     // ----------------------------------------------------------------- token
@@ -392,14 +409,19 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void searchPlayer(final String wanted) {
+    private void searchPlayer(String wanted) {
+        searchPlayer(wanted, TAB_HOME);
+    }
+
+    /** landOn lets an empty tab load a profile without throwing you back home. */
+    private void searchPlayer(final String wanted, int landOn) {
         prefs.edit().putString(KEY_LAST_TAG, wanted).apply();
         tag = wanted;
         player = null;
         battles = null;
         club = null;
         detail = null;
-        tab = TAB_HOME;
+        tab = landOn;
         content.removeAllViews();
         setStatus("Chargement...", Ui.MUTED);
 
@@ -556,6 +578,8 @@ public class MainActivity extends Activity {
     private void render() {
         content.removeAllViews();
         refreshNav();
+        refreshChrome();
+        Ui.enter(content);
 
         if (detail != null) {
             renderBrawlerDetail(detail);
@@ -588,8 +612,14 @@ public class MainActivity extends Activity {
     }
 
     private void renderWelcome() {
-        content.addView(Ui.spacer(this, 6));
-        content.addView(Ui.display(this, "Suis ta partie\nBrawl Stars", 34, Ui.WHITE));
+        LinearLayout hero = Ui.row(this);
+        hero.setPadding(0, Ui.dp(this, 6), 0, 0);
+
+        LinearLayout words = Ui.column(this);
+        words.addView(Ui.display(this, "Suis ta\npartie", 34, Ui.WHITE));
+        hero.addView(Ui.weighted(words, 1f));
+        hero.addView(Ui.icon(this, R.drawable.brawl, 96, 0));
+        content.addView(hero);
         content.addView(Ui.spacer(this, 12));
 
         TextView pitch = Ui.text(this,
@@ -615,19 +645,13 @@ public class MainActivity extends Activity {
 
         LinearLayout legend = Ui.card(this);
         legend.addView(Ui.heading(this, "Ce que tu suis", null));
-        legend.addView(Ui.spacer(this, 6));
-        LinearLayout r1 = Ui.row(this);
-        r1.addView(Ui.legendItem(this, "Trophees", Ui.GOLD));
-        r1.addView(Ui.legendItem(this, "Win rate", Ui.WIN));
-        legend.addView(r1);
-        LinearLayout r2 = Ui.row(this);
-        r2.addView(Ui.legendItem(this, "Battle log", Ui.DRAW));
-        r2.addView(Ui.legendItem(this, "Stats brawlers", Ui.PURPLE));
-        legend.addView(r2);
-        LinearLayout r3 = Ui.row(this);
-        r3.addView(Ui.legendItem(this, "Events live", Ui.LIME));
-        r3.addView(Ui.legendItem(this, "Classements", Ui.CYAN));
-        legend.addView(r3);
+        legend.addView(Ui.spacer(this, 4));
+        legend.addView(Ui.legendItem(this, R.drawable.trophy,
+                "Trophees et classements", "Progression, records, top mondial et FR"));
+        legend.addView(Ui.legendItem(this, R.drawable.brawl,
+                "Stats brawlers", "Rang, puissance, star powers, gadgets, gears"));
+        legend.addView(Ui.legendItem(this, R.drawable.skull,
+                "Battle log", "Win rate par mode, series, star player"));
         content.addView(legend);
 
         List<String> recent = recentTags();
@@ -662,11 +686,41 @@ public class MainActivity extends Activity {
 
     private View needPlayerCard(String section) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, section, null));
-        card.addView(Ui.spacer(this, 10));
-        card.addView(Ui.text(this,
-                "Cette section a besoin d'un profil. Entre un tag en haut avec "
-                        + "JOUEURS selectionne, puis appuie sur GO.", 14, Ui.MUTED));
+        card.addView(Ui.heading(this, R.drawable.brawl, section, null));
+        card.addView(Ui.spacer(this, 14));
+
+        LinearLayout hero = Ui.row(this);
+        hero.addView(Ui.icon(this, R.drawable.brawl, 72, 14));
+        LinearLayout words = Ui.column(this);
+        words.addView(Ui.heavy(this, "AUCUN PROFIL", 19, Ui.WHITE));
+        words.addView(Ui.spacer(this, 6));
+        words.addView(Ui.text(this,
+                "Entre un tag de joueur ci-dessus pour voir ses brawlers, "
+                        + "leur rang, leur puissance et leurs deblocages.",
+                13, Ui.MUTED));
+        hero.addView(Ui.weighted(words, 1f));
+        card.addView(hero);
+
+        List<String> recent = recentTags();
+        if (!recent.isEmpty()) {
+            card.addView(Ui.divider(this));
+            card.addView(Ui.label(this, "Reprendre", Ui.MUTED));
+            for (final String t : recent) {
+                LinearLayout row = Ui.row(this);
+                row.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 10));
+                row.addView(Ui.weighted(Ui.wrap(this,
+                        Ui.bold(this, "#" + t, 15, Ui.WHITE)), 1f));
+                row.addView(Ui.bold(this, "›", 20, Ui.LIME));
+                row.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tagInput.setText(t);
+                        searchPlayer(t, TAB_BRAWLERS);
+                    }
+                });
+                card.addView(row);
+            }
+        }
         return card;
     }
 
@@ -739,7 +793,7 @@ public class MainActivity extends Activity {
 
     private View trackingCard(Stats s) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, "Tracking",
+        card.addView(Ui.heading(this, R.drawable.trophy, "Tracking",
                 Ui.chip(this, s.battles + " COMBATS", Ui.MUTED, Ui.CARD_SOFT)));
 
         card.addView(Ui.spacer(this, 12));
@@ -771,7 +825,7 @@ public class MainActivity extends Activity {
     /** Win rate split per game mode, which the raw battle list does not show. */
     private View modesCard(Stats s) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, "Par mode", null));
+        card.addView(Ui.heading(this, R.drawable.skull, "Par mode", null));
         card.addView(Ui.spacer(this, 6));
 
         if (s.byMode.isEmpty()) {
@@ -809,7 +863,7 @@ public class MainActivity extends Activity {
 
     private View heroBrawlerCard(final JSONObject b) {
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.heading(this, "Meilleur brawler",
+        card.addView(Ui.heading(this, R.drawable.brawl, "Meilleur brawler",
                 Ui.chip(this, "DETAIL", Ui.BG, Ui.LIME)));
         card.addView(Ui.spacer(this, 12));
         card.addView(brawlerHeader(b, 58));
@@ -835,7 +889,7 @@ public class MainActivity extends Activity {
         List<JSONObject> list = brawlerList();
 
         LinearLayout header = Ui.card(this);
-        header.addView(Ui.heading(this, "Brawlers",
+        header.addView(Ui.heading(this, R.drawable.brawl, "Brawlers",
                 Ui.chip(this, String.valueOf(list.size()), Ui.BG, Ui.LIME)));
         header.addView(Ui.spacer(this, 10));
 
@@ -889,7 +943,7 @@ public class MainActivity extends Activity {
                 Ui.dp(this, portraitDp), Ui.dp(this, portraitDp));
         ip.rightMargin = Ui.dp(this, 11);
         portrait.setLayoutParams(ip);
-        portrait.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 9));
+        portrait.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
         ImageLoader.brawler(portrait, b.optInt("id"));
         row.addView(portrait);
 
@@ -1015,7 +1069,7 @@ public class MainActivity extends Activity {
         LinearLayout counts = Ui.row(this);
         counts.addView(Ui.heavy(this, s.wins + "V", 14, Ui.WIN));
         counts.addView(Ui.heavy(this, "  " + s.losses + "D", 14, Ui.LOSS));
-        card.addView(Ui.heading(this, "Combats", counts));
+        card.addView(Ui.heading(this, R.drawable.skull, "Combats", counts));
         card.addView(Ui.spacer(this, 4));
 
         int limit = Math.min(battles.length(), 25);
@@ -1068,7 +1122,7 @@ public class MainActivity extends Activity {
                 Ui.dp(this, 40), Ui.dp(this, 30));
         tl.rightMargin = Ui.dp(this, 10);
         thumb.setLayoutParams(tl);
-        thumb.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 7));
+        thumb.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
         thumb.setClipToOutline(true);
         ImageLoader.map(thumb, event == null ? 0 : event.optInt("id"));
         row.addView(thumb);
@@ -1131,7 +1185,7 @@ public class MainActivity extends Activity {
                 Ui.dp(this, 62), Ui.dp(this, 46));
         al.rightMargin = Ui.dp(this, 11);
         art.setLayoutParams(al);
-        art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 8));
+        art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
         art.setClipToOutline(true);
         ImageLoader.map(art, event.optInt("id"));
         row.addView(art);
@@ -1184,7 +1238,7 @@ public class MainActivity extends Activity {
                         Ui.dp(this, 46), Ui.dp(this, 34));
                 al.rightMargin = Ui.dp(this, 10);
                 art.setLayoutParams(al);
-                art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 7));
+                art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
                 art.setClipToOutline(true);
                 ImageLoader.map(art, event.optInt("id"));
                 row.addView(art);
@@ -1331,7 +1385,7 @@ public class MainActivity extends Activity {
 
     private void renderRankingsTab() {
         LinearLayout header = Ui.card(this);
-        header.addView(Ui.heading(this, "Classement", null));
+        header.addView(Ui.heading(this, R.drawable.trophy, "Classement", null));
         header.addView(Ui.spacer(this, 10));
 
         LinearLayout controls = Ui.row(this);
