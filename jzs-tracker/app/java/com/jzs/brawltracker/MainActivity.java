@@ -1,11 +1,8 @@
 package com.jzs.brawltracker;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
@@ -32,7 +29,6 @@ import java.util.Map;
 public class MainActivity extends Activity {
 
     private static final String PREFS = "jzs";
-    private static final String KEY_TOKEN = "token";
     private static final String KEY_LAST_TAG = "last_tag";
     private static final String KEY_RECENT = "recent_tags";
     private static final int MAX_RECENT = 8;
@@ -183,18 +179,6 @@ public class MainActivity extends Activity {
         });
         bar.addView(refresh);
 
-        TextView key = Ui.chip(this, "CLE", Ui.MUTED, Ui.CARD);
-        LinearLayout.LayoutParams kl = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        kl.leftMargin = Ui.dp(this, 6);
-        key.setLayoutParams(kl);
-        key.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                promptForToken();
-            }
-        });
-        bar.addView(key);
         return bar;
     }
 
@@ -347,30 +331,9 @@ public class MainActivity extends Activity {
 
     // ----------------------------------------------------------------- token
 
+    /** The key ships with the build, so nobody is asked to supply one. */
     private String token() {
-        return prefs.getString(KEY_TOKEN, Config.DEFAULT_TOKEN).trim();
-    }
-
-    private void promptForToken() {
-        final EditText field = new EditText(this);
-        field.setHint("eyJ0eXAiOiJKV1Qi...");
-        field.setTextColor(Color.BLACK);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Cle API Brawl Stars")
-                .setMessage("Cree une cle sur developer.brawlstars.com avec l'IP "
-                        + BrawlApi.PROXY_IP + " autorisee, puis colle-la ici.")
-                .setView(field)
-                .setPositiveButton("Enregistrer", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int which) {
-                        prefs.edit().putString(
-                                KEY_TOKEN, field.getText().toString().trim()).apply();
-                        setStatus("Cle enregistree.", Ui.LIME);
-                    }
-                })
-                .setNegativeButton("Annuler", null)
-                .show();
+        return Config.DEFAULT_TOKEN.trim();
     }
 
     // -------------------------------------------------------- recent profiles
@@ -414,7 +377,7 @@ public class MainActivity extends Activity {
             return;
         }
         if (token().isEmpty()) {
-            setStatus("Ajoute ta cle API avec le bouton CLE.", Ui.LOSS);
+            setStatus("Service indisponible.", Ui.LOSS);
             return;
         }
         hideKeyboard();

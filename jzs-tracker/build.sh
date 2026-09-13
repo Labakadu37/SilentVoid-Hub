@@ -18,14 +18,6 @@ APP="$HERE/app"
 OUT="$HERE/build"
 NAME="BrawlBee"
 
-# A build meant for public distribution must not carry a token, since anyone
-# who downloads the APK can read it back out.
-WITH_TOKEN=1
-if [ "${1:-}" = "--no-token" ]; then
-    WITH_TOKEN=0
-    NAME="BrawlBee-setup"
-fi
-
 for required in "$BT/aapt2" "$BT/d8" "$BT/zipalign" "$BT/apksigner" "$PLATFORM"; do
     [ -e "$required" ] || { echo "missing: $required"; exit 1; }
 done
@@ -47,11 +39,11 @@ echo "[2/6] linking resources"
     "$OUT/res/resources.zip"
 
 echo "[3/6] compiling java"
-# Sources are staged so a token can be baked in without the secret ever
-# living in a tracked file. token.txt is gitignored; without it the app
-# ships tokenless and each user enters their own.
+# Sources are staged so the token can be baked in without the secret ever
+# living in a tracked file. token.txt is gitignored, and the app has no way
+# to ask for a key, so a build without it cannot reach the API.
 cp -r "$APP/java" "$OUT/src"
-if [ "$WITH_TOKEN" = "1" ] && [ -s "$HERE/token.txt" ]; then
+if [ -s "$HERE/token.txt" ]; then
     TOKEN="$(tr -d '[:space:]' < "$HERE/token.txt")"
     CONFIG="$OUT/src/com/jzs/brawltracker/Config.java"
     sed -i "s|DEFAULT_TOKEN = \"\"|DEFAULT_TOKEN = \"$TOKEN\"|" "$CONFIG"

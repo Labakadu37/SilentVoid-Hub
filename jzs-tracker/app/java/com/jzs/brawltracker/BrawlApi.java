@@ -179,8 +179,9 @@ public final class BrawlApi {
             case 400:
                 return "Tag invalide. Verifie les caracteres.";
             case 403:
-                return "Cle API refusee. Elle doit etre creee avec l'IP "
-                        + PROXY_IP + " en whitelist.";
+                // Only the build's own key can cause this, so there is nothing
+                // for the person holding the phone to fix.
+                return "Service momentanement indisponible.";
             case 404:
                 return "Joueur introuvable. Ce tag n'existe pas.";
             case 429:
