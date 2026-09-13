@@ -809,11 +809,11 @@ public class MainActivity extends Activity {
         card.addView(Ui.tileRow(this,
                 Ui.tile(this, "Victoires", String.valueOf(s.wins), Ui.WIN),
                 Ui.tile(this, "Defaites", String.valueOf(s.losses), Ui.LOSS),
-                Ui.tile(this, "Nuls", String.valueOf(s.draws), Ui.DRAW)));
+                Ui.tile(this, "Nuls", String.valueOf(s.draws), Ui.MUTED)));
         card.addView(Ui.tileRow(this,
-                Ui.tile(this, "Star player", String.valueOf(s.starPlayer), Ui.ORANGE),
-                Ui.tile(this, "Brawlers", String.valueOf(s.brawlersUsed.size()), Ui.PURPLE),
-                Ui.tile(this, "Serie", s.streak + "V", Ui.CYAN)));
+                Ui.tile(this, "Star player", String.valueOf(s.starPlayer), Ui.GOLD),
+                Ui.tile(this, "Brawlers", String.valueOf(s.brawlersUsed.size()), Ui.WHITE),
+                Ui.tile(this, "Serie", s.streak + "V", Ui.LIME)));
         card.addView(Ui.tileRow(this,
                 Ui.tile(this, "Gagnes", Ui.signed(s.trophiesWon), Ui.WIN),
                 Ui.tile(this, "Perdus", "-" + Ui.num(s.trophiesLost), Ui.LOSS),
@@ -848,6 +848,15 @@ public class MainActivity extends Activity {
             block.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
 
             LinearLayout line = Ui.row(this);
+            ImageView glyph = new ImageView(this);
+            glyph.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(
+                    Ui.dp(this, 26), Ui.dp(this, 26));
+            gl.rightMargin = Ui.dp(this, 9);
+            glyph.setLayoutParams(gl);
+            ImageLoader.gameMode(glyph, rec.length > 2 ? rec[2] : -1);
+            line.addView(glyph);
+
             line.addView(Ui.weighted(Ui.wrap(this,
                     Ui.bold(this, pretty(e.getKey()), 14, Ui.WHITE)), 1f));
             line.addView(Ui.bold(this, rec[0] + "V " + rec[1] + "D", 12, Ui.MUTED));
@@ -871,7 +880,7 @@ public class MainActivity extends Activity {
         card.addView(Ui.tileRow(this,
                 Ui.tile(this, "Star powers", count(b.optJSONArray("starPowers")) + "/2", Ui.GOLD),
                 Ui.tile(this, "Gadgets", count(b.optJSONArray("gadgets")) + "/2", Ui.WIN),
-                Ui.tile(this, "Gears", count(b.optJSONArray("gears")) + "/6", Ui.DRAW)));
+                Ui.tile(this, "Gears", count(b.optJSONArray("gears")) + "/6", Ui.WHITE)));
 
         card.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -963,7 +972,7 @@ public class MainActivity extends Activity {
         String skinName = skin == null ? "" : skin.optString("name", "");
         LinearLayout sub = Ui.row(this);
         if (!skinName.isEmpty()) {
-            sub.addView(Ui.bold(this, pretty(skinName), 11, Ui.DRAW));
+            sub.addView(Ui.bold(this, pretty(skinName), 11, Ui.LIME));
             sub.addView(Ui.text(this, "  •  ", 11, Ui.MUTED));
         }
         sub.addView(Ui.text(this, "Rang " + b.optInt("rank"), 11, Ui.MUTED));
@@ -1003,7 +1012,7 @@ public class MainActivity extends Activity {
         card.addView(Ui.tileRow(this,
                 Ui.tile(this, "Rang", String.valueOf(b.optInt("rank")), Ui.WHITE),
                 Ui.tile(this, "Puissance", String.valueOf(b.optInt("power")), Ui.LIME),
-                Ui.tile(this, "Prestige", String.valueOf(b.optInt("prestigeLevel")), Ui.PURPLE)));
+                Ui.tile(this, "Prestige", String.valueOf(b.optInt("prestigeLevel")), Ui.WHITE)));
 
         int current = b.optInt("currentWinStreak");
         int best = Math.max(b.optInt("maxWinStreak"), 1);
@@ -1018,7 +1027,7 @@ public class MainActivity extends Activity {
 
         content.addView(unlockCard("Star powers", b.optJSONArray("starPowers"), 2, Ui.GOLD));
         content.addView(unlockCard("Gadgets", b.optJSONArray("gadgets"), 2, Ui.WIN));
-        content.addView(unlockCard("Gears", b.optJSONArray("gears"), 6, Ui.DRAW));
+        content.addView(unlockCard("Gears", b.optJSONArray("gears"), 6, Ui.LIME));
     }
 
     /** Lists owned unlocks by name, then how many slots are still empty. */
@@ -1116,16 +1125,14 @@ public class MainActivity extends Activity {
         LinearLayout row = Ui.row(this);
         row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
 
-        ImageView thumb = new ImageView(this);
-        thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(
-                Ui.dp(this, 40), Ui.dp(this, 30));
-        tl.rightMargin = Ui.dp(this, 10);
-        thumb.setLayoutParams(tl);
-        thumb.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
-        thumb.setClipToOutline(true);
-        ImageLoader.map(thumb, event == null ? 0 : event.optInt("id"));
-        row.addView(thumb);
+        ImageView modeIcon = new ImageView(this);
+        modeIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(
+                Ui.dp(this, 30), Ui.dp(this, 30));
+        ml.rightMargin = Ui.dp(this, 10);
+        modeIcon.setLayoutParams(ml);
+        ImageLoader.gameMode(modeIcon, event == null ? -1 : event.optInt("modeId", -1));
+        row.addView(modeIcon);
 
         LinearLayout left = Ui.column(this);
         left.addView(Ui.bold(this, mode, 14, Ui.WHITE));
@@ -1179,10 +1186,20 @@ public class MainActivity extends Activity {
                 Ui.dp(this, 12), Ui.dp(this, 11));
 
         LinearLayout row = Ui.row(this);
+
+        ImageView glyph = new ImageView(this);
+        glyph.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(
+                Ui.dp(this, 38), Ui.dp(this, 38));
+        gl.rightMargin = Ui.dp(this, 9);
+        glyph.setLayoutParams(gl);
+        ImageLoader.gameMode(glyph, event.optInt("modeId", -1));
+        row.addView(glyph);
+
         ImageView art = new ImageView(this);
         art.setScaleType(ImageView.ScaleType.CENTER_CROP);
         LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(
-                Ui.dp(this, 62), Ui.dp(this, 46));
+                Ui.dp(this, 56), Ui.dp(this, 42));
         al.rightMargin = Ui.dp(this, 11);
         art.setLayoutParams(al);
         art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
@@ -1232,16 +1249,14 @@ public class MainActivity extends Activity {
                 LinearLayout row = Ui.row(this);
                 row.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
 
-                ImageView art = new ImageView(this);
-                art.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(
-                        Ui.dp(this, 46), Ui.dp(this, 34));
-                al.rightMargin = Ui.dp(this, 10);
-                art.setLayoutParams(al);
-                art.setBackground(Ui.panel(this, Ui.CARD_SOFT, Ui.STROKE, 3));
-                art.setClipToOutline(true);
-                ImageLoader.map(art, event.optInt("id"));
-                row.addView(art);
+                ImageView glyph = new ImageView(this);
+                glyph.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                LinearLayout.LayoutParams gl = new LinearLayout.LayoutParams(
+                        Ui.dp(this, 32), Ui.dp(this, 32));
+                gl.rightMargin = Ui.dp(this, 10);
+                glyph.setLayoutParams(gl);
+                ImageLoader.gameMode(glyph, event.optInt("modeId", -1));
+                row.addView(glyph);
 
                 LinearLayout info = Ui.column(this);
                 info.addView(Ui.bold(this, pretty(event.optString("mode", "?")),

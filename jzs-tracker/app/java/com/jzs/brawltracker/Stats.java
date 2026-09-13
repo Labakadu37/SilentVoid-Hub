@@ -26,7 +26,10 @@ final class Stats {
     int streak;
     final Set<String> brawlersUsed = new HashSet<>();
 
-    /** Mode name to {wins, losses}, in the order the modes were first seen. */
+    /**
+     * Mode name to {wins, losses, modeId}, in the order the modes were first
+     * seen. The id is carried so each mode can be shown with its own artwork.
+     */
     final Map<String, int[]> byMode = new LinkedHashMap<>();
 
     int winRate() {
@@ -104,7 +107,7 @@ final class Stats {
                         : battle.optString("mode", "?");
                 int[] record = s.byMode.get(mode);
                 if (record == null) {
-                    record = new int[2];
+                    record = new int[]{0, 0, event == null ? -1 : event.optInt("modeId", -1)};
                     s.byMode.put(mode, record);
                 }
                 record[won ? 0 : 1]++;

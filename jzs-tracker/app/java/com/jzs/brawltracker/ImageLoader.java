@@ -53,6 +53,17 @@ final class ImageLoader {
     }
 
     /**
+     * The game's own mode icon. Mode artwork is numbered from a fixed base,
+     * so the API's modeId maps straight onto it — verified against the live
+     * rotation, where every mode's id lined up with its icon.
+     */
+    static void gameMode(ImageView view, int modeId) {
+        load(view, "game-modes/regular", modeId < 0 ? 0 : GAME_MODE_BASE + modeId);
+    }
+
+    private static final int GAME_MODE_BASE = 48000000;
+
+    /**
      * Shows a dimmed mark straight away so a slot never reads as a hole while
      * the artwork is in flight, or if it never arrives.
      */
